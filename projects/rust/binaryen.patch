@@ -1,0 +1,22 @@
+From 4f64c770fc7b8770530c57ba520b39ca7d052c3d Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Mon, 9 Apr 2018 07:34:13 +0000
+Subject: [PATCH] Use our gcc/g++
+
+
+diff --git a/src/librustc_binaryen/build.rs b/src/librustc_binaryen/build.rs
+index f23ff3cee5..fdbb918ef3 100644
+--- a/src/librustc_binaryen/build.rs
++++ b/src/librustc_binaryen/build.rs
+@@ -26,6 +26,8 @@ fn main() {
+ 
+     Config::new("../binaryen")
+         .define("BUILD_STATIC_LIB", "ON")
++        .define("CMAKE_C_COMPILER", "gcc")
++        .define("CMAKE_CXX_COMPILER", "g++")
+         .build_target("binaryen")
+         .build();
+ 
+-- 
+2.16.3
+
