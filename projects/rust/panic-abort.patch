@@ -1,4 +1,4 @@
-From 2fe471643721f3967f1bdf28907b0a7247fdb705 Mon Sep 17 00:00:00 2001
+From a9f89b79c955fee65b8011aa5d8ac1b1a3e4c49b Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
 Date: Thu, 26 Apr 2018 13:18:27 +0000
 Subject: [PATCH] Avoid cross-compilation breakage due to unwinding
@@ -6,10 +6,10 @@ Subject: [PATCH] Avoid cross-compilation breakage due to unwinding
 
 
 diff --git a/src/bootstrap/bin/rustc.rs b/src/bootstrap/bin/rustc.rs
-index 55d104b182..85330f973b 100644
+index 6701f58ba8..c7b03d0f92 100644
 --- a/src/bootstrap/bin/rustc.rs
 +++ b/src/bootstrap/bin/rustc.rs
-@@ -143,7 +143,8 @@ fn main() {
+@@ -152,7 +152,8 @@ fn main() {
          // workaround undefined references to `rust_eh_unwind_resume` generated
          // otherwise, see issue https://github.com/rust-lang/rust/issues/43095.
          if crate_name == "panic_abort" ||
@@ -20,17 +20,17 @@ index 55d104b182..85330f973b 100644
          }
  
 diff --git a/src/libtest/lib.rs b/src/libtest/lib.rs
-index 9ea5f39b71..bb689120af 100644
+index b8be1aeff1..c92ddb4e45 100644
 --- a/src/libtest/lib.rs
 +++ b/src/libtest/lib.rs
-@@ -45,7 +45,6 @@ extern crate getopts;
- extern crate term;
+@@ -43,7 +43,6 @@
+ extern crate getopts;
  #[cfg(any(unix, target_os = "cloudabi"))]
  extern crate libc;
 -extern crate panic_unwind;
+ extern crate term;
  
  pub use self::TestFn::*;
- pub use self::ColorConfig::*;
 -- 
-2.17.0
+2.17.1
 
