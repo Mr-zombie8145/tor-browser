@@ -1,8 +1,8 @@
 # vim: filetype=yaml sw=2
 filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %].tar.gz'
-version: 1.25.0
+version: 1.26.1
 var:
-  prev_version: 1.24.1
+  prev_version: 1.25.0
   container:
     use_container: 1
 
