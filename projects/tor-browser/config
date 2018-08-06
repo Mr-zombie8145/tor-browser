@@ -16,6 +16,8 @@ var:
     - xz-utils
 
 targets:
+  ffdev:
+    filename: 'tor-browser-ffdev-[% c("var/osname") %]'
   linux-i686:
     var:
       mar_osname: linux32

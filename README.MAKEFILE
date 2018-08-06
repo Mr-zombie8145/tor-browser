@@ -44,8 +44,25 @@ By default it is based on the alpha channel, but you can change that by
 editing rbm.local.conf. The resulting build can be found in directory
 testbuild.
 
-{release,alpha,nightly,testbuild}-linux-x86_64-debug
-----------------------------------------------------
+testbuild-{linux-x86_64,linux-i686,windows-i686,osx-x86_64}
+-----------------------------------------------------------
+The same as testbuild, for the selected platform only.
+
+testbuild-ffdev
+---------------
+This is the same as testbuild, except for the firefox component. This
+target is useful when you are developing a firefox patch and want to do
+quick incremental rebuilds of firefox. Instead of using the firefox
+sources from git and doing a full rebuild, we use an existing directory.
+You should configure this directory by setting the var/ffdev_dir option
+in rbm.local.conf.
+
+testbuild-ffdev-{linux-x86_64,linux-i686,windows-i686,osx-x86_64}
+-----------------------------------------------------------------
+The same as testbuild-ffdev, for the selected platform only.
+
+{release,alpha,nightly,testbuild,testbuild-ffdev}-linux-x86_64-debug
+--------------------------------------------------------------------
 Create a debug build for Linux x86_64 with debug features such as ASan.
 
 {release,alpha,nightly,testbuild}-src

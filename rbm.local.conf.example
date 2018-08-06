@@ -96,6 +96,13 @@ targets:
       ### Uncomment this if you want to create mar files in your test build.
       #build_mar: 1
 
+  ffdev:
+    var:
+      ### If you want to do testbuild-ffdev builds, you should point ffdev_dir
+      ### to your developement directory containing the firefox sources you
+      ### want to build.
+      #ffdev_dir: '/home/user/tor-browser'
+
   nightly:
 
     ### By default 'fetch' is set to 1 for nightly builds, meaning that new
