@@ -210,6 +210,10 @@
 				"ro"
 			]
 		}
+                [% IF c("var/container/mounts") %]
+                   ,
+                   [% c("var/container/mounts") %]
+                [% END -%]
 	],
 	"hooks": {},
 	"linux": {

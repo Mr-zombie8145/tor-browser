@@ -87,6 +87,12 @@ targets:
       build_target: torbrowser-testbuild
       publish_dir: ''
 
+  testbuild-ffdev:
+    output_dir: 'testbuild'
+    var:
+      build_target: torbrowser-testbuild-ffdev
+      publish_dir: ''
+
   no_containers:
     var:
       containers_target: no_containers

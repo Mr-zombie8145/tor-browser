@@ -39,7 +39,9 @@ export LLVM_CONFIG="/var/tmp/dist/clang/bin/llvm-config"
   [% END -%]
 [% END -%]
 
-tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
+[% IF ! c("var/ffdev") -%]
+  tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
+[% END -%]
 
 [% IF c("var/osx") %]
   mkdir -p "$distdir/Tor Browser.app/Contents/MacOS"
@@ -47,7 +49,7 @@ tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
   mkdir -p $distdir/Browser
 [% END %]
 
-cd /var/tmp/build/[% project %]-[% c("version") %]
+cd /var/tmp/build/[% project %]-[% IF c("var/ffdev"); GET 'ffdev'; ELSE; GET c("version"); END; %]
 mv -f $rootdir/[% c('input_files_by_name/mozconfig') %] .mozconfig
 [% IF c("var/asan") -%]
   mv -f .mozconfig-asan .mozconfig
@@ -85,7 +87,7 @@ then
     exit 1
 fi
 
-[% IF c("var/windows") %]
+[% IF c("var/windows") &&  ! c("var/ffdev") %]
   # Make sure widl is not inserting random timestamps, see #21837.
   export WIDL_TIME_OVERRIDE="0"
   patch -p1 < $rootdir/nsis-uninstall.patch

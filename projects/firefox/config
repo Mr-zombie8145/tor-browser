@@ -48,6 +48,23 @@ targets:
     var:
       branding_directory: '[% IF c("var/android") %]mobile/android[% ELSE %]browser[% END %]/branding/official'
 
+  ffdev:
+    filename: 'firefox-ffdev-[% c("var/osname") %]'
+    git_hash: ''
+    git_url: ''
+    var:
+      copyright_year: 2018
+      container:
+        mounts: |
+          {
+            "type": "bind",
+            "source": "[% c('var/ffdev_dir', { error_if_undef => 1 }) %]",
+            "destination": "/var/tmp/build/firefox-ffdev",
+            "options": [
+              "rbind"
+              ]
+          }
+
   nightly:
     git_hash: 'tor-browser-[% c("var/firefox_version") %]-[% c("var/torbrowser_branch") %]-1'
     tag_gpg_id: 0

@@ -267,6 +267,23 @@ in the build script and do a
 
 after adding the patch to the project's config file (see above).
 
+Doing firefox incremental builds
+--------------------------------
+
+By default, when we find that a firefox rebuild is needed, we do a full
+rebuild as we did not keep files from the previous build. However when
+you are developing a firefox patch, it might be useful to be able to do
+incremental rebuilds of firefox.
+
+You can do that by setting the var/ffdev_dir option in rbm.local.conf
+pointing to your firefox development directory, and using the
+testbuild-ffdev makefile targets. The firefox git sources will be ignored,
+and instead the var/ffdev_dir directory will be mounted in the build
+container and used as the build sources. The patch that may be applied
+in projects/firefox/build are not applied in this case, so you should
+have them applied in your tree if they are needed.
+
+
 The Firefox mozconfig files
 ---------------------------
 

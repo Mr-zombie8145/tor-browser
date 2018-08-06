@@ -146,6 +146,41 @@ testbuild-osx-x86_64: submodule-update
 testbuild-src: submodule-update
 	$(rbm) build release --target testbuild --target torbrowser-src-testbuild
 
+testbuild-ffdev: submodule-update
+	rm -rf out/firefox/firefox-ffdev-*
+	rm -rf out/tor-browser/tor-browser-ffdev-*
+	$(rbm) build release --target testbuild-ffdev --target torbrowser-all
+
+testbuild-ffdev-linux-x86_64: submodule-update
+	rm -rf out/firefox/firefox-ffdev-linux-x86_64
+	rm -rf out/tor-browser/tor-browser-ffdev-linux-x86_64
+	$(rbm) build release --target testbuild-ffdev --target torbrowser-linux-x86_64
+
+testbuild-ffdev-linux-x86_64-debug: submodule-update
+	rm -rf out/firefox/firefox-ffdev-linux-x86_64
+	rm -rf out/tor-browser/tor-browser-ffdev-linux-x86_64
+	$(rbm) build release --target testbuild-ffdev --target torbrowser-linux-x86_64-debug
+
+testbuild-ffdev-linux-i686: submodule-update
+	rm -rf out/firefox/firefox-ffdev-linux-i686
+	rm -rf out/tor-browser/tor-browser-ffdev-linux-i686
+	$(rbm) build release --target testbuild-ffdev --target torbrowser-linux-i686
+
+testbuild-ffdev-windows-x86_64: submodule-update
+	rm -rf out/firefox/firefox-ffdev-windows-x86_64
+	rm -rf out/tor-browser/tor-browser-ffdev-windows-x86_64
+	$(rbm) build release --target testbuild-ffdev --target torbrowser-windows-x86_64
+
+testbuild-ffdev-windows-i686: submodule-update
+	rm -rf out/firefox/firefox-ffdev-windows-i686
+	rm -rf out/tor-browser/tor-browser-ffdev-windows-i686
+	$(rbm) build release --target testbuild-ffdev --target torbrowser-windows-i686
+
+testbuild-ffdev-osx-x86_64: submodule-update
+	rm -rf out/firefox/firefox-ffdev-osx-x86_64
+	rm -rf out/tor-browser/tor-browser-ffdev-osx-x86_64
+	$(rbm) build release --target testbuild-ffdev --target torbrowser-osx-x86_64
+
 signtag-release: submodule-update
 	$(rbm) build release --step signtag --target release
 
