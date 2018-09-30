@@ -136,6 +136,7 @@ fi
   patch -p1 < $rootdir/nsis-uninstall.patch
   patch -p1 < $rootdir/1464084.patch
   patch -p1 < $rootdir/1467041.patch
+  patch -p1 < $rootdir/27865.patch
 [% END -%]
 
 rm -f configure

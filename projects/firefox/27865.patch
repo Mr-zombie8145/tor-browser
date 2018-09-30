@@ -1,0 +1,30 @@
+From 06750f24d6c10d12158d2402361e3ce71d8493e1 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Sun, 30 Sep 2018 17:53:00 +0000
+Subject: [PATCH] Bug 27865: Fix start-up crashes on Windows
+
+Don't bind --enable-release to MOZILLA_OFFICIAL for Windows targets as
+we are currently crashing on start-up for unknown reasons if
+--enable-release is set, see:
+https://bugzilla.mozilla.org/show_bug.cgi?id=1470772.
+
+diff --git a/build/moz.configure/toolchain.configure b/build/moz.configure/toolchain.configure
+index 67007c8dcf7c..008193c6c945 100755
+--- a/build/moz.configure/toolchain.configure
++++ b/build/moz.configure/toolchain.configure
+@@ -1382,8 +1382,10 @@ option(env='RUSTFLAGS',
+        help='Rust compiler flags')
+ set_config('RUSTFLAGS', depends('RUSTFLAGS')(lambda flags: flags))
+ 
+-
+-imply_option('--enable-release', mozilla_official)
++if target.os != 'WINNT':
++    imply_option('--enable-release', mozilla_official)
++else:
++    imply_option('--enable-release', False)
+ imply_option('--enable-release', depends_if('MOZ_AUTOMATION')(lambda x: True))
+ 
+ js_option('--enable-release',
+-- 
+2.19.0
+
