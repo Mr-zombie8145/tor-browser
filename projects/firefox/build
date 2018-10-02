@@ -139,7 +139,7 @@ fi
 [% END -%]
 
 patch -p1 < $rootdir/sec1.patch
-patch -p2 < $rootdir/sec2.patch
+patch -p1 < $rootdir/sec2.patch
 
 rm -f configure
 rm -f js/src/configure
