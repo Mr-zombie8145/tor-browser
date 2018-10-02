@@ -1,0 +1,33 @@
+From 3fd07589dda05e09eeeefce13273dc1625db3aa4 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Tue, 2 Oct 2018 10:17:49 +0000
+Subject: [PATCH 2/2] Revert "Bug 1493900.  r=bhackett,sunfish a=dveditz"
+
+This reverts commit 3943f44464ab5aa6bf92b3326cd99479779a83c7.
+
+diff --git a/js/src/jit/BacktrackingAllocator.cpp b/js/src/jit/BacktrackingAllocator.cpp
+index 414de92e5bbc..16f7ff56397c 100644
+--- a/js/src/jit/BacktrackingAllocator.cpp
++++ b/js/src/jit/BacktrackingAllocator.cpp
+@@ -1930,16 +1930,8 @@ BacktrackingAllocator::resolveControlFlow()
+ 
+                 if (!alloc().ensureBallast())
+                     return false;
+-                if (mSuccessor->numPredecessors() > 1) {
+-                    MOZ_ASSERT(predecessor->mir()->numSuccessors() == 1);
+-                    if (!moveAtExit(predecessor, from, to, def->type())) {
+-                        return false;
+-                    }
+-                } else {
+-                    if (!moveAtEntry(successor, from, to, def->type())) {
+-                        return false;
+-                    }
+-                }
++                if (!moveAtExit(predecessor, from, to, def->type()))
++                    return false;
+             }
+         }
+     }
+-- 
+2.19.0
+

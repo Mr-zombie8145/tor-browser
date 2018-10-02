@@ -108,6 +108,8 @@ input_files:
     enable: '[% c("var/windows") %]'
   - filename: 1467041.patch
     enable: '[% c("var/windows") %]'
+  - filename: sec1.patch
+  - filename: sec2.patch
   - project: rust
     name: rust
   - project: llvm

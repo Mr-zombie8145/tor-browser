@@ -1,0 +1,28 @@
+From df3448977cf9c5584b4f223ed1c03d3ac74468c4 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Tue, 2 Oct 2018 10:17:31 +0000
+Subject: [PATCH 1/2] Revert "Bug 1493903 - Don't inline push with more than 1
+ argument. r=tcampbell a=dveditz"
+
+This reverts commit 19a1fbba648f1dd12e7bfc31f7c3f82cfc89cf33.
+
+diff --git a/js/src/jit/MCallOptimize.cpp b/js/src/jit/MCallOptimize.cpp
+index 1e600583c4cb..2bee4b605280 100644
+--- a/js/src/jit/MCallOptimize.cpp
++++ b/js/src/jit/MCallOptimize.cpp
+@@ -775,12 +775,6 @@ IonBuilder::inlineArrayPush(CallInfo& callInfo)
+         return InliningStatus_NotInlined;
+     }
+ 
+-    // XXX bug 1493903.
+-    if (callInfo.argc() != 1) {
+-        trackOptimizationOutcome(TrackedOutcome::CantInlineNativeBadForm);
+-        return InliningStatus_NotInlined;
+-    }
+-
+     MDefinition* obj = convertUnboxedObjects(callInfo.thisArg());
+     for (uint32_t i = 0; i < callInfo.argc(); i++) {
+         MDefinition* value = callInfo.getArg(i);
+-- 
+2.19.0
+
