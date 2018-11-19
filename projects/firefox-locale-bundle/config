@@ -1,0 +1,36 @@
+# vim: filetype=yaml sw=2
+version: '[% c("var/ff_version") %]-[% c("var/ff_build") %]'
+filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
+
+var:
+  ff_version: '[% pc("firefox", "var/firefox_version") %]'
+  ff_build: build1
+  input_filename: 'checkout-locale-[% c("version") %]'
+
+input_files:
+  - filename: '[% c("var/input_filename") %]'
+    refresh_iput: 1
+    exec: |
+      #!/bin/bash
+      set -e
+      [% SET outdir = c("var/input_filename");
+         SET filename = "Firefox-" _ c("var/ff_version") _ '-' _ c("var/ff_build") _ '.json';
+         SET URL = "https://product-details.mozilla.org/1.0/l10n/" _ filename; %]
+      echo "Testing"
+      #test -f [% dest_dir %]/[% filename %] || \
+      #         [% GET c("urlget", { filename => filename, URL => URL }); %]
+      echo "Done testing"
+      # TODO: process json file
+      mkdir -p [% dest_dir %]/[% outdir %]
+      echo [% filename %]
+      echo "1"
+      [% FOREACH lang = c('var/locales') %]
+      [% SET lang = tmpl(lang) %]
+      [% SET hgurl = "https://hg.mozilla.org/l10n-central/" _ lang;
+         SET filename = outdir _ '/' _ lang; %]
+      echo [% filename %]
+      echo "2"
+      test -f [% dest_dir %]/[% filename %] || \
+        hg clone [% hgurl %] [% dest_dir %]/[% filename %]
+      # TODO: check out the actual rev according to the json file
+      [% END %]
