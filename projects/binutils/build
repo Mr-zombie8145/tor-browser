@@ -28,6 +28,8 @@ cd [% project %]-[% c("version") %]
   # fix build reproducibility of Windows builds by reverting commit 13e570f80c.
   # See bug 16472.
   patch -p1 < ../fix-windows-reproducibility.patch
+  patch -p1 < ../binutils_19803.patch
+  patch -p1 < ../binutils_19803_2.patch
 [% END -%]
 [% IF c('var/windows-x86_64') -%]
   patch -p1 < ../64bit-fixups.patch

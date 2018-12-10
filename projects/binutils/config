@@ -28,3 +28,7 @@ input_files:
     enable: '[% c("var/windows") %]'
   - filename: fix-windows-reproducibility.patch
     enable: '[% c("var/windows") %]'
+  - filename: binutils_19803.patch
+    enable: '[% c("var/windows") %]'
+  - filename: binutils_19803_2.patch
+    enable: '[% c("var/windows") %]'

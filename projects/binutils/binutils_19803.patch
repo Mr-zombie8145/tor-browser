@@ -1,0 +1,130 @@
+From 3ee4f18fb539ee6d7ce8998266e0d12b786174ba Mon Sep 17 00:00:00 2001
+From: Nick Clifton <nickc@redhat.com>
+Date: Tue, 22 Mar 2016 12:25:08 +0000
+Subject: [PATCH] Improve COFF/PE linker garbage collection by preventing the
+ removal of sections containing exported symbols.
+
+	PR ld/19803
+	* ldlang.c (lang_add_gc_name): New function.  Adds the provided
+	symbol name to the list of gc symbols.
+	(lang_process): Call lang_add_gc_name with entry_symbol_default if
+	entry_symbol.name is NULL.  Use lang_add_gc_name to add the init
+	and fini function names.
+	* pe-dll.c (process_def_file_and_drectve): Add exported names to
+	the gc symbol list.
+
+diff --git a/ld/ChangeLog b/ld/ChangeLog
+index 3c60c938b6..49722e9f4a 100644
+--- a/ld/ChangeLog
++++ b/ld/ChangeLog
+@@ -1,5 +1,18 @@
+ 2016-06-29  Tristan Gingold  <gingold@adacore.com>
+ 
++	PR ld/19803
++	* ldlang.c (lang_add_gc_name): New function.  Adds the provided
++	symbol name to the list of gc symbols.
++	(lang_process): Call lang_add_gc_name with entry_symbol_default if
++	entry_symbol.name is NULL.  Use lang_add_gc_name to add the init
++	and fini function names.
++	* pe-dll.c (process_def_file_and_drectve): Add exported names to
++	the gc symbol list.
++	* testsuite/ld-pe/pr19803.s: Do not export _testval symbol.
++	* testsuite/ld-pe/pr19803.d: Tweak expected output.
++
++2016-03-22  Nick Clifton  <nickc@redhat.com>
++
+ 	* configure: Regenerate.
+ 
+ 2016-06-14  Senthil Kumar Selvaraj  <senthil_kumar.selvaraj@atmel.com>
+diff --git a/ld/ldlang.c b/ld/ldlang.c
+index c45b9128f4..0f36e57e69 100644
+--- a/ld/ldlang.c
++++ b/ld/ldlang.c
+@@ -6700,6 +6700,23 @@ lang_list_remove_tail (lang_statement_list_type *destlist,
+ }
+ #endif /* ENABLE_PLUGINS */
+ 
++/* Add NAME to the list of garbage collection entry points.  */
++
++void
++lang_add_gc_name (const char * name)
++{
++  struct bfd_sym_chain *sym;
++
++  if (name == NULL)
++    return;
++
++  sym = (struct bfd_sym_chain *) stat_alloc (sizeof (*sym));
++
++  sym->next = link_info.gc_sym_list;
++  sym->name = name;
++  link_info.gc_sym_list = sym;
++}
++
+ void
+ lang_process (void)
+ {
+@@ -6782,26 +6799,19 @@ lang_process (void)
+     }
+ #endif /* ENABLE_PLUGINS */
+ 
++  /* Make sure that nobody has tried to add a symbol to this list before now.  */
++  ASSERT (link_info.gc_sym_list == NULL);
++
+   link_info.gc_sym_list = &entry_symbol;
+   if (entry_symbol.name == NULL)
+-    link_info.gc_sym_list = ldlang_undef_chain_list_head;
+-  if (link_info.init_function != NULL)
+     {
+-      struct bfd_sym_chain *sym
+-	= (struct bfd_sym_chain *) stat_alloc (sizeof (*sym));
+-      sym->next = link_info.gc_sym_list;
+-      sym->name = link_info.init_function;
+-      link_info.gc_sym_list = sym;
+-    }
+-  if (link_info.fini_function != NULL)
+-    {
+-      struct bfd_sym_chain *sym
+-	= (struct bfd_sym_chain *) stat_alloc (sizeof (*sym));
+-      sym->next = link_info.gc_sym_list;
+-      sym->name = link_info.fini_function;
+-      link_info.gc_sym_list = sym;
++      link_info.gc_sym_list = ldlang_undef_chain_list_head;
++      lang_add_gc_name (entry_symbol_default);
+     }
+ 
++  lang_add_gc_name (link_info.init_function);
++  lang_add_gc_name (link_info.fini_function);
++
+   ldemul_after_open ();
+   if (config.map_file != NULL)
+     lang_print_asneeded ();
+diff --git a/ld/ldlang.h b/ld/ldlang.h
+index 32e519623e..6829030775 100644
+--- a/ld/ldlang.h
++++ b/ld/ldlang.h
+@@ -693,4 +693,7 @@ lang_ld_feature (char *);
+ extern void
+ lang_print_memory_usage (void);
+ 
++extern void
++lang_add_gc_name (const char *);
++
+ #endif
+diff --git a/ld/pe-dll.c b/ld/pe-dll.c
+index fdadeaf286..3c02d0b2dd 100644
+--- a/ld/pe-dll.c
++++ b/ld/pe-dll.c
+@@ -895,6 +895,9 @@ process_def_file_and_drectve (bfd *abfd ATTRIBUTE_UNUSED, struct bfd_link_info *
+   for (i = 0; i < NE; i++)
+     {
+       char *name;
++      /* PR 19803: Make sure that any exported symbol does not get garbage collected.  */
++      lang_add_gc_name (pe_def_file->exports[i].internal_name);
++
+       name = xmalloc (strlen (pe_def_file->exports[i].internal_name) + 2);
+       if (pe_details->underscored
+  	  && (*pe_def_file->exports[i].internal_name != '@'))
+-- 
+2.19.2
+
