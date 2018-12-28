@@ -1,0 +1,24 @@
+# vim: filetype=yaml sw=2
+version: r342383
+filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
+git_url: 'https://github.com/llvm-mirror/llvm'
+git_hash: 5201dae2defd52cce43f84d3ed0570c80308728a
+
+var:
+  container:
+    use_container: 1
+
+input_files:
+  - project: container-image
+  - project: cmake
+    name: cmake
+  - project: clang
+    name: clang
+  - project: compiler-rt
+    name:  compiler-rt
+  - project: lld
+    name: lld
+  - project: libcxx
+    name: libcxx
+  - project: libcxxabi
+    name: libcxxabi
