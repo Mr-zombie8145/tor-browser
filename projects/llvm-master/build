@@ -12,6 +12,7 @@ tar -xf $rootdir/[% c('input_files_by_name/compiler-rt') %]
 tar -xf $rootdir/[% c('input_files_by_name/lld') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxxabi') %]
+mv llvm-master-* llvm-master
 mv clang llvm-master/tools
 mv compiler-rt llvm-master/projects
 mv lld llvm-master/tools
