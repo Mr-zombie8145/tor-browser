@@ -1,5 +1,5 @@
 # vim: filetype=yaml sw=2
-version: r342383
+version: '[% c("var/llvm_version") %]'
 git_hash: 0177850a1fb333a465abfa53ec49a7f75cf79b72
 git_url: https://github.com/llvm-mirror/compiler-rt
 filename: '[% project %]-[% c("version") %].tar.gz'
