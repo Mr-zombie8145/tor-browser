@@ -30,8 +30,30 @@ cmake .. -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=$distdir -DCMAKE_BUILD_TYPE:
 make -j[% c("buildconf/num_procs") %]
 make install
 
-# Adding the binutils things we need
+# Adding the binutils things and the wrappers we need
 cd $distdir/bin
+# First the wrappers
+exception_flags=""
+[% IF c("var/windows-i686") %]
+  exception_flags="-fsjlj-exceptions"
+[% END -%]
+compiler_flags="--sysroot \$DIR/../[% c("arch") %]-w64-mingw32 -rtlib=compiler-rt -stdlib=libc++ -fuse-ld=lld $exception_flags -fuse-cxa-atexit -Qunused-arguments"
+
+cat <<EOF >[% c("arch") %]-w64-mingw32-clang
+#!/bin/sh
+DIR="\$(cd "\$(dirname "\$0")" && pwd)"
+\$DIR/clang -target [% c("arch") %]-w64-mingw32 $compiler_flags "\$@"
+EOF
+chmod +x [% c("arch") %]-w64-mingw32-clang
+
+cat <<EOF >[% c("arch") %]-w64-mingw32-clang++
+#!/bin/sh
+DIR="\$(cd "\$(dirname "\$0")" && pwd)"
+\$DIR/clang -target [% c("arch") %]-w64-mingw32 --driver-mode=g++ $compiler_flags "\$@"
+EOF
+chmod +x [% c("arch") %]-w64-mingw32-clang++
+
+# Now the binutils tools
 cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-nm .
 ln -s llvm-readobj [% c("arch") %]-w64-mingw32-readobj
 ./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
