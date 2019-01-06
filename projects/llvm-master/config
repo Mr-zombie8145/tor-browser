@@ -14,6 +14,8 @@ input_files:
     name: cmake
   - project: clang
     name: clang
+  - project: mingw-w64-source
+    name: mingw-w64-source
   - project: compiler-rt
     name:  compiler-rt
   - project: lld
@@ -26,3 +28,11 @@ input_files:
     name: llvm-mingw
   - project: binutils
     name: binutils
+
+#XXX: libunwind
+
+  #XXX: mingw-w64 as sub project just tarring up the source files like the
+  #libcxx etc. repos? And then we build the mingw-w64 parts as part of llvm-master
+  #which we could then rename to `mingw-w64-clang`. The point is that the prefix
+#needs to point to /path/to/llvm-master so that $arch-w64-mingw32 gets created
+#in the correct place for the sysroot etc.

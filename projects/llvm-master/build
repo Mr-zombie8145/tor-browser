@@ -10,6 +10,7 @@ mkdir -p $builddir
 cd $builddir
 tar -xf $rootdir/[% project %]-[% c('version') %].tar.gz
 tar -xf $rootdir/[% c('input_files_by_name/clang') %]
+tar -xf $rootdir/[% c('input_files_by_name/mingw-w64-source') %]
 tar -xf $rootdir/[% c('input_files_by_name/compiler-rt') %]
 tar -xf $rootdir/[% c('input_files_by_name/lld') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
@@ -57,6 +58,54 @@ chmod +x [% c("arch") %]-w64-mingw32-clang++
 cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-nm .
 ln -s llvm-readobj [% c("arch") %]-w64-mingw32-readobj
 ./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
+
+# Building mingw-w64
+export PATH="$distdir/bin:$PATH"
+CC="[% c("arch") %]-w64-mingw32-clang"
+CXX="[% c("arch") %]-w64-mingw32-clang++"
+# This is default value of _WIN32_WINNT. Gecko configure script explicitly sets
+# this, so this is not used to build Gecko itself. We default to 0x600, which is
+#Windows Vista.
+default_win32_winnt=0x600
+[% IF c("var/windows-i686") %]
+  crt_flags="--enable-lib32 --disable-lib64"
+  compiler_rt_machine="i386"
+[% ELSE -%]
+  crt_flags="--disable-lib32 --enable-lib64"
+  compiler_rt_machine="x86_64"
+[% END -%]
+
+cd $builddir/mingw-w64-source/mingw-w64-headers
+mkdir build && cd build
+../configure --host=[% c("arch") %]-w64-mingw32 \
+             --enable-sdk=all \
+             --enable-secure-api \
+             --enable-idl \
+             --with-default-msvcrt=ucrt \
+             --with-default-win32-winnt=$default_win32_winnt \
+             --prefix=$distdir/[% c("arch") %]-w64-mingw32
+make -j[% c("buildconf/num_procs") %] install
+
+cd $builddir/mingw-w64-source/mingw-w64-crt
+mkdir build && cd build
+../configure --host=[% c("arch") %]-w64-mingw32 \
+             $crt_flags \
+             --with-default-msvcrt=ucrt \
+             CC="$CC" \
+             AR=llvm-ar \
+             RANLIB=llvm-ranlib \
+             DLLTOOL=llvm-dlltool \
+             --prefix=$distdir/[% c("arch") %]-w64-mingw32
+make -j[% c("buildconf/num_procs") %]
+make -j[% c("buildconf/num_procs") %] install
+
+cd $builddir/mingw-w64-source/mingw-w64-tools/widl
+mkdir build && cd build
+../configure --target=[% c("arch") %]-w64-mingw32 --prefix=$distdir
+make -j[% c("buildconf/num_procs") %]
+make -j[% c("buildconf/num_procs") %] install
+
+#XXX: compiler-rt, libcxx, libcxxabi
 
 # Packaging up everything
 cd ../../
