@@ -13,17 +13,20 @@ tar -xf $rootdir/[% c('input_files_by_name/clang') %]
 tar -xf $rootdir/[% c('input_files_by_name/mingw-w64-source') %]
 tar -xf $rootdir/[% c('input_files_by_name/compiler-rt') %]
 tar -xf $rootdir/[% c('input_files_by_name/lld') %]
+tar -xf $rootdir/[% c('input_files_by_name/libunwind') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxxabi') %]
 tar -xf $rootdir/[% c('input_files_by_name/llvm-mingw') %]
-mv llvm-master-* llvm-master
-mv clang llvm-master/tools
-mv compiler-rt llvm-master/projects
-mv lld llvm-master/tools
-mv libcxx llvm-master/projects
-mv libcxxabi llvm-master/projects
+mv mingw-w64-clang-[% c('version') %] mingw-w64-clang
+mv clang mingw-w64-clang/tools
+# We need compiler-rt, so we only copy it here.
+mv lld mingw-w64-clang/tools
 
-cd llvm-master
+cd mingw-w64-clang
+# Building clang first. That's based on
+# build/build-clang/clang-trunk-mingw.json. We don't need everything specified
+# there, though. Fow now, we just compile lld additionally. XXX: Do we even need
+# that? Or do we need more?
 export LLVM_HOME=$(pwd)
 mkdir build
 cd build
