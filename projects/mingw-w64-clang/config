@@ -19,7 +19,7 @@ input_files:
   - project: mingw-w64-source
     name: mingw-w64-source
   - project: compiler-rt
-    name:  compiler-rt
+    name: compiler-rt
   - project: lld
     name: lld
   - project: libunwind
