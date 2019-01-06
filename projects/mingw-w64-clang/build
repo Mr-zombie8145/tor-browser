@@ -204,7 +204,7 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DLIBCXX_ENABLE_STATIC_ABI_LIBRARY=TRUE \
       -DLIBCXX_CXX_ABI=libcxxabi \
       -DLIBCXX_CXX_ABI_INCLUDE_PATHS=$builddir/libcxxabi/include \
-      -DLIBCXX_CXX_ABI_LIBRARY_PATH=$builddir/libcxxabi/lib \
+      -DLIBCXX_CXX_ABI_LIBRARY_PATH=$builddir/libcxxabi/build/lib \
       -DCMAKE_CXX_FLAGS="-D_LIBCXXABI_DISABLE_VISIBILITY_ANNOTATIONS" \
       $builddir/libcxx
 make -j[% c("buildconf/num_procs") %] VERBOSE=1
@@ -231,7 +231,7 @@ merge_libs $distdir/[% c("arch") %]-w64-mingw32/lib/libc++.a $distdir/[% c("arch
 # Packaging up everything
 cd $distdir
 # XXX Why?
-rm lib/libstdc++*
+rm clang/lib/libstdc++*
 cd ..
 [% c('tar', {
         tar_src => [ project ],
