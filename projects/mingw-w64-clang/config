@@ -7,8 +7,6 @@ git_hash: 5201dae2defd52cce43f84d3ed0570c80308728a
 var:
   container:
     use_container: 1
-  deps:
-    - libc6-dev
 
 input_files:
   - project: container-image

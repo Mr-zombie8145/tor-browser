@@ -230,8 +230,8 @@ merge_libs $distdir/[% c("arch") %]-w64-mingw32/lib/libc++.a $distdir/[% c("arch
 
 # Packaging up everything
 cd $distdir
-# XXX Why?
-rm clang/lib/libstdc++*
+# XXX Why? And this does break the build currently...
+# rm clang/lib/libstdc++*
 cd ..
 [% c('tar', {
         tar_src => [ project ],
