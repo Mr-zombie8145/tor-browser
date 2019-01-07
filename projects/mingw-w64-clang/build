@@ -16,7 +16,6 @@ tar -xf $rootdir/[% c('input_files_by_name/lld') %]
 tar -xf $rootdir/[% c('input_files_by_name/libunwind') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxxabi') %]
-tar -xf $rootdir/[% c('input_files_by_name/llvm-mingw') %]
 mv mingw-w64-clang-[% c('version') %] mingw-w64-clang
 mv clang mingw-w64-clang/tools
 # We need compiler-rt, so we only copy it here.
@@ -24,9 +23,9 @@ mv lld mingw-w64-clang/tools
 
 cd mingw-w64-clang
 # Building clang first. That's based on
-# build/build-clang/clang-trunk-mingw.json. We don't need everything specified
-# there, though. Fow now, we just compile lld additionally. XXX: Do we even need
-# that? Or do we need more?
+# https://hg.mozilla.org/releases/mozilla-esr60/file/tip/build/build-clang/clang-trunk-mingw.json
+# We don't need everything specified there, though. Fow now, we just compile lld
+# additionally. XXX: Do we even need # that? Or do we need more?
 export LLVM_HOME=$(pwd)
 mkdir build
 cd build
@@ -59,8 +58,7 @@ chmod +x [% c("arch") %]-w64-mingw32-clang++
 
 # Now the binutils tools
 cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-nm .
-ln -s llvm-readobj [% c("arch") %]-w64-mingw32-readobj
-./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
+cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-windres .
 
 # Building mingw-w64
 export PATH="$distdir/bin:$PATH"
