@@ -18,8 +18,10 @@ tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxxabi') %]
 mv mingw-w64-clang-[% c('version') %] mingw-w64-clang
 mv clang mingw-w64-clang/tools
-# We need compiler-rt, so we only copy it here.
 mv lld mingw-w64-clang/tools
+# We need libcxx and libcxxabi later on, so we only copy them here.
+cp -rf libcxx mingw-w64-clang/projects
+cp -rf libcxxabi mingw-w64-clang/projects
 
 cd mingw-w64-clang
 # Building clang first. That's based on
