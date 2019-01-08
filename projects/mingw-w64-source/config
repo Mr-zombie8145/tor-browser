@@ -3,3 +3,6 @@ version: '[% c("abbrev") %]'
 git_url: https://git.code.sf.net/p/mingw-w64/mingw-w64
 git_hash: d66350ea60d043a8992ada752040fc4ea48537c3
 filename: '[% project %]-[% c("version") %].tar.gz'
+
+input_files:
+  - filename: math.patch
