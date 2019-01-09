@@ -9,15 +9,14 @@ CPP="x86_64-w64-mingw32-clang -E"
 AR=llvm-ar
 RANLIB=llvm-ranlib
 
-# Bug 1471698 - Work around binutils corrupting mingw clang binaries.
-LDFLAGS="-Wl,-S"
-STRIP=/bin/true
-OBJCOPY=/bin/true
-
 clang_path=/var/tmp/dist/mingw-w64-clang
 
 # For Stylo
-BINDGEN_CFLAGS="-I$clang_path/x86_64-w64-mingw32/include/c++/v1 -I$clang_path/x86_64-w64-mingw32/include"
+BINDGEN_CFLAGS="-I$clang_path/x86_64-w64-mingw32/include/c++/v1 -I$clang_path/lib/clang/8.0.0/include -I$clang_path/x86_64-w64-mingw32/include"
+
+LDFLAGS="-Wl,-S"
+STRIP=/bin/true
+OBJCOPY=/bin/true
 
 ac_add_options --enable-application=browser
 ac_add_options --target=x86_64-w64-mingw32
@@ -44,7 +43,6 @@ ac_add_options --disable-crashreporter
 ac_add_options --disable-maintenance-service
 ac_add_options --disable-webrtc
 ac_add_options --disable-tests
-ac_add_options --disable-sandbox #XXX: Still needed for mingw-clang??
 ac_add_options --disable-geckodriver # Bug 1489320
-ac_add_options --disable-stylo # Bugzilla 1390583
+ac_add_options --disable-sandbox # Does not compile currently
 ac_add_options --disable-jemalloc # Bugzilla 1466192
