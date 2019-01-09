@@ -1,0 +1,5 @@
+# vim: filetype=yaml sw=2
+version: '[% c("var/llvm_version") %]'
+git_hash: 488e667216e264789c3b3db4a559c6483b180307
+git_url: https://github.com/llvm-mirror/libcxxabi
+filename: '[% project %]-[% c("version") %].tar.gz'
