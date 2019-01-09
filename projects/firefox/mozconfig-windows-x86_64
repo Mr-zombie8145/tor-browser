@@ -1,5 +1,21 @@
 CROSS_COMPILE=1
 
+HOST_CC="clang"
+HOST_CXX="clang++"
+CC="x86_64-w64-mingw32-clang"
+CXX="x86_64-w64-mingw32-clang++"
+CXXFLAGS="-fms-extensions"
+CPP="x86_64-w64-mingw32-clang -E"
+AR=llvm-ar
+RANLIB=llvm-ranlib
+# Since we use windres from binutils without the rest of tools (like cpp), we
+# need to explicitly specify clang as a preprocessor.
+WINDRES="x86_64-w64-mingw32-windres --preprocessor=\"$CPP -xc\" -DRC_INVOKED"
+# Bug 1471698 - Work around binutils corrupting mingw clang binaries.
+LDFLAGS="-Wl,-S"
+STRIP=/bin/true
+OBJCOPY=/bin/true
+
 ac_add_options --enable-application=browser
 ac_add_options --target=x86_64-w64-mingw32
 ac_add_options --with-toolchain-prefix=x86_64-w64-mingw32-
@@ -25,5 +41,7 @@ ac_add_options --disable-crashreporter
 ac_add_options --disable-maintenance-service
 ac_add_options --disable-webrtc
 ac_add_options --disable-tests
+ac_add_options --disable-sandbox #XXX: Still needed for mingw-clang??
+ac_add_options --disable-geckodriver # Bug 1489320
 ac_add_options --disable-stylo # Bugzilla 1390583
 ac_add_options --disable-jemalloc # Bugzilla 1466192
