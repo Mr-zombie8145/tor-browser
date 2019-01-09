@@ -116,9 +116,6 @@ input_files:
   - URL: https://people.torproject.org/~boklm/mirrors/sources/msvcr100-x86_64.dll
     sha256sum: ae3cb6c6afba9a4aa5c85f66023c35338ca579b30326dd02918f9d55259503d5
     enable: '[% c("var/windows-x86_64") %]'
-  - project: gcc
-    name: gcc
-    enable: '[% c("var/windows") %]'
   - filename: nsis-uninstall.patch
     enable: '[% c("var/windows") %]'
   - filename: 1464084.patch
