@@ -18,14 +18,13 @@ tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxxabi') %]
 mv mingw-w64-clang-[% c('version') %] mingw-w64-clang
 mv clang mingw-w64-clang/tools
-# We need compiler-rt, so we only copy it here.
 mv lld mingw-w64-clang/tools
 
 cd mingw-w64-clang
 # Building clang first. That's based on
 # https://hg.mozilla.org/releases/mozilla-esr60/file/tip/build/build-clang/clang-trunk-mingw.json
 # We don't need everything specified there, though. Fow now, we just compile lld
-# additionally. XXX: Do we even need # that? Or do we need more?
+# additionally.
 export LLVM_HOME=$(pwd)
 mkdir build
 cd build
@@ -64,11 +63,10 @@ cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-windres .
 export PATH="$distdir/bin:$PATH"
 CC="[% c("arch") %]-w64-mingw32-clang"
 CXX="[% c("arch") %]-w64-mingw32-clang++"
-# XXX: ? and why Vista?
-# This is default value of _WIN32_WINNT. Gecko configure script explicitly sets
-# this, so this is not used to build Gecko itself. We default to 0x600, which is
-# Windows Vista.
-default_win32_winnt=0x600
+# This is the default value of _WIN32_WINNT. Gecko configure script explicitly
+# sets this, so this is not used to build Gecko itself. We default to 0x601,
+# which is Windows 7.
+default_win32_winnt=0x601
 [% IF c("var/windows-i686") %]
   crt_flags="--enable-lib32 --disable-lib64"
   compiler_rt_machine="i386"
@@ -124,7 +122,7 @@ cmake -DCMAKE_BUILD_TYPE=Release \
   mkdir -p $distdir/lib/clang/$CLANG_VERSION/lib/windows
   cp lib/windows/libclang_rt.builtins-$compiler_rt_machine.a $distdir/lib/clang/$CLANG_VERSION/lib/windows/
 
-# libunwind XXX: Do we need the libunwind stuff?
+# libunwind
 cd $builddir/libunwind
 mkdir build && cd build
 cmake -DCMAKE_BUILD_TYPE=Release \
@@ -210,7 +208,7 @@ make -j[% c("buildconf/num_procs") %] install
 
 # libc++.a depends on libunwind.a. While the linker will automatically link  to
 # libc++.a in C++ mode, it won't pick libunwind.a, requiring the caller to
-# explicitly pass -lunwind. To work around that, we merge libunwind.a  into
+# explicitly pass -lunwind. To work around that, we merge libunwind.a into
 # libc++.a.
 merge_libs() {
   cat <<EOF |llvm-ar -M
@@ -228,8 +226,6 @@ merge_libs $distdir/[% c("arch") %]-w64-mingw32/lib/libc++.a $distdir/[% c("arch
 
 # Packaging up everything
 cd $distdir
-# XXX Why? And this does break the build currently...
-# rm clang/lib/libstdc++*
 cd ..
 [% c('tar', {
         tar_src => [ project ],
