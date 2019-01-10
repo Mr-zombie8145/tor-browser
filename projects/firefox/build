@@ -155,6 +155,8 @@ fi
   patch -p1 < $rootdir/1467041.patch
 [% END -%]
 
+patch -p1 < $rootdir/28875.patch
+
 rm -f configure
 rm -f js/src/configure
 

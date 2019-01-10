@@ -140,3 +140,4 @@ input_files:
   - project: firefox-locale-bundle
     name: firefox-locale-bundle
     enable: '[% c("var/android") %]'
+  - filename: 28875.patch
