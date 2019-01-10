@@ -1,30 +1,21 @@
+From 8091681b68c7e4439a1b111b243c38a1db506a93 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Thu, 10 Jan 2019 10:53:12 +0000
+Subject: [PATCH] Bug 28875
 
-# HG changeset patch
-# User Tom Ritter <tom@mozilla.com>
-# Date 1545159084 21600
-# Node ID 6ee4de0f59dcd4c628f2a526ab0333ac77000231
-# Parent  175862396dbe551608b5f58f0e06504de6fbb970
-Bug 1515001 - Add privacy.spoof_english to the early content prefs to avoid a crash. r=baku, a=RyanVM
 
 diff --git a/dom/ipc/ContentPrefs.cpp b/dom/ipc/ContentPrefs.cpp
+index ac1ea109fc9f..87d4e2da1580 100644
 --- a/dom/ipc/ContentPrefs.cpp
 +++ b/dom/ipc/ContentPrefs.cpp
-@@ -297,16 +297,17 @@ const char* mozilla::dom::ContentPrefs::
-     "privacy.reduceTimerPrecision",
-     "privacy.resistFingerprinting",
-     "privacy.resistFingerprinting.autoDeclineNoUserInputCanvasPrompts",
-     "privacy.resistFingerprinting.reduceTimerPrecision.jitter",
-     "privacy.resistFingerprinting.reduceTimerPrecision.microseconds",
-     "privacy.resistFingerprinting.target_video_res",
-     "privacy.resistFingerprinting.video_dropped_ratio",
-     "privacy.resistFingerprinting.video_frames_per_sec",
-+    "privacy.spoof_english",
-     "privacy.trackingprotection.lower_network_priority",
-     "privacy.window.maxInnerHeight",
-     "privacy.window.maxInnerWidth",
-     "security.csp.enable",
-     "security.data_uri.block_toplevel_data_uri_navigations",
-     "security.data_uri.unique_opaque_origin",
-     "security.fileuri.strict_origin_policy",
-     "security.mixed_content.block_active_content",
+@@ -302,6 +302,7 @@ const char* mozilla::dom::ContentPrefs::gEarlyPrefs[] = {
+   "privacy.resistFingerprinting.target_video_res",
+   "privacy.resistFingerprinting.video_dropped_ratio",
+   "privacy.resistFingerprinting.video_frames_per_sec",
++  "privacy.spoof_english",
+   "privacy.trackingprotection.lower_network_priority",
+   "privacy.window.maxInnerHeight",
+   "privacy.window.maxInnerWidth",
+-- 
+2.20.1
 
