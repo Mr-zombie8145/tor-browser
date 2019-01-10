@@ -26,5 +26,7 @@ input_files:
     name: libcxx
   - project: libcxxabi
     name: libcxxabi
+  - project: llvm-mingw
+    name: llvm-mingw
   - project: binutils
     name: binutils

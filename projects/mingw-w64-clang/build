@@ -16,6 +16,7 @@ tar -xf $rootdir/[% c('input_files_by_name/lld') %]
 tar -xf $rootdir/[% c('input_files_by_name/libunwind') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxxabi') %]
+tar -xf $rootdir/[% c('input_files_by_name/llvm-mingw') %]
 mv mingw-w64-clang-[% c('version') %] mingw-w64-clang
 mv clang mingw-w64-clang/tools
 mv lld mingw-w64-clang/tools
@@ -57,7 +58,8 @@ chmod +x [% c("arch") %]-w64-mingw32-clang++
 
 # Now the binutils tools
 cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-nm .
-cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-windres .
+ln -s llvm-readobj [% c("arch") %]-w64-mingw32-readobj
+./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
 
 # Building mingw-w64
 export PATH="$distdir/bin:$PATH"
