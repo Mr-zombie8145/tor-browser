@@ -58,7 +58,6 @@ chmod +x [% c("arch") %]-w64-mingw32-clang++
 
 # Now the binutils tools
 cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-nm .
-ln -s llvm-readobj [% c("arch") %]-w64-mingw32-readobj
 ./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
 
 # Building mingw-w64
