@@ -37,8 +37,10 @@ make install
 cd $distdir/bin
 # First the wrappers
 exception_flags=""
+target=""
 [% IF c("var/windows-i686") %]
   exception_flags="-fsjlj-exceptions"
+  target="--target=i686-linux-gnu"
 [% END -%]
 compiler_flags="--sysroot \$DIR/../[% c("arch") %]-w64-mingw32 -rtlib=compiler-rt -stdlib=libc++ -fuse-ld=lld $exception_flags -fuse-cxa-atexit -Qunused-arguments"
 
@@ -58,7 +60,7 @@ chmod +x [% c("arch") %]-w64-mingw32-clang++
 
 # Now the binutils tools
 cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-nm .
-./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
+./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c $target -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
 
 # Building mingw-w64
 export PATH="$distdir/bin:$PATH"
