@@ -5,7 +5,6 @@ builddir=/var/tmp/build
 distdir=/var/tmp/dist/[% project %]
 mkdir -p /var/tmp/dist
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/cmake') %]
-tar -C /var/tmp/dist -xf [% c('input_files_by_name/binutils') %]
 export PATH="/var/tmp/dist/cmake/bin:$PATH"
 mkdir -p $builddir
 cd $builddir
@@ -34,9 +33,8 @@ cmake .. -G "Unix Makefiles" -DCMAKE_INSTALL_PREFIX=$distdir -DCMAKE_BUILD_TYPE:
 make -j[% c("buildconf/num_procs") %]
 make install
 
-# Adding the binutils things and the wrappers we need
+# Adding the wrappers and symlinks we need
 cd $distdir/bin
-# First the wrappers
 exception_flags=""
 [% IF c("var/windows-i686") %]
   exception_flags="-fsjlj-exceptions"
@@ -57,9 +55,8 @@ DIR="\$(cd "\$(dirname "\$0")" && pwd)"
 EOF
 chmod +x [% c("arch") %]-w64-mingw32-clang++
 
-# Now the binutils tools
-cp /var/tmp/dist/binutils/bin/[% c("arch") %]-w64-mingw32-nm .
 ./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
+ln -s llvm-nm [% c("arch") %]-w64-mingw32-nm
 
 # Building mingw-w64
 export PATH="$distdir/bin:$PATH"

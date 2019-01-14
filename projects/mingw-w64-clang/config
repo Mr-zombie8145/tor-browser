@@ -28,5 +28,3 @@ input_files:
     name: libcxxabi
   - project: llvm-mingw
     name: llvm-mingw
-  - project: binutils
-    name: binutils
