@@ -44,5 +44,4 @@ ac_add_options --disable-maintenance-service
 ac_add_options --disable-webrtc
 ac_add_options --disable-tests
 ac_add_options --disable-geckodriver # Bug 1489320
-ac_add_options --disable-sandbox # Does not compile currently
 ac_add_options --disable-jemalloc # Bugzilla 1466192
