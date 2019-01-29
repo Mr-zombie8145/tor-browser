@@ -56,7 +56,7 @@ EOF
 chmod +x [% c("arch") %]-w64-mingw32-clang++
 
 ./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
-ln -s llvm-nm [% c("arch") %]-w64-mingw32-nm
+ln -s llvm-readobj [% c("arch") %]-w64-mingw32-readobj
 
 # Building mingw-w64
 export PATH="$distdir/bin:$PATH"
