@@ -162,12 +162,8 @@ rm -f js/src/configure
   chmod 755 $distdir/Browser/firefox
 [% END %]
 
-[% IF c("var/windows-x86_64") -%]
-  mv $rootdir/msvcr100-x86_64.dll $rootdir/msvcr100.dll
-[% END -%]
 [% IF c("var/windows") %]
   cp -a obj-*/dist/firefox/* $distdir/Browser/
-  cp -a $rootdir/msvcr100.dll $distdir/Browser
   cp -a $fxcdir/d3dcompiler_47.dll $distdir/Browser
 [% END %]
 
@@ -215,7 +211,6 @@ cp -p obj-*/dist/host/bin/mbsdiff $MARTOOLS/
   for LIB in $NSS_LIBS; do
       cp -p obj-*/dist/bin/$LIB $MARTOOLS/
   done
-  cp -a $rootdir/msvcr100.dll $MARTOOLS/
 [% END %]
 
 cd $distdir
