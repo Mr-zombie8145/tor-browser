@@ -99,9 +99,6 @@ input_files:
   - name: mingw-w64-clang
     project: mingw-w64-clang
     enable: '[% c("var/windows") %]'
-  - name: mingw-w64
-    project: mingw-w64
-    enable: '[% c("var/windows") %]'
   - filename: get-moz-build-date
   - filename: 'mozconfig-[% c("var/osname") %]'
     name: mozconfig
