@@ -6,9 +6,6 @@
 [% ELSE %]
   mkdir -p /var/tmp/dist
   tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/mingw-w64-clang') %]
-  # Only needed for libwinpthread for fxc right now.
-  tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/mingw-w64') %]
-  mingwdir=/var/tmp/dist/mingw-w64
   export PATH="/var/tmp/dist/mingw-w64-clang/bin:$PATH"
 [% END %]
 distdir=/var/tmp/dist/[% project %]
@@ -20,7 +17,6 @@ mkdir -p [% dest_dir _ '/' _ c('filename') %]
   mkdir -p /var/tmp/dist
   tar -C /var/tmp/dist -xf [% c('input_files_by_name/fxc2') %]
   fxcdir=/var/tmp/dist/fxc2/bin
-  cp $mingwdir/[% c("arch") %]-w64-mingw32/bin/libwinpthread-1.dll $fxcdir
   export PATH="$fxcdir:$PATH"
   # fxc2 requires Wine.
   [% IF c("var/windows-x86_64") %]
