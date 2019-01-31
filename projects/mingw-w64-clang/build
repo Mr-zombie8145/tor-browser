@@ -98,6 +98,15 @@ mkdir build && cd build
 make -j[% c("buildconf/num_procs") %]
 make -j[% c("buildconf/num_procs") %] install
 
+# Needed for fxc2
+cd $builddir/mingw-w64-source/mingw-w64-pthread
+mkdir build && cd build
+../configure LDFLAGS="-Wl,--no-insert-timestamp" \
+             --host=[% c("arch") %]-w64-mingw32 \
+             --prefix=$distdir/[% c("arch") %]-w64-mingw32
+make -j[% c("buildconf/num_procs") %]
+make -j[% c("buildconf/num_procs") %] install
+
 cd $builddir/mingw-w64-source/mingw-w64-tools/widl
 mkdir build && cd build
 ../configure --target=[% c("arch") %]-w64-mingw32 --prefix=$distdir
