@@ -13,11 +13,6 @@ clang_path=/var/tmp/dist/mingw-w64-clang
 # For Stylo
 BINDGEN_CFLAGS="-I$clang_path/x86_64-w64-mingw32/include/c++/v1 -I$clang_path/x86_64-w64-mingw32/include"
 
-# Bug 1471698 - Work around binutils corrupting mingw clang binaries.
-LDFLAGS="-Wl,-S"
-STRIP=/bin/true
-OBJCOPY=/bin/true
-
 ac_add_options --enable-application=browser
 ac_add_options --target=x86_64-w64-mingw32
 ac_add_options --with-toolchain-prefix=x86_64-w64-mingw32-
