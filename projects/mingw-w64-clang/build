@@ -102,6 +102,7 @@ make -j[% c("buildconf/num_procs") %] install
 cd $builddir/mingw-w64-source/mingw-w64-pthread
 mkdir build && cd build
 ../configure LDFLAGS="-Wl,--no-insert-timestamp" \
+             CC=$arch-w64-mingw32-clang AR=llvm-ar RANLIB=llvm-ranlib \
              --host=[% c("arch") %]-w64-mingw32 \
              --prefix=$distdir/[% c("arch") %]-w64-mingw32
 make -j[% c("buildconf/num_procs") %]
