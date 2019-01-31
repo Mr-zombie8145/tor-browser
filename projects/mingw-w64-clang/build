@@ -98,16 +98,6 @@ mkdir build && cd build
 make -j[% c("buildconf/num_procs") %]
 make -j[% c("buildconf/num_procs") %] install
 
-# Needed for fxc2
-cd $builddir/mingw-w64-source/mingw-w64-libraries/winpthreads
-mkdir build && cd build
-../configure LDFLAGS="-Wl,--no-insert-timestamp" \
-             CC=[% c("arch") %]-w64-mingw32-clang AR=llvm-ar \
-             RANLIB=llvm-ranlib --host=[% c("arch") %]-w64-mingw32 \
-             --prefix=$distdir/[% c("arch") %]-w64-mingw32
-make -j[% c("buildconf/num_procs") %]
-make -j[% c("buildconf/num_procs") %] install
-
 cd $builddir/mingw-w64-source/mingw-w64-tools/widl
 mkdir build && cd build
 ../configure --target=[% c("arch") %]-w64-mingw32 --prefix=$distdir
@@ -232,6 +222,16 @@ EOF
 }
 
 merge_libs $distdir/[% c("arch") %]-w64-mingw32/lib/libc++.a $distdir/[% c("arch") %]-w64-mingw32/lib/libunwind.a
+
+# Needed for fxc2
+cd $builddir/mingw-w64-source/mingw-w64-libraries/winpthreads
+mkdir build && cd build
+../configure LDFLAGS="-Wl,--no-insert-timestamp" \
+             CC=[% c("arch") %]-w64-mingw32-clang AR=llvm-ar \
+             RANLIB=llvm-ranlib --host=[% c("arch") %]-w64-mingw32 \
+             --prefix=$distdir/[% c("arch") %]-w64-mingw32
+make -j[% c("buildconf/num_procs") %]
+make -j[% c("buildconf/num_procs") %] install
 
 # Packaging up everything
 cd $distdir
