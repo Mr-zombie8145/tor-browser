@@ -103,7 +103,7 @@ cd $builddir/mingw-w64-source/mingw-w64-libraries/winpthreads
 mkdir build && cd build
 ../configure LDFLAGS="-Wl,--no-insert-timestamp" \
              CC=[% c("arch") %]-w64-mingw32-clang AR=llvm-ar \
-             RANLIB=llvm-ranlib \ --host=[% c("arch") %]-w64-mingw32 \
+             RANLIB=llvm-ranlib --host=[% c("arch") %]-w64-mingw32 \
              --prefix=$distdir/[% c("arch") %]-w64-mingw32
 make -j[% c("buildconf/num_procs") %]
 make -j[% c("buildconf/num_procs") %] install
