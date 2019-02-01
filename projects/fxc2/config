@@ -10,7 +10,5 @@ var:
 
 input_files:
   - project: container-image
-  - name: '[% c("var/compiler") %]'
-    project: '[% c("var/compiler") %]'
   - name: mingw-w64-clang
     project: mingw-w64-clang
