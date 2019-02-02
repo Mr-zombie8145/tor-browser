@@ -82,6 +82,11 @@ targets:
     var:
       arch_deps:
         - wine
+      pre_pkginst: |
+        echo 'deb http://ftp.debian.org/debian stretch-backports main' >> /etc/apt/sources.list
+      post_pkginst: |
+        # Get 3.0.3 which Mozilla is using in the mingw-w64/clang build process
+        apt-get -y -t stretch-backports install wine
 
   windows-i686:
     var:
