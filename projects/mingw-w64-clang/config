@@ -2,7 +2,7 @@
 version: '[% c("var/llvm_version") %]'
 filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
 git_url: 'https://github.com/llvm-mirror/llvm'
-git_hash: e96cf5f80be5089730d10cdab2b43e616a43bce3
+git_hash: 0bd2b610127f5d2d7dae5cb7f4e705709cf4612d
 
 var:
   container:

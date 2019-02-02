@@ -1,6 +1,6 @@
 # vim: filetype=yaml sw=2
 version: '[% c("var/llvm_version") %]'
-git_hash: 45524b4fb1827487968f8cdb754071fc4c1f75b8
+git_hash: 5500a785ffcc416cee19f4460b877250cde8129a
 git_url: https://github.com/llvm-mirror/lld
 filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
 
