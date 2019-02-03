@@ -7,6 +7,7 @@ CXX="x86_64-w64-mingw32-clang++"
 CXXFLAGS="-fms-extensions"
 AR=llvm-ar
 RANLIB=llvm-ranlib
+STRIP=/bin/true
 
 clang_path=/var/tmp/dist/mingw-w64-clang
 
