@@ -9,9 +9,13 @@ tar -C /var/tmp/dist -xf [% c('input_files_by_name/prev_rust') %]
 cd /var/tmp/dist/rust-[% c('var/prev_version') %]-[% c('var/rust_arch') %]-unknown-linux-gnu
 ./install.sh --prefix=$distdir-rust-old
 export PATH="$distdir-rust-old/bin:$PATH"
-
-[% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
-
+[% IF !c("var/windows") %]
+  [% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
+[% ELSE %]
+  mkdir -p /var/tmp/dist
+  tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/mingw-w64-clang') %]
+  export PATH="/var/tmp/dist/mingw-w64-clang/bin:$PATH"
+[% END %]
 [% IF c("var/osx") %]
   # We need to clear `CC` and `LDFLAGS` as they are used for the host platform
   # (i.e. Linux).

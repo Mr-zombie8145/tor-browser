@@ -71,7 +71,7 @@ targets:
         - libssl-dev
         - pkg-config
         - zlib1g-dev
-      configure_opt: --enable-local-rust --enable-vendor --enable-extended --release-channel=stable --sysconfdir=etc --target=[% c("arch") %]-pc-windows-gnu
+      configure_opt: --enable-local-rust --enable-vendor --enable-extended --release-channel=stable --sysconfdir=etc --target=[% c("arch") %]-pc-windows-gnu --set=target.[% c("arch") %]-pc-windows-gnu.cc=[% c("arch") %]-w64-mingw32-clang
 
 input_files:
   - project: container-image
