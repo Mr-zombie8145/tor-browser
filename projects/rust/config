@@ -79,6 +79,10 @@ input_files:
     name: cmake
   - project: '[% c("var/compiler") %]'
     name: '[% c("var/compiler") %]'
+    enable: '[% !c("var/windows") %]'
+  - project: mingw-w64-clang
+    name: mingw-w64-clang
+    enable: '[% c("var/windows") %]'
   - URL: 'https://static.rust-lang.org/dist/rustc-[% c("version") %]-src.tar.gz'
     name: rust
     sig_ext: asc
