@@ -29,7 +29,7 @@ targets:
 
   android-aarch64:
     var:
-      configure_opt: --enable-local-rust --enable-vendor --enable-extended --release-channel=stable --sysconfdir=etc --target=aarch64-linux-androideabi --set=target.aarch64-linux-androideabi.cc=$ANDROID_NDK_HOME/arm64/bin/arm64-linux-androideabi-gcc
+      configure_opt: --enable-local-rust --enable-vendor --enable-extended --release-channel=stable --sysconfdir=etc --target=aarch64-linux-android --set=target.aarch64-linux-android.cc=$ANDROID_NDK_HOME/arm64/bin/aarch64-linux-android-gcc
 
   linux:
     var:
