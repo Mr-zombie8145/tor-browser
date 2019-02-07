@@ -15,14 +15,21 @@ var:
     use_container: 1
 
 targets:
-  android-armv7:
+  android:
     var:
       rust_arch: x86_64
       arch_deps:
         - libssl-dev
         - pkg-config
         - zlib1g-dev
+
+  android-armv7:
+    var:
       configure_opt: --enable-local-rust --enable-vendor --enable-extended --release-channel=stable --sysconfdir=etc --target=armv7-linux-androideabi --set=target.armv7-linux-androideabi.cc=$ANDROID_NDK_HOME/arm/bin/arm-linux-androideabi-gcc
+
+  android-aarch64:
+    var:
+      configure_opt: --enable-local-rust --enable-vendor --enable-extended --release-channel=stable --sysconfdir=etc --target=aarch64-linux-androideabi --set=target.aarch64-linux-androideabi.cc=$ANDROID_NDK_HOME/arm64/bin/arm64-linux-androideabi-gcc
 
   linux:
     var:
