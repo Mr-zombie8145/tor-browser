@@ -14,8 +14,8 @@ ac_add_options --with-android-version=21
 ac_add_options --with-branding=mobile/android/branding/torbrowser
 
 # Android NDK does not contain llvm-config so set clang path in options
-ac_add_options --with-libclang-path=/var/tmp/dist/android-toolchain/android-ndk/arm/lib64
-ac_add_options --with-clang-path=/var/tmp/dist/android-toolchain/android-ndk/arm/bin/clang
+ac_add_options --with-libclang-path=/var/tmp/dist/android-toolchain/android-ndk/arm64/lib64
+ac_add_options --with-clang-path=/var/tmp/dist/android-toolchain/android-ndk/arm64/bin/clang
 
 ac_add_options --with-android-distribution-directory=@TOPSRCDIR@/mobile/android/torbrowser
 ac_add_options --with-l10n-base=/var/tmp/dist/locales
