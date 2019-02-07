@@ -23,7 +23,7 @@ done
 # Build OrbotService Native Libraries
 pushd /var/tmp/build/[% project %]-[% c('version') %]/orbotservice/src/main
 /var/tmp/dist/android-toolchain/android-ndk/ndk-build
-mv libs/armeabi-v7a/pdnsd libs/armeabi-v7a/pdnsd.so
+mv libs/x86/pdnsd libs/x86/pdnsd.so
 popd
 
 # Build Android Libraries and Apps
