@@ -47,7 +47,6 @@ input_files:
   - filename: 0012-Bug-28051-Escape-the-apostrophe-correctly.patch
   - filename: 0013-Bug-28051-Add-a-notification-compatibility-class.patch
   - filename: set_gradle_repo_to_local.patch
-  - filename: aarch64.patch
   - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
     name: gradle-dependencies
     exec: '[% INCLUDE "fetch-gradle-dependencies" %]'
