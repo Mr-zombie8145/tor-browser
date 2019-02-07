@@ -19,7 +19,7 @@ mv android-ndk-r15c/* .
 rm -fR android-ndk-r15c
 
 # The architectures we support
-archs="arm x86"
+archs="arm x86 arm64"
 for arch in $archs; do
   ./build/tools/make_standalone_toolchain.py --api [% c("var/android_min_api") %] --arch $arch --install-dir=./$arch
 done
