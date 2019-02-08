@@ -28,7 +28,6 @@ pushd /var/tmp/build/[% project %]-[% c('version') %]/orbotservice/src/main
 [% ELSE %]
   arch=x86
 [% END %]
-
 mv libs/$arch/pdnsd libs/$arch/pdnsd.so
 popd
 
