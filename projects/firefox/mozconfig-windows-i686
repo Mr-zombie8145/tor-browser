@@ -7,16 +7,12 @@ CXX="i686-w64-mingw32-clang++"
 CXXFLAGS="-fms-extensions"
 AR=llvm-ar
 RANLIB=llvm-ranlib
+STRIP=/bin/true
 
 clang_path=/var/tmp/dist/mingw-w64-clang
 
 # For Stylo
 BINDGEN_CFLAGS="-I$clang_path/i686-w64-mingw32/include/c++/v1 -I$clang_path/i686-w64-mingw32/include"
-
-# Bug 1471698 - Work around binutils corrupting mingw clang binaries.
-LDFLAGS="-Wl,-S"
-STRIP=/bin/true
-OBJCOPY=/bin/true
 
 ac_add_options --enable-application=browser
 ac_add_options --target=i686-w64-mingw32
