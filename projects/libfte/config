@@ -14,12 +14,6 @@ targets:
       arch_deps:
         - python-setuptools
         - python-dev
-  windows-i686:
-    var:
-      compiler: winpython
-      arch_deps:
-        - wine
-        - faketime
 
 input_files:
   - project: container-image
@@ -29,5 +23,3 @@ input_files:
     name: gmp
   - project: obfsproxy
     name: obfsproxy
-  - filename: bug20302.patch
-    enable: '[% c("var/windows") %]'

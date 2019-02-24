@@ -12,13 +12,6 @@ targets:
         - python-dev
         - python-setuptools
 
-  windows-i686:
-    var:
-      compiler: winpython
-      arch_deps:
-        - faketime
-        - wine
-
 input_files:
   - project: container-image
   - name: '[% c("var/compiler") %]'
