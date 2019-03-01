@@ -8,7 +8,7 @@ cd /var/tmp/build/[% project %]-[% c('version') %]
 # Even if we are not shipping libgmpxx anymore we still need --enable-cxx
 # during compile time.
 [% IF c("var/linux") && c("var/nightly") %]
-./configure --enable-cxx
+./configure --enable-cxx --prefix=$distdir
 [% ELSE %]
 ./configure --disable-static --enable-shared --enable-cxx \
     [% c("var/configure_opt") %] [% c("var/configure_opt_gmp") %] --prefix=$distdir
