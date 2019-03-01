@@ -121,8 +121,9 @@ tar -C Bundle-Data/[% bundledata_osname %] -c . | tar -C "$TBDIR[% IF ! c("var/o
 
 cat Bundle-Data/PTConfigs/[% bundledata_osname %]/torrc-defaults-appendix >> "$TBDIR/$TORCONFIGPATH/torrc-defaults"
 [% IF c("var/linux") -%]
-  [% IF ! c("var/snowflake") %]
-    grep -v 'default_bridge\.snowflake' Bundle-Data/PTConfigs/bridge_prefs.js \
+  # If we are not on the alpha series either snowflake or FTE is not available.
+  [% IF ! c("var/alpha") %]
+    grep -v [% IF ! c("var/snowflake") %] 'default_bridge\.snowflake' [% ELSE %] 'default_bridge\.fte' [% END %] Bundle-Data/PTConfigs/bridge_prefs.js \
        >> "$GENERATEDPREFSPATH"
   [% ELSE %]
     cat Bundle-Data/PTConfigs/bridge_prefs.js >> "$GENERATEDPREFSPATH"
