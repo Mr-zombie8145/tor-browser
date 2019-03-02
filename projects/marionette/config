@@ -10,7 +10,7 @@ var:
 
 input_files:
   - project: container-image
-  - project: gmp
-    name: gmp
+  - name: gmp
+    project: gmp
   - name: '[% c("var/compiler") %]'
     project: '[% c("var/compiler") %]'
