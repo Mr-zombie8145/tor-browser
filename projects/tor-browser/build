@@ -61,6 +61,10 @@ mv "$TBDIR/meek-http-helper@bamsoftware.com.xpi" "$TBDIR/$MEEKPROFILEPATH/extens
   tar -C "$TBDIR" -xf [% c('input_files_by_name/snowflake') -%]
 [% END -%]
 
+[% IF c("var/marionette") %]
+  tar -C "$TBDIR" -xf [% c('input_files_by_name/marionette') -%]
+[% END -%]
+
 [% IF c("var/fteproxy") -%]
   tar -C "$TBDIR" -xf [% c('input_files_by_name/fteproxy') %]
 [% END -%]
@@ -131,13 +135,17 @@ cat Bundle-Data/PTConfigs/[% bundledata_osname %]/torrc-defaults-appendix >> "$T
 [% END -%]
 [% IF c("var/windows") -%]
   # We don't have snowflake available on Windows yet
+  # We don't have Marionette available on Windows yet
   # We don't have fte available on Windows x86_64 yet
-  grep -v 'default_bridge\.snowflake' Bundle-Data/PTConfigs/bridge_prefs.js \
+  grep -v 'default_bridge\.snowflake' Bundle-Data/PTConfigs/bridge_prefs.js | \
+  grep -v 'default_bridge\.marionette' Bundle-Data/PTConfigs/bridge_prefs.js \
   [% IF c("var/windows-x86_64") %]| grep -v 'default_bridge\.fte' [% END %] \
       >> "$GENERATEDPREFSPATH"
 [% END -%]
 [% IF c("var/osx") -%]
+  # We don't have Marionette available on macOS yet
   # FTE is temporarily removed due to bug 18495.
+  grep -v 'default_bridge\.marionette' Bundle-Data/PTConfigs/bridge_prefs.js | \
   grep -Ev 'default_bridge\.fte' Bundle-Data/PTConfigs/bridge_prefs.js \
   [% IF ! c("var/snowflake") %]| grep -v 'default_bridge\.snowflake' [% END %] \
       >> "$GENERATEDPREFSPATH"

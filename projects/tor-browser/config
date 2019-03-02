@@ -87,6 +87,9 @@ input_files:
   - project: snowflake
     name: snowflake
     enable: '[% c("var/snowflake") %]'
+  - project: marionette
+    name: marionette
+    enable: '[% c("var/marionette") %]'
   - filename: Bundle-Data
     enable: '[% ! c("var/android") %]'
   - URL: https://addons.cdn.mozilla.net/user-media/addons/722/noscript_security_suite-10.2.1-fx.xpi
