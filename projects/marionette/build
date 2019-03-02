@@ -1,0 +1,37 @@
+#!/bin/bash
+[% c("var/set_default_env") -%]
+distdir="/var/tmp/dist/[% project %]"
+[% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
+tar -C $distdir -xf $rootdir/[% c('input_files_by_name/gmp') %]
+mkdir -p /var/tmp/build
+tar -C /var/tmp/build -xf $rootdir/[% project %]-[% c('version') %].tar.gz
+cd /var/tmp/build/[% project %]-[% c('version') %]
+
+# XXX: Third-party code gets built first. Ideally we want to do that in own
+# projects which is slightly trickier as we are supposed to use the code checked
+# into this repo. I guess we could use the same repo every time and just build
+# the repsective third-party code which kind of feels weird. But we should think
+# about whether we need that first anyway, see #26920 comment:5.
+mkdir third_party/libs
+# We already have GMP, so just copy that over.
+cp $distdir/gmp/lib/libgmp.a third_party/libs/
+# re2
+cd third_party/re2
+make -j[% c("buildconf/num_procs") %]
+cp obj/libre2.a ../libs/
+# openfst
+cd ../openfst
+./configure --enable-static=yes
+make -j[% c("buildconf/num_procs") %]
+cp src/lib/.libs/libfst.a ../libs/
+cp src/script/.libs/libfstscript.a ../libs/
+
+# Builiding Marionette
+echo "Done"
+exit 1
+# Bundling everything up
+cd $distdir
+[% c('tar', {
+        tar_src => [ '.' ],
+        tar_args => '-czf ' _ dest_dir _ '/' _ c('filename'),
+    }) %]

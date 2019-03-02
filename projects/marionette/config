@@ -1,0 +1,16 @@
+# vim: filetype=yaml sw=2
+version: '[% c("abbrev") %]'
+git_url: https://github.com/redjack/marionette
+git_hash: 5d0d25fc40843b0e6dec648f8824dff4980b24f2
+filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %].tar.gz'
+
+var:
+  container:
+    use_container: 1
+
+input_files:
+  - project: container-image
+  - project: gmp
+    name: gmp
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
