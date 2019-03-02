@@ -13,8 +13,8 @@ cd /var/tmp/build/[% project %]-[% c('version') %]
 # about whether we need that first anyway, see #26920 comment:5.
 mkdir third_party/libs
 # We already have GMP, so just copy that over.
-tar -C $distdir -xf $rootdir/[% c('input_files_by_name/gmp') %]
-cp $distdir/gmp/lib/libgmp.a third_party/libs/
+tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/gmp') %]
+cp /var/tmp/dist/gmp/lib/libgmp.a third_party/libs/
 # re2
 cd third_party/re2
 make -j[% c("buildconf/num_procs") %]
