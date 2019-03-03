@@ -10,7 +10,7 @@ build: '[% c("projects/go/var/build_go_lib") %]'
 var:
   container:
     use_container: 1
-  go_lib: github.com/uber-go/zap
+  go_lib: go.uber.org/zap
 
 input_files:
   - project: container-image
