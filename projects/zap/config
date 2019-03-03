@@ -1,8 +1,7 @@
 # vim: filetype=yaml sw=2
 version: '[% c("abbrev") %]'
 git_url: https://github.com/uber-go/zap
-version: 1.9.1
-git_hash: 'v[% c("version") %]'
+git_hash: ff33455a0e382e8a81d14dd7c922020b6b5e7982
 filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %].tar.gz'
 
 build: '[% c("projects/go/var/build_go_lib") %]'
