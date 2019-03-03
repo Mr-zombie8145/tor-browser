@@ -19,3 +19,6 @@ input_files:
   - name: binutils
     project: binutils
     enable: '[% c("var/linux") %]'
+  - name: go-socks5
+    project: go-socks5
+
