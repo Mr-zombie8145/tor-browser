@@ -31,6 +31,7 @@ cd ../openfst
 make -j[% c("buildconf/num_procs") %]
 cp src/lib/.libs/libfst.a ../libs/
 cp src/script/.libs/libfstscript.a ../libs/
+cd ../../
 
 # Builiding Marionette
 go build
