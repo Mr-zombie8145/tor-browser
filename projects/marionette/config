@@ -21,4 +21,6 @@ input_files:
     enable: '[% c("var/linux") %]'
   - name: go-socks5
     project: go-socks5
+  - name: zap
+    project: zap
 
