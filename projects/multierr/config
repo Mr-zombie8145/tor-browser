@@ -11,8 +11,12 @@ var:
   container:
     use_container: 1
   go_lib: go.uber.org/multierr
+  go_lib_deps:
+    - atomic
 
 input_files:
   - project: container-image
   - name: go
     project: go
+  - name: atomic
+    project: atomic
