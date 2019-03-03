@@ -12,6 +12,7 @@ var:
   go_lib: golang.org/x/net
   go_lib_install:
     - golang.org/x/net/proxy
+    # Needed for Marionette
     - golang.org/x/net/context
 
 targets:
