@@ -23,4 +23,6 @@ input_files:
     project: go-socks5
   - name: zap
     project: zap
+  - name: goptlib
+    project: goptlib
 
