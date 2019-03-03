@@ -20,7 +20,7 @@ cd /var/tmp/build/[% project %]-[% c('version') %]
 # the repsective third-party code which kind of feels weird. But we should think
 # about whether we need that first anyway, see #26920 comment:5.
 mkdir third_party/libs
-# We already have GMP, so just copy that over.
+# We already have GMP, so just copy it over.
 tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/gmp') %]
 export CGO_CXXFLAGS="-I/var/tmp/dist/gmp/include"
 cp /var/tmp/dist/gmp/lib/libgmp.a third_party/libs/
@@ -36,15 +36,16 @@ cp src/lib/.libs/libfst.a ../libs/
 cp src/script/.libs/libfstscript.a ../libs/
 cd ../../
 
-# Builiding Marionette
+# Building Marionette
 marionette_path="$GOPATH/src/github.com/redjack"
 mkdir -p $marionette_path
 ln -sf "$PWD" $marionette_path/marionette
+# We build inside the GOPATH as `go install` would fail otherwise.
+cd $marionette_path/marionette
 go build
 go install ./cmd/marionette
 cp $GOPATH/bin/marionette* $PTDIR
 
-# Bundling everything up
 cd $distdir
 [% c('tar', {
         tar_src => [ '.' ],
