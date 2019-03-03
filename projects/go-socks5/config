@@ -10,8 +10,11 @@ var:
   container:
     use_container: 1
   go_lib: github.com/armon/go-socks5
+  go_lib_deps: goxnet
 
 input_files:
   - project: container-image
   - name: go
     project: go
+  - name: goxnet
+    project: goxnet
