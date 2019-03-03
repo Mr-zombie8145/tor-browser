@@ -21,6 +21,7 @@ cd /var/tmp/build/[% project %]-[% c('version') %]
 mkdir third_party/libs
 # We already have GMP, so just copy that over.
 tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/gmp') %]
+export CGO_CXXFLAGS="-I/var/tmp/dist/gmp/include"
 cp /var/tmp/dist/gmp/lib/libgmp.a third_party/libs/
 # re2
 cd third_party/re2
@@ -35,6 +36,9 @@ cp src/script/.libs/libfstscript.a ../libs/
 cd ../../
 
 # Builiding Marionette
+marionette_path="$GOPATH/src/github.com/redjack"
+mkdir -p $marionette_path
+ln -sf "$PWD" $marionette_path/marionette
 go build
 go install ./cmd/marionette
 cp $GOPATH/bin/marionette* $PTDIR
