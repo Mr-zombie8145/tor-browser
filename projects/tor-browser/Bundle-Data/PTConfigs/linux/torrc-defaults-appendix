@@ -11,4 +11,4 @@ ClientTransportPlugin meek exec ./TorBrowser/Tor/PluggableTransports/meek-client
 ClientTransportPlugin snowflake exec ./TorBrowser/Tor/PluggableTransports/snowflake-client -url https://snowflake-broker.azureedge.net/ -front ajax.aspnetcdn.com -ice stun:stun.l.google.com:19302
 
 ## Marionette configuration
-ClientTransportPlugin marionette exec ./TorBrowser/Tor/PluggableTransports/marionette pt-client
+ClientTransportPlugin marionette exec ./TorBrowser/Tor/PluggableTransports/marionette pt-client -format http_simple_blocking
