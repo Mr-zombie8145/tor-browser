@@ -1,5 +1,5 @@
 # vim: filetype=yaml sw=2
-version: version: '[% c("abbrev") %]'
+version: '[% c("abbrev") %]'
 git_url: https://github.com/uber-go/atomic
 git_hash: 1ea20fb1cbb1cc08cbd0d913a96dead89aa18289
 filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %].tar.gz'
