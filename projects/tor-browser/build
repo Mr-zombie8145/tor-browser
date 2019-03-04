@@ -138,7 +138,7 @@ cat Bundle-Data/PTConfigs/[% bundledata_osname %]/torrc-defaults-appendix >> "$T
   # We don't have Marionette available on Windows yet
   # We don't have fte available on Windows x86_64 yet
   grep -v 'default_bridge\.snowflake' Bundle-Data/PTConfigs/bridge_prefs.js | \
-  grep -v 'default_bridge\.marionette' Bundle-Data/PTConfigs/bridge_prefs.js \
+  grep -v 'default_bridge\.marionette' \
   [% IF c("var/windows-x86_64") %]| grep -v 'default_bridge\.fte' [% END %] \
       >> "$GENERATEDPREFSPATH"
 [% END -%]
@@ -146,7 +146,7 @@ cat Bundle-Data/PTConfigs/[% bundledata_osname %]/torrc-defaults-appendix >> "$T
   # We don't have Marionette available on macOS yet
   # FTE is temporarily removed due to bug 18495.
   grep -v 'default_bridge\.marionette' Bundle-Data/PTConfigs/bridge_prefs.js | \
-  grep -Ev 'default_bridge\.fte' Bundle-Data/PTConfigs/bridge_prefs.js \
+  grep -v 'default_bridge\.fte' \
   [% IF ! c("var/snowflake") %]| grep -v 'default_bridge\.snowflake' [% END %] \
       >> "$GENERATEDPREFSPATH"
 [% END -%]
