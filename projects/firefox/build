@@ -112,6 +112,7 @@ mv -f $rootdir/[% c('input_files_by_name/mozconfig') %] .mozconfig
   mkdir -p /var/tmp/dist/locales
   tar -C /var/tmp/dist/locales -xf $rootdir/[% c('input_files_by_name/firefox-locale-bundle') %]
   tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/tba-translation') %]
+  tba_trans=/var/tmp/dist/tba-translation
 [% END %]
 
 eval $(perl $rootdir/get-moz-build-date [% c("var/copyright_year") %] [% c("var/torbrowser_version") %])
@@ -164,8 +165,10 @@ rm -f js/src/configure
   # Building a multi-locale .apk
   [% FOREACH lang = c('var/locales') %]
     [% SET lang = tmpl(lang) %]
-    # Copy our torbrowser_strings.dtd at the right place
-    cp /var/tmp/dist/tba-translation/[% lang %]/torbrowser_strings.dtd /var/tmp/dist/locales/[% lang %]/mobile/android/base/
+    # Copy our torbrowser_strings.dtd at the right place after escaping the
+    # apostrophe if needed.
+    sed -i 's/'"'"'(?!\\)/\\'"'"'/g' $tba_trans/[% lang %]/torbrowser_strings.dtd
+    cp $tba_trans/[% lang %]/torbrowser_strings.dtd /var/tmp/dist/locales/[% lang %]/mobile/android/base/
     ./mach build chrome-[% lang %];
   [% END %]
   export MOZ_CHROME_MULTILOCALE='[% tmpl(c('var/locales').join(' ')) %]'
