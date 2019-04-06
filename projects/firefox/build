@@ -167,7 +167,7 @@ rm -f js/src/configure
     [% SET lang = tmpl(lang) %]
     # Copy our torbrowser_strings.dtd at the right place after escaping the
     # apostrophe if needed.
-    sed -i 's/'"'"'(?!\\)/\\'"'"'/g' $tba_trans/[% lang %]/torbrowser_strings.dtd
+    sed -i '/\\/i s/'"'"'/\\'"'"'/g' $tba_trans/[% lang %]/torbrowser_strings.dtd
     cp $tba_trans/[% lang %]/torbrowser_strings.dtd /var/tmp/dist/locales/[% lang %]/mobile/android/base/
     ./mach build chrome-[% lang %];
   [% END %]
