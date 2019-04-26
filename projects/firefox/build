@@ -170,10 +170,14 @@ rm -f js/src/configure
 
 [% IF c("var/android") %]
   # Building a multi-locale .apk
+  torbutton_path=toolkit/torproject/torbutton/src/chrome/
   [% FOREACH lang = c('var/locales') %]
     [% SET lang = tmpl(lang) %]
     # Copy our torbrowser_strings.dtd at the right place
     cp /var/tmp/dist/tba-translation/[% lang %]/torbrowser_strings.dtd /var/tmp/dist/locales/[% lang %]/mobile/android/base/
+    # Copy our Torbutton strings at the right place
+    mkdir -p /var/tmp/dist/locales/[% lang %]/$torbutton_path
+    cp toolkit/torproject/torbutton/src/chrome/locale/[% lang %]/* /var/tmp/dist/locales/[% lang %]/$torbutton_path
     ./mach build chrome-[% lang %];
   [% END %]
   export MOZ_CHROME_MULTILOCALE='[% tmpl(c('var/locales').join(' ')) %]'
