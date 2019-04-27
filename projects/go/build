@@ -70,6 +70,10 @@ cd /var/tmp/dist/go/src
   export GOOS=windows
   export GOARCH=[% c("var/GOARCH") %]
   CGO_ENABLED=1 CC_FOR_TARGET="$CC_FOR_TARGET" CC= CFLAGS= LDFLAGS= ./make.bash
+[% ELSIF c("var/android") -%]
+  export GOOS=android
+  export GOARCH=[% c("var/GOARCH") %]
+  CGO_ENABLED=1 ./make.bash
 [% END -%]
 
 cd /var/tmp/dist

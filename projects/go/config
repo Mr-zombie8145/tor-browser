@@ -80,11 +80,18 @@ targets:
     var:
       GOARCH: 386
 
+  android-armv7:
+    var:
+      GOARCH: arm
+  android-x86:
+    var:
+      GOARCH: 386
+
 input_files:
   - project: container-image
   - name: '[% c("var/compiler") %]'
     project: '[% c("var/compiler") %]'
-    enable: '[% c("var/windows") || c("var/osx") %]'
+    enable: '[% ! c("var/linux") %]'
   - URL: 'https://golang.org/dl/go[% c("version") %].src.tar.gz'
     name: go
     sha256sum: bc1ef02bb1668835db1390a2e478dcbccb5dd16911691af9d75184bbe5aa943e
