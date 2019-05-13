@@ -56,6 +56,8 @@ EOF
   mkdir -p /var/tmp/dist
   tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/binutils') %]
   export PATH="/var/tmp/dist/binutils/bin:$PATH"
+  tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/python') %]
+  export PATH="/var/tmp/dist/python/bin:$PATH"
 [% END -%]
 
 mkdir -p /var/tmp/dist
@@ -159,7 +161,7 @@ fi
 rm -f configure
 rm -f js/src/configure
 
-./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] --enable-bundled-fonts --with-branding=[% c("var/branding_directory") %]
+./mach configure --with-distribution-id=org.torproject --enable-bundled-fonts
 ./mach build --verbose
 
 [% IF c("var/android") %]
