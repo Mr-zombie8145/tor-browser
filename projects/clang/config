@@ -17,29 +17,29 @@ input_files:
     name: llvm
     sig_ext: sig
     file_gpg_id: 1
-    gpg_keyring: llvm.gpg
+    gpg_keyring: clang.gpg
   - URL: 'https://releases.llvm.org/[% c("version") %]/cfe-[% c("version") %].src.tar.xz'
     name: cfe
     sig_ext: sig
     file_gpg_id: 1
-    gpg_keyring: llvm.gpg
+    gpg_keyring: clang.gpg
   - URL: 'https://releases.llvm.org/[% c("version") %]/libcxx-[% c("version") %].src.tar.xz'
     name: libcxx
     sig_ext: sig
     file_gpg_id: 1
-    gpg_keyring: llvm.gpg
+    gpg_keyring: clang.gpg
   - URL: 'https://releases.llvm.org/[% c("version") %]/libcxxabi-[% c("version") %].src.tar.xz'
     name: libcxxabi
     sig_ext: sig
     file_gpg_id: 1
-    gpg_keyring: llvm.gpg
+    gpg_keyring: clang.gpg
   - URL: 'https://releases.llvm.org/[% c("version") %]/lld-[% c("version") %].src.tar.xz'
     name: lld
     sig_ext: sig
     file_gpg_id: 1
-    gpg_keyring: llvm.gpg
+    gpg_keyring: clang.gpg
   - URL: 'https://releases.llvm.org/[% c("version") %]/compiler-rt-[% c("version") %].src.tar.xz'
     name: compiler-rt
     sig_ext: sig
     file_gpg_id: 1
-    gpg_keyring: llvm.gpg
+    gpg_keyring: clang.gpg
