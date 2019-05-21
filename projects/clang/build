@@ -19,12 +19,13 @@ tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxxabi') %]
 tar -xf $rootdir/[% c('input_files_by_name/lld') %]
 tar -xf $rootdir/[% c('input_files_by_name/compiler-rt') %]
-mv cfe-* llvm-*/tools/clang
-mv libcxx-* llvm-*/projects/libcxx
-mv libcxxabi-* llvm-*/projects/libcxxabi
-mv lld-* llvm-*/tools/lld
-mv compiler-rt-* llvm-*/projects/compiler-rt
-cd llvm-*
+mv llvm-* llvm
+mv cfe-* llvm/tools/clang
+mv libcxx-* llvm/projects/libcxx
+mv libcxxabi-* llvm/projects/libcxxabi
+mv lld-* llvm/tools/lld
+mv compiler-rt-* llvm/projects/compiler-rt
+cd llvm
 export LLVM_HOME=$(pwd)
 mkdir build
 cd build
