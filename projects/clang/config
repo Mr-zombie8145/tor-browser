@@ -43,3 +43,27 @@ input_files:
     sig_ext: sig
     file_gpg_id: 1
     gpg_keyring: clang.gpg
+  - filename: llvm-objcopy-1.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-2.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-3.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-4.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-5.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-6.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-7.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-8.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-9.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-10.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-11.patch
+    enable: '[% c("var/windows") %]'
+  - filename: llvm-objcopy-12.patch
+    enable: '[% c("var/windows") %]'

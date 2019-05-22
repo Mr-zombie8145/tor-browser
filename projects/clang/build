@@ -25,6 +25,11 @@ mv libcxx-* llvm/projects/libcxx
 mv libcxxabi-* llvm/projects/libcxxabi
 mv lld-* llvm/tools/lld
 mv compiler-rt-* llvm/projects/compiler-rt
+[% IF c("var/windows") -%]
+  for p in $rootdir/*.patch
+    do patch -p1 < $p
+  done
+[% END %]
 cd llvm
 export LLVM_HOME=$(pwd)
 mkdir build
