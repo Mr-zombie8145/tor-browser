@@ -26,9 +26,12 @@ mv libcxxabi-* llvm/projects/libcxxabi
 mv lld-* llvm/tools/lld
 mv compiler-rt-* llvm/projects/compiler-rt
 [% IF c("var/windows") -%]
-  for p in $rootdir/*.patch
-    do patch -p1 < $p
+  # Patch order is important here
+  for i in {1..12}
+    do patch -p1 < $rootdir/llvm-objcopy-$i.patch
   done
+  # Hack to get the git binary patch applied that the patch tool does not like
+  cp $rootdir/bigobj.o.gz llvm/test/tools/llvm-objcopy/COFF/Inputs/
 [% END %]
 cd llvm
 export LLVM_HOME=$(pwd)
