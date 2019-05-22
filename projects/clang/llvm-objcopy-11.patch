@@ -45,22 +45,6 @@ git-svn-id: https://llvm.org/svn/llvm-project/llvm/trunk@351947 91177308-0d34-04
  create mode 100644 test/tools/llvm-objcopy/COFF/bigobj.test
  rename test/tools/llvm-objcopy/{ELF => }/Inputs/ungzip.py (100%)
 
-diff --git a/llvm/test/tools/llvm-objcopy/COFF/Inputs/bigobj.o.gz b/llvm/test/tools/llvm-objcopy/COFF/Inputs/bigobj.o.gz
-new file mode 100644
-index 0000000000000000000000000000000000000000..6435f4785ff76e0c6bca12f3e57bc6ad8888bece
-GIT binary patch
-literal 7841
-zcmb2|=3r3v^@w3&etUMmo^zoH`-kGKM_vfJsF<z%6+Sz#g6qq)pf0Hj#_r`4B7DML
-zW(h1l`+!x)t@&W-R@I~lyKmU3Ti&1Z=iKur;uBMy1MR!_ywlsouYY&-*4H1mU!Qw=
-z`RpIDkw;!V4(WOF_)B3`(Vt|~S>?L-b)Wx@^wig`HIMAw|N8V<v65oeyETs611{)_
-zm27RwTe)ENN|7SLgM~83N6}~qjE2By2#kinXb6mkz-S1JhQMeDjE2By2#kinXb6mk
-zz-S1JhQMeDjE2By2#kinXb6mkz-S1JhQMeDjE2By2#kgRokHNw|D97mKRo|%+Z6Ym
-z*X{Ku$4#4*Vqm}gyYR^b^Sc?_E*<<cFE#Q=*rt6OBmJeLZ=aoe_u9R>-w!^l5biDe
-p{d@nvw*mU6<NG83=jxn4_wt_G?yUy#YeOF~KhH^=cj<;Y0{~9Br>p<~
-
-literal 0
-HcmV?d00001
-
 diff --git a/llvm/test/tools/llvm-objcopy/COFF/bigobj.test b/llvm/test/tools/llvm-objcopy/COFF/bigobj.test
 new file mode 100644
 index 00000000000..17968f12b8a
