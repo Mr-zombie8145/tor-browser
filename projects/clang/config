@@ -69,5 +69,5 @@ input_files:
     enable: '[% c("var/windows") %]'
   # patch does not cope with binary patches. Thus, we add the new file
   # introduced with `llvm-objcopy-11.patch` ourselves.
-  - bigobj.o.gz
+  - filename: bigobj.o.gz
     enable: '[% c("var/windows") %]'
