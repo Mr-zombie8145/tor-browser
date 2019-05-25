@@ -1,0 +1,17 @@
+#!/bin/bash
+[% c("var/set_default_env") -%]
+tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/rust') %]
+export PATH="/var/tmp/dist/rust/bin:$PATH"
+
+mkdir -p /var/tmp/build
+tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
+cd /var/tmp/build/[% project %]-[% c('version') %]
+
+cargo install
+exit 1
+
+cd $distdir
+[% c('tar', {
+        tar_src => [ '.' ],
+        tar_args => '-czf ' _ dest_dir _ '/' _ c('filename'),
+    }) %]
