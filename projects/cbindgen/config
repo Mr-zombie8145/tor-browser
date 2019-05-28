@@ -11,3 +11,4 @@ input_files:
   - project: container-image
   - name: rust
     project: rust
+  - filename: vendor
