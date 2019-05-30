@@ -55,18 +55,17 @@ EOF
 [% IF c("var/linux") %]
   mkdir -p /var/tmp/dist
   tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/binutils') %]
-  export PATH="/var/tmp/dist/binutils/bin:$PATH"
+  tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/python') %]
+  export PATH="/var/tmp/dist/binutils/bin:/var/tmp/dist/python/bin:$PATH"
+  # Add clang so stylo can build
+  tar -C /var/tmp/dist -xf [% c('input_files_by_name/clang') %]
+  export LLVM_CONFIG="/var/tmp/dist/clang/bin/llvm-config"
 [% END -%]
 
 mkdir -p /var/tmp/dist
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/rust') %]
-export PATH="/var/tmp/dist/rust/bin:$PATH"
-
-[% IF c("var/linux") %]
-  # Add llvm so stylo can build
-  tar -C /var/tmp/dist -xf [% c('input_files_by_name/llvm') %]
-  export LLVM_CONFIG="/var/tmp/dist/llvm/bin/llvm-config"
-[% END -%]
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/cbindgen') %]
+export PATH="/var/tmp/dist/rust/bin:/var/tmp/dist/cbindgen:$PATH"
 
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
@@ -159,7 +158,7 @@ fi
 rm -f configure
 rm -f js/src/configure
 
-./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] --enable-bundled-fonts --with-branding=[% c("var/branding_directory") %]
+./mach configure --with-distribution-id=org.torproject --enable-bundled-fonts
 ./mach build --verbose
 
 [% IF c("var/android") %]
