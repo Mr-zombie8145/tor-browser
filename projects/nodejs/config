@@ -1,0 +1,8 @@
+# vim: filetype=yaml sw=2
+version: v10.16.0
+filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
+
+input_files:
+  - project: container-image
+  - URL: 'https://nodejs.org/download/release/[% c("version") %].tar.xz'
+    sha256sum: 18e37f891d10ea7fbc8f6410c444c2b1d9cc3cbbb1d35aa9c41f761816956608
