@@ -145,6 +145,8 @@ input_files:
     name: cbindgen
   - project: node
     name: node
+  - project: nasm
+    name: nasm
   - project: python
     name: python
   - project: clang
