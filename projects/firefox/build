@@ -70,7 +70,7 @@ mkdir -p /var/tmp/dist
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/rust') %]
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/cbindgen') %]
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/nasm') %]
-export PATH="/var/tmp/dist/rust/bin:/var/tmp/dist/cbindgen:/var/tmp/dist/nasm:$PATH"
+export PATH="/var/tmp/dist/rust/bin:/var/tmp/dist/cbindgen:/var/tmp/dist/nasm/bin:$PATH"
 
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
