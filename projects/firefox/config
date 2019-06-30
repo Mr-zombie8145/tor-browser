@@ -143,7 +143,6 @@ input_files:
     name: python
   - project: clang
     name: clang
-    enable: '[% c("var/linux") %]'
   - project: yasm
     name: yasm
     enable: '[% c("var/linux") %]'
