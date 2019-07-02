@@ -35,7 +35,7 @@ input_files:
       set -e
       [% SET outdir = c("var/input_filename") %]
       mkdir -p [% dest_dir %]/[% outdir %]
-      [% FOREACH lang = c('var/locales') %]
+      [% FOREACH lang = c('var/locales').merge(c('var/locales_desktop_add')) %]
       [% SET lang = tmpl(lang) %]
       [% SET ffver = c("var/ff_version");
          SET ffbuild = c("var/ff_build");
