@@ -38,3 +38,6 @@ input_files:
   - name: goxtext
     project: goxtext
     enable: '[% c("var/nightly") %]'
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
+    enable: '[% c("var/osx") %]'
