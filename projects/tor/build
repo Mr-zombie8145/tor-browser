@@ -88,6 +88,8 @@ find -type f -print0 | xargs -0 [% c("var/touch") %]
 [% IF c("var/osx") -%]
   export LD_PRELOAD=[% c("var/faketime_path") %]
   export FAKETIME="[% USE date; GET date.format(c('timestamp'), format = '%Y-%m-%d %H:%M:%S') %]"
+  # It seems setting this after `configure` but before `make` is enough.
+  export MACOSX_DEPLOYMENT_TARGET=10.7
 [% END -%]
 make -j[% c("buildconf/num_procs") %]
 make install
