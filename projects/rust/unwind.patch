@@ -1,4 +1,4 @@
-From 0cfcf3fc9647bb036d669768877794d6570bc987 Mon Sep 17 00:00:00 2001
+From b3bea7008ece7a5bdf9b5a5dcc95e82febad1854 Mon Sep 17 00:00:00 2001
 From: Bjorn Neergaard <bjorn@neersighted.com>
 Date: Sat, 9 Feb 2019 19:39:23 +0000
 Subject: [PATCH] Fix cross-compiling i686-pc-windows-gnu from Linux
@@ -30,31 +30,27 @@ Also, currently there is copy-pasted/duplicated code in libunwind.
 Ideally, this could be reduced, but this would likely require a
 rethinking of how iOS is special-cased above, to avoid further
 duplication. Input on how to best structure this file is requested.
----
- src/bootstrap/compile.rs   |  5 +++++
- src/libstd/Cargo.toml      |  1 +
- src/libunwind/Cargo.toml   |  3 +++
- src/libunwind/libunwind.rs | 53 ++++++++++++++++++++++++++++++++--------------
- 4 files changed, 46 insertions(+), 16 deletions(-)
 
 diff --git a/src/bootstrap/compile.rs b/src/bootstrap/compile.rs
-index 249a183..0783bf7 100644
+index 249a183189..df08d6eb0c 100644
 --- a/src/bootstrap/compile.rs
 +++ b/src/bootstrap/compile.rs
-@@ -164,6 +164,11 @@ pub fn std_cargo(builder: &Builder<'_>,
+@@ -162,7 +162,12 @@ pub fn std_cargo(builder: &Builder<'_>,
+             .arg("--features")
+             .arg("compiler-builtins-mem");
      } else {
-         let features = builder.std_features();
- 
+-        let features = builder.std_features();
++        let mut features = builder.std_features();
++
 +        // FIXME: Temporary detection of SJLJ MinGW compilers.
 +        if builder.config.build.contains("linux") && target == "i686-pc-windows-gnu" {
 +            features.push_str(" sjlj_eh");
 +        }
-+
+ 
          if compiler.stage != 0 && builder.config.sanitizers {
              // This variable is used by the sanitizer runtime crates, e.g.
-             // rustc_lsan, to build the sanitizer runtime from C code
 diff --git a/src/libstd/Cargo.toml b/src/libstd/Cargo.toml
-index 7d60a17..d876d0b 100644
+index 7d60a17042..d876d0b89a 100644
 --- a/src/libstd/Cargo.toml
 +++ b/src/libstd/Cargo.toml
 @@ -71,3 +71,4 @@ wasm-bindgen-threads = []
@@ -63,7 +59,7 @@ index 7d60a17..d876d0b 100644
  std_detect_dlsym_getauxval = []
 +sjlj_eh = ["unwind/sjlj_eh"]
 diff --git a/src/libunwind/Cargo.toml b/src/libunwind/Cargo.toml
-index 2378b0a..0b5979e 100644
+index 2378b0a315..0b5979ed62 100644
 --- a/src/libunwind/Cargo.toml
 +++ b/src/libunwind/Cargo.toml
 @@ -16,3 +16,6 @@ doc = false
@@ -74,7 +70,7 @@ index 2378b0a..0b5979e 100644
 +[features]
 +sjlj_eh = []
 diff --git a/src/libunwind/libunwind.rs b/src/libunwind/libunwind.rs
-index 339b554..ec2f93e 100644
+index 339b554ed6..ec2f93ed60 100644
 --- a/src/libunwind/libunwind.rs
 +++ b/src/libunwind/libunwind.rs
 @@ -1,10 +1,5 @@
@@ -161,3 +157,6 @@ index 339b554..ec2f93e 100644
 +    }
  }
  } // cfg_if!
+-- 
+2.23.0.rc0
+
