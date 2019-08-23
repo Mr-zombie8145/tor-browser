@@ -1,0 +1,26 @@
+# vim: filetype=yaml sw=2
+filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
+git_url: https://git.code.sf.net/p/mingw-w64/mingw-w64
+git_hash: 2d52c4b3433e55b1c454f9567c0ae9adc4b83b41
+version: '[% c("abbrev") %]'
+var:
+  container:
+    use_container: 1
+
+input_files:
+  - project: clang
+    name: clang
+  - URL: 'https://releases.llvm.org/[% c("version") %]/libcxx-[% c("version") %].src.tar.xz'
+    name: libcxx
+    file_gpg_id: 1
+  - URL: 'https://releases.llvm.org/[% c("version") %]/libcxxabi-[% c("version") %].src.tar.xz'
+    name: libcxxabi
+    file_gpg_id: 1
+  - URL: 'https://releases.llvm.org/[% c("version") %]/libunwind-[% c("version") %].src.tar.xz'
+    name: libunwind
+    file_gpg_id: 1
+  - URL: 'https://releases.llvm.org/[% c("version") %]/compiler-rt-[% c("version") %].src.tar.xz'
+    name: compiler-rt
+    file_gpg_id: 1
+  - project: llvm-mingw
+    name: llvm-mingw
