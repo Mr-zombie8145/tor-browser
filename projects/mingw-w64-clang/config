@@ -12,8 +12,11 @@ var:
     use_container: 1
 
 input_files:
+  - project: container-image
   - project: clang
     name: clang
+  - project: cmake
+    name: cmake
   - URL: 'https://releases.llvm.org/[% c("llvm_version") %]/libcxx-[% c("llvm_version") %].src.tar.xz'
     name: libcxx
     file_gpg_id: 1

@@ -2,14 +2,16 @@
 [% c("var/setarch") -%]
 [% c("var/set_default_env") -%]
 builddir=/var/tmp/build
-distdir=/var/tmp/dist/[% project %]
+distdir=/var/tmp/dist/mingw-w64-clang
 mkdir -p $distdir
 cd /var/tmp/dist
 tar -xf $rootdir/[% c('input_files_by_name/clang') %]
-mv clang [% project %]
+mv clang/* mingw-w64-clang/
+tar -xf $rootdir/[% c('input_files_by_name/cmake') %]
 mkdir -p $builddir
 cd $builddir
-tar -xf $rootdir/[% project %]-[% c('version') %].tar.gz
+tar -xf $rootdir/mingw-w64-clang-[% c('version') %].tar.gz
+mv mingw-w64-clang-[% c('version') %] mingw-w64-clang
 tar -xf $rootdir/[% c('input_files_by_name/libcxx') %]
 tar -xf $rootdir/[% c('input_files_by_name/libcxxabi') %]
 tar -xf $rootdir/[% c('input_files_by_name/libunwind') %]
@@ -38,14 +40,14 @@ DIR="\$(cd "\$(dirname "\$0")" && pwd)"
 EOF
 chmod +x [% c("arch") %]-w64-mingw32-clang++
 
-ln -s llvm-nm $machine-w64-mingw32-nm
-ln -s llvm-strip $machine-w64-mingw32-strip
-ln -s llvm-readobj $machine-w64-mingw32-readobj
-ln -s llvm-objcopy $machine-w64-mingw32-objcopy
+ln -s llvm-nm [% c("arch") %]-w64-mingw32-nm
+ln -s llvm-strip [% c("arch") %]-w64-mingw32-strip
+ln -s llvm-readobj [% c("arch") %]-w64-mingw32-readobj
+ln -s llvm-objcopy [% c("arch") %]-w64-mingw32-objcopy
 ./clang $builddir/llvm-mingw/wrappers/windres-wrapper.c -O2 -Wl,-s -o [% c("arch") %]-w64-mingw32-windres
 
 # Building mingw-w64
-export PATH="$distdir/bin:$PATH"
+export PATH="$distdir/bin:/var/tmp/dist/cmake/bin:$PATH"
 CC="[% c("arch") %]-w64-mingw32-clang"
 CXX="[% c("arch") %]-w64-mingw32-clang++"
 # This is the default value of _WIN32_WINNT. Gecko configure script explicitly
@@ -102,7 +104,7 @@ cmake -DCMAKE_BUILD_TYPE=Release \
       -DCMAKE_C_COMPILER_WORKS=1 \
       -DCMAKE_C_COMPILER_TARGET=$compiler_rt_machine-windows-gnu \
       -DCOMPILER_RT_DEFAULT_TARGET_ONLY=TRUE \
-      $builddir/compiler-rt/lib/builtins
+      $builddir/compiler-rt-*/lib/builtins
   make -j[% c("buildconf/num_procs") %]
   mkdir -p $distdir/lib/clang/$CLANG_VERSION/lib/windows
   cp lib/windows/libclang_rt.builtins-$compiler_rt_machine.a $distdir/lib/clang/$CLANG_VERSION/lib/windows/
