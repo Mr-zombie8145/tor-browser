@@ -157,7 +157,7 @@ rm -f js/src/configure
 
 [% IF c("var/windows") %]
   cp -a obj-*/dist/firefox/* $distdir/Browser/
-  cp -a $fxcdir/d3dcompiler_47.dll $distdir/Browser
+  cp -a var/tmp/dist/fxc2/bin/d3dcompiler_47.dll $distdir/Browser
 [% END %]
 
 # Make MAR-based update tools available for use during the bundle phase.
