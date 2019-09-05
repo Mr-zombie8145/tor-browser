@@ -4,7 +4,7 @@ HOST_CC="clang"
 HOST_CXX="clang++"
 CC="x86_64-w64-mingw32-clang"
 CXX="x86_64-w64-mingw32-clang++"
-CXXFLAGS="-fms-extensions"
+CXXFLAGS="-fms-extensions -v"
 AR=llvm-ar
 RANLIB=llvm-ranlib
 

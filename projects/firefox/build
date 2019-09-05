@@ -90,7 +90,7 @@ fi
   export WIDL_TIME_OVERRIDE="0"
   patch -p1 < $rootdir/nsis-uninstall.patch
   # Make sure we link without inserting timestamps in general.
-  export LDFLAGS="-Wl,--no-insert-timestamp"
+  export LDFLAGS="-Wl,--no-insert-timestamp -Wl,--verbose -Wl,--Map,map"
 [% END -%]
 
 [% IF ! c("var/android") %]
@@ -105,7 +105,7 @@ rm -f js/src/configure
 ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
 
 ./mach build --verbose
-
+exit 1
 [% IF c("var/android") %]
   # Building a multi-locale .apk
   [% FOREACH lang = c('var/locales');
