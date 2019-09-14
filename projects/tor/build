@@ -39,9 +39,8 @@ openssldir=/var/tmp/dist/openssl
   [% END %]
   tar -C /var/tmp/build -xf [% c('input_files_by_name/zlib') %]
   zlibdir=/var/tmp/build/zlib
-  mingwlibs=/var/tmp/dist/mingw-w64/[% c("arch") %]-w64-mingw32/bin/
   cp $zlibdir/lib/*.dll $openssldir/bin/*.dll $libeventdir/bin/*.dll \
-      $gcclibs/*.dll $mingwlibs/libwinpthread-1.dll $distdir/Tor/
+      $gcclibs/*.dll $distdir/Tor/
 [% END %]
 
 [% IF c("var/linux-i686") && c("var/nightly") -%]
