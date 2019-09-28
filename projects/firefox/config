@@ -188,3 +188,4 @@ input_files:
     enable: '[% c("var/android") %]'
   - filename: 1527534.patch
     enable: '[% c("var/android") %]'
+  - filename: libssp.tar.bz2
