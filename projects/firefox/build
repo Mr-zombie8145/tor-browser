@@ -103,26 +103,13 @@ rm -f js/src/configure
 # Android does not support --enable-bundled-fonts option
 ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
 
-./mach build --verbose
-
-[% IF c("var/android") %]
-  # Building a multi-locale .apk
-  [% FOREACH lang = c('var/locales');
-     SET lang = tmpl(lang);
-     # mk is unavailable on mobile.
-     NEXT IF lang == 'mk'; %]
-    # Copy our torbrowser_strings.dtd at the right place
-    cp /var/tmp/dist/tba-translation/[% lang %]/torbrowser_strings.dtd /var/tmp/dist/locales/[% lang %]/mobile/android/base/
-    ./mach build chrome-[% lang %];
-  [% END %]
-  export MOZ_CHROME_MULTILOCALE='[% tmpl(c('var/locales').join(' ')) %]'
-  AB_CD=multi ./mach package
-  # Copy the result over and return. There is nothing more to do for mobile.
-  cp obj-*/dist/*unsigned-unaligned.apk [% dest_dir _ '/' _ c('filename') %]/tor-browser-unsigned-unaligned.apk
-  [% RETURN %]
-[% END %]
-
-./mach build stage-package
+while true
+do
+    ./mach build --verbose
+    ./mach build stage-package
+    echo 'b8f4cf09acb2a6117fe2aaff9b86083e0717e04773a6031c368fbed1868a9194  ./obj-i686-pc-linux-gnu/dist/firefox/libxul.so' | sha256sum -c
+    rm -Rf obj-i686-pc-linux-gnu/
+done
 
 [% IF c("var/osx") %]
   cp -a obj-macos/dist/firefox/* $distdir
