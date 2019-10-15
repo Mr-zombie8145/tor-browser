@@ -107,8 +107,8 @@ do
 
     ./mach build --verbose
     ./mach build stage-package
-    echo 'b8f4cf09acb2a6117fe2aaff9b86083e0717e04773a6031c368fbed1868a9194  ./obj-i686-pc-linux-gnu/dist/firefox/libxul.so' | sha256sum -c
-    rm -Rf obj-i686-pc-linux-gnu/
+    echo '923eec13b492959a9957b4d50521a367491086c663ec23083bda6e389fc49de7 .obj-macos/dist/firefox/Tor\ Browser.app/Contents/MacOS/XUL' | sha256sum -c
+    rm -Rf obj-macos/
 done
 
 [% IF c("var/osx") %]
