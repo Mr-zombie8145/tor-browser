@@ -97,14 +97,14 @@ fi
   tar -C browser/extensions -xf $rootdir/[% c('input_files_by_name/tor-launcher') %]
 [% END -%]
 
-rm -f configure
-rm -f js/src/configure
-
-# Android does not support --enable-bundled-fonts option
-./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
-
 while true
 do
+    rm -f configure
+    rm -f js/src/configure
+
+    # Android does not support --enable-bundled-fonts option
+    ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
+
     ./mach build --verbose
     ./mach build stage-package
     echo 'b8f4cf09acb2a6117fe2aaff9b86083e0717e04773a6031c368fbed1868a9194  ./obj-i686-pc-linux-gnu/dist/firefox/libxul.so' | sha256sum -c
