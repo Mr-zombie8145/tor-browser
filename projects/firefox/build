@@ -97,17 +97,17 @@ fi
   tar -C browser/extensions -xf $rootdir/[% c('input_files_by_name/tor-launcher') %]
 [% END -%]
 
-while true
+for i in {1..20}
 do
+    echo "STARTING BUILD $i..."
     rm -f configure
     rm -f js/src/configure
 
     # Android does not support --enable-bundled-fonts option
     ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
 
-    ./mach build --verbose
-    ./mach build stage-package
-    echo '923eec13b492959a9957b4d50521a367491086c663ec23083bda6e389fc49de7 .obj-macos/dist/firefox/Tor\ Browser.app/Contents/MacOS/XUL' | sha256sum -c
+    ./mach build pre-export export toolkit/library/rust --verbose
+    echo '39172e8e8b5470c2ab84a63896486c4bf045a101845f7559db2a8612ec1b2833 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c
     rm -Rf obj-macos/
 done
 
