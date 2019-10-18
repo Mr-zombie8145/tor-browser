@@ -107,7 +107,7 @@ do
     ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
 
     ./mach build pre-export export toolkit/library/rust --verbose
-    echo '39172e8e8b5470c2ab84a63896486c4bf045a101845f7559db2a8612ec1b2833 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c
+    echo '2766db2a1a44daf5345dbc94c7606e6722776f45d51f4cf7eccf0fdc209c8367 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c
     rm -Rf obj-macos/
 done
 
