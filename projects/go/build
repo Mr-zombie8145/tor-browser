@@ -36,6 +36,9 @@ cd $rootdir
 # Building go
 # http://golang.org/doc/install/source#environment
 tar -C /var/tmp/dist -xf $rootdir/[% c('input_files_by_name/go') %]
+[% IF c("var/android") %]
+patch -p1 < $rootdir/90a3ce02dc25adcf1598faf11a66b151ada3f637.patch
+[% END %]
 export GOROOT="$distdir"
 cd /var/tmp/dist/go/src
 [% IF c("var/linux") -%]
