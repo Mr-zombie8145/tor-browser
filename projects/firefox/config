@@ -186,4 +186,4 @@ input_files:
     name: tba-translation
     enable: '[% c("var/android") %]'
   - filename: servo.patch
-  #- filename: no_lto.patch
+  - filename: no_lto.patch

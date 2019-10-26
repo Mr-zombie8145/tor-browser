@@ -98,7 +98,7 @@ fi
 [% END -%]
 
 patch -p1 < $rootdir/servo.patch
-#patch -p1 < $rootdir/no_lto.patch
+patch -p1 < $rootdir/no_lto.patch
 
 rm -f configure
 rm -f js/src/configure
@@ -113,12 +113,12 @@ do
     set +e
     ./mach build pre-export export toolkit/library/rust --verbose
     set -e
-    #echo 'b61f1c50ec16fb68bacf296ee92e4705665f42b9f178e92b980a4057f8b517c9 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c
-    echo '8fe2c6284b1f35a9d384ca5c3c5227777e29b01aa8a68450bf2ae0b497de07d1 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c
-    #echo 'd7de0d4bc42e7274c85bc1b8aa851894553cd3624d2362ced07cbcda1a51a14f obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c lto + geckoservo rebuild
+    echo 'b61f1c50ec16fb68bacf296ee92e4705665f42b9f178e92b980a4057f8b517c9 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto
+    #echo '8fe2c6284b1f35a9d384ca5c3c5227777e29b01aa8a68450bf2ae0b497de07d1 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # lto + geckoservo rebuild
+    #echo 'd7de0d4bc42e7274c85bc1b8aa851894553cd3624d2362ced07cbcda1a51a14f obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # lto + geckoservo rebuild!?
     find obj-macos -name *.a -exec rm {} +
-    #find obj-macos -name libstyle-* -exec rm {} +
-    find obj-macos -name libgeckoservo-* -exec rm {} +
+    find obj-macos -name libstyle-* -exec rm {} + # rebuilding from stylo on
+    #find obj-macos -name libgeckoservo-* -exec rm {} + # just rebuilding from geckoservo on
 done
 
 [% IF c("var/osx") %]
