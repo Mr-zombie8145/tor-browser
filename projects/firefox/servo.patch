@@ -1,0 +1,31 @@
+From 7b76d9de7ea2b0d9675d20647da7ad04925748f8 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Tue, 22 Oct 2019 12:51:01 +0000
+Subject: [PATCH] Plus bindgen
+
+
+diff --git a/toolkit/library/rust/moz.build b/toolkit/library/rust/moz.build
+index 764bd0c171b7..ad58d38258ad 100644
+--- a/toolkit/library/rust/moz.build
++++ b/toolkit/library/rust/moz.build
+@@ -6,7 +6,7 @@
+ 
+ include('gkrust-features.mozbuild')
+ 
+-RustLibrary('gkrust', gkrust_features)
++RustLibrary('gkrust', ['servo', 'bindgen'])
+ 
+ # Target directory doesn't matter a lot here, since we can't share panic=abort
+ # compilation artifacts with gkrust.
+@@ -15,7 +15,7 @@ RUST_TESTS = [
+     'servo_arc',
+     'stylo_tests',
+ ]
+-RUST_TEST_FEATURES = gkrust_features
++RUST_TEST_FEATURES = ['servo', 'bindgen']
+ 
+ if CONFIG['CPU_ARCH'] != 'x86':
+     # malloc_size_of_derive is a build dependency, so if we are doing
+-- 
+2.24.0.rc0
+
