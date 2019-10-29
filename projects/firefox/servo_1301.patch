@@ -1,0 +1,31 @@
+From 7a858b9639d20816959245c4ece98b0a5ae17242 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Tue, 29 Oct 2019 09:34:55 +0000
+Subject: [PATCH 2/2] servo_1301
+
+
+diff --git a/toolkit/library/rust/moz.build b/toolkit/library/rust/moz.build
+index 9b257149bab2..748678988d2d 100644
+--- a/toolkit/library/rust/moz.build
++++ b/toolkit/library/rust/moz.build
+@@ -6,7 +6,7 @@
+ 
+ include('gkrust-features.mozbuild')
+ 
+-RustLibrary('gkrust', gkrust_features)
++RustLibrary('gkrust', ['servo', 'bindgen'])
+ 
+ # Target directory doesn't matter a lot here, since we can't share panic=abort
+ # compilation artifacts with gkrust.
+@@ -15,7 +15,7 @@ RUST_TESTS = [
+     'servo_arc',
+     'stylo_tests',
+ ]
+-RUST_TEST_FEATURES = gkrust_features
++RUST_TEST_FEATURES = ['servo', 'bindgen']
+ 
+ if CONFIG['CPU_ARCH'] != 'x86':
+     # malloc_size_of_derive is a build dependency, so if we are doing
+-- 
+2.24.0.rc1
+

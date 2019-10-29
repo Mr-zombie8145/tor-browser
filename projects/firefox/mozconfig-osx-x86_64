@@ -1,7 +1,7 @@
 TOOLCHAIN_DIR=/var/tmp/dist/macosx-toolchain
 
 # ld needs libLTO.so from llvm
-mk_add_options "export LD_LIBRARY_PATH=$TOOLCHAIN_DIR/clang/lib"
+mk_add_options "export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$TOOLCHAIN_DIR/clang/lib"
 
 CROSS_CCTOOLS_PATH=$TOOLCHAIN_DIR/cctools
 CROSS_SYSROOT=$TOOLCHAIN_DIR/MacOSX10.11.sdk
@@ -35,10 +35,10 @@ ac_add_options --enable-official-branding
 ac_add_options --enable-optimize
 ac_add_options --disable-debug
 
-ac_add_options --enable-tor-browser-data-outside-app-dir
-ac_add_options --enable-tor-browser-update
-ac_add_options --enable-signmar
-ac_add_options --enable-verify-mar
+#ac_add_options --enable-tor-browser-data-outside-app-dir
+#ac_add_options --enable-tor-browser-update
+#ac_add_options --enable-signmar
+#ac_add_options --enable-verify-mar
 
 ac_add_options --disable-crashreporter
 ac_add_options --disable-webrtc

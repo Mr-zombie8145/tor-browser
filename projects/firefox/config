@@ -187,3 +187,4 @@ input_files:
     enable: '[% c("var/android") %]'
   - filename: servo_1301.patch
   - filename: no_lto_1301.patch
+  - filename: rust_version_1300.patch
