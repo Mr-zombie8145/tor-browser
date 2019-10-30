@@ -51,7 +51,7 @@ targets:
       branding_directory: '[% IF c("var/android") %]mobile/android[% ELSE %]browser[% END %]/branding/official'
 
   nightly:
-    git_hash: '8c8829c53f6a9'
+    git_hash: 'd38aa902136fe6a'
     tag_gpg_id: 0
     var:
       torbrowser_update_channel: default

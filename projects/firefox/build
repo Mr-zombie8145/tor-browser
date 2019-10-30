@@ -100,7 +100,7 @@ fi
 
 patch -p1 < $rootdir/servo_1301.patch
 patch -p1 < $rootdir/no_lto_1301.patch
-patch -p1 < $rootdir/rust_version_1300.patch
+#patch -p1 < $rootdir/rust_version_1300.patch
 
 rm -f configure
 rm -f js/src/configure
@@ -119,7 +119,10 @@ do
     # echo 'efcca748d214692af8c8610973a251fdc9cd65101f0003dcd37e2043311fc812 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto 1.34.2 bisect
     # echo '5146cbcca08250c7dba11df38260baeb49eb4ec29a1d384345d7baa7026c1358 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto 1.38.0 bisect
     # echo 'be74ae66b36b8c13b88149bc303cdd248c6ce335835ac5b01957f49dfa31d289 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto 1.32.0 bisect
-    echo '4e3e4b9c065c97d45eca2901baea1d5ec9ddcb6488fc778a9b3b6ba04be2d44c obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto 1.30.1 8c8829c53f6 bisect
+    # echo '4e3e4b9c065c97d45eca2901baea1d5ec9ddcb6488fc778a9b3b6ba04be2d44c obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto 1.30.1 8c8829c53f6 bisect
+    # echo '6d7599a6b97de430d312eb9ffbd6ca2d38027c7f8f98f82b21b9bcef3edcb3bc obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto 1.32.0 8c8829c53f6 bisect
+    # echo 'f0668cf4ddb790f1280514963649e93e7d33758487d07415fd58c5cb685e7a37 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto 1.32.0 de6947591cd66 bisect
+    echo '2ce447a3808cc3082ea5586b82152dad3a35e0b31d89e826eb8fa4774bf00bcc obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # non lto 1.32.0 d38aa902136f6 bisect
     #echo '8fe2c6284b1f35a9d384ca5c3c5227777e29b01aa8a68450bf2ae0b497de07d1 obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # lto + geckoservo rebuild
     #echo 'd7de0d4bc42e7274c85bc1b8aa851894553cd3624d2362ced07cbcda1a51a14f obj-macos/x86_64-apple-darwin/release/libgkrust.a' | sha256sum -c # lto + geckoservo rebuild!?
     find obj-macos -name *.a -exec rm {} +
