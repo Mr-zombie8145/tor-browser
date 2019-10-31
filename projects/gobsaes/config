@@ -10,8 +10,15 @@ var:
   container:
     use_container: 1
   go_lib: git.schwanenlied.me/yawning/bsaes.git
+  build_go_lib_pre: |
+    [% IF c("var/android") -%]
+      [% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
+    [% END -%]
 
 input_files:
   - project: container-image
   - name: go
     project: go
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
+    enable: '[% c("var/android") %]'
