@@ -1,0 +1,78 @@
+From 3298b4ccdb42be0ca8058ed2e9cb5fda8eae7dd0 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Sun, 3 Nov 2019 19:14:11 +0000
+Subject: [PATCH] Building just stylo
+
+
+diff --git a/toolkit/library/rust/Cargo.toml b/toolkit/library/rust/Cargo.toml
+index 1188696d17cc..e56d31650a4e 100644
+--- a/toolkit/library/rust/Cargo.toml
++++ b/toolkit/library/rust/Cargo.toml
+@@ -6,30 +6,10 @@ license = "MPL-2.0"
+ description = "Rust code for libxul"
+ 
+ [features]
+-bindgen = ["gkrust-shared/bindgen"]
+-servo = ["gkrust-shared/servo"]
+-quantum_render = ["gkrust-shared/quantum_render"]
+-webrender_debugger = ["gkrust-shared/webrender_debugger"]
+-cubeb-remoting = ["gkrust-shared/cubeb-remoting"]
+-cubeb_pulse_rust = ["gkrust-shared/cubeb_pulse_rust"]
+-gecko_debug = ["gkrust-shared/gecko_debug"]
+-simd-accel = ["gkrust-shared/simd-accel"]
+-moz_memory = ["gkrust-shared/moz_memory"]
+-moz_places = ["gkrust-shared/moz_places"]
+-spidermonkey_rust = ["gkrust-shared/spidermonkey_rust"]
+-cranelift_x86 = ["gkrust-shared/cranelift_x86"]
+-cranelift_arm32 = ["gkrust-shared/cranelift_arm32"]
+-cranelift_arm64 = ["gkrust-shared/cranelift_arm64"]
+-cranelift_none = ["gkrust-shared/cranelift_none"]
+-gecko_profiler = ["gkrust-shared/gecko_profiler"]
+-gecko_profiler_parse_elf = ["gkrust-shared/gecko_profiler_parse_elf"]
+-bitsdownload = ["gkrust-shared/bitsdownload"]
+-new_xulstore = ["gkrust-shared/new_xulstore"]
+-new_cert_storage = ["gkrust-shared/new_cert_storage"]
++bindgen = ["style/use_bindgen"]
+ 
+ [dependencies]
+-gkrust-shared = { path = "shared" }
+-mozilla-central-workspace-hack = { path = "../../../build/workspace-hack" }
++style = {path = "../../../servo/components/style", features = ["gecko"]}
+ 
+ [dev-dependencies]
+ stylo_tests = { path = "../../../servo/ports/geckolib/tests/" }
+diff --git a/toolkit/library/rust/lib.rs b/toolkit/library/rust/lib.rs
+index 815413a5da15..be7348b1446f 100644
+--- a/toolkit/library/rust/lib.rs
++++ b/toolkit/library/rust/lib.rs
+@@ -6,4 +6,4 @@
+ // get link errors when linking libxul-gtest.  Add any |extern crate|
+ // declarations or similar to the gkrust-shared crate in
+ // toolkit/library/rust/shared/lib.rs.
+-extern crate gkrust_shared;
++//extern crate gkrust_shared;
+diff --git a/toolkit/library/rust/moz.build b/toolkit/library/rust/moz.build
+index 764bd0c171b7..d8836c441609 100644
+--- a/toolkit/library/rust/moz.build
++++ b/toolkit/library/rust/moz.build
+@@ -6,7 +6,7 @@
+ 
+ include('gkrust-features.mozbuild')
+ 
+-RustLibrary('gkrust', gkrust_features)
++RustLibrary('gkrust', ['bindgen'])
+ 
+ # Target directory doesn't matter a lot here, since we can't share panic=abort
+ # compilation artifacts with gkrust.
+@@ -15,7 +15,7 @@ RUST_TESTS = [
+     'servo_arc',
+     'stylo_tests',
+ ]
+-RUST_TEST_FEATURES = gkrust_features
++RUST_TEST_FEATURES = ['bindgen']
+ 
+ if CONFIG['CPU_ARCH'] != 'x86':
+     # malloc_size_of_derive is a build dependency, so if we are doing
+-- 
+2.24.0.rc2
+

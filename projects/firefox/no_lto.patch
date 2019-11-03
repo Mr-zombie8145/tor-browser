@@ -1,0 +1,22 @@
+From b9ae6def354a7e152a69906c9fb31dd96374c44c Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Fri, 25 Oct 2019 08:07:47 +0000
+Subject: [PATCH] No LTO
+
+
+diff --git a/config/makefiles/rust.mk b/config/makefiles/rust.mk
+index 02a398db9e25..4f63bb3097f0 100644
+--- a/config/makefiles/rust.mk
++++ b/config/makefiles/rust.mk
+@@ -47,7 +47,7 @@ cargo_rustc_flags = $(CARGO_RUSTCFLAGS)
+ ifndef DEVELOPER_OPTIONS
+ ifndef MOZ_DEBUG_RUST
+ # Enable link-time optimization for release builds.
+-cargo_rustc_flags += -C lto
++# cargo_rustc_flags += -C lto
+ endif
+ endif
+ 
+-- 
+2.24.0.rc0
+
