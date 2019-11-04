@@ -187,3 +187,4 @@ input_files:
     enable: '[% c("var/android") %]'
   - filename: no_lto.patch
   - filename: just_stylo.patch
+  - filename: chop1.patch

@@ -99,6 +99,7 @@ fi
 
 patch -p1 < $rootdir/no_lto.patch
 patch -p1 < $rootdir/just_stylo.patch
+patch -p1 < $rootdir/chop1.patch
 
 rm -f configure
 rm -f js/src/configure
