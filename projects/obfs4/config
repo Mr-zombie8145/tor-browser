@@ -16,11 +16,6 @@ targets:
     version: '[% c("abbrev") %]'
     tag_gpg_id: 0
 
-  android:
-    var:
-      build_go_lib_pre: |
-        [% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
-
 input_files:
   - project: container-image
   - name: go
