@@ -15,10 +15,12 @@ var:
     - golang.org/x/net/dns/dnsmessage
   go_lib_deps:
     - goxsys
-  build_go_lib_pre: |
-    [% IF c("var/android") -%]
-      [% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
-    [% END -%]
+
+targets:
+  android:
+    var:
+      build_go_lib_pre: |
+        [% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
 
 input_files:
   - project: container-image
