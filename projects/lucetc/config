@@ -19,3 +19,5 @@ input_files:
     project: binutils
   - name: rust
     project: rust
+  - URL: https://people.torproject.org/~gk/mirrors/sources/lucetc-vendor.tar.bz2
+    sha256sum: 9f192ed01a040cb5ea86e2102fb06a5c08e0509312075baa8e72bd7d2ad6758d

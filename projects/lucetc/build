@@ -1,8 +1,9 @@
 #!/bin/bash
 [% c("var/set_default_env") -%]
-distdir=/var/tmp/dist/
+distdir=/var/tmp/dist
+builddir=var/tmp/build/[% project %]
 mkdir -p $distdir
-mkdir -p /var/tmp/build
+mkdir -p $builddir
 
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/cmake') %]
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/clang') %]
@@ -16,9 +17,21 @@ export CXX=$distdir/clang/bin/clang++
 export AR=$distdir/clang/bin/llvm-ar
 export RUSTFLAGS="-C linker=$CXX -C link-arg=$CXXFLAGS"
 export LUCET_PREFIX=$distdir/[% project %]
+tar -C $builddir -xf [% project %]-[% c('version') %].tar.gz
 
-tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
-cd /var/tmp/build/[% project %]-[% c('version') %]
+# Now prepare the offline build
+# Move the directory for hardcoding the path in .cargo/config
+mv /var/tmp/build/[% project %]-[% c('version') %] $builddir
+tar -C $builddir -xjf lucetc-vendor.tar.bz2
+cd $builddir
+mkdir .cargo
+cat > .cargo/config << 'EOF'
+[source.crates-io]
+replace-with = "vendored-sources"
+
+[source.vendored-sources]
+directory = "/var/tmp/build/lucetc/vendor"
+EOF
 
 make -j[% c("buildconf/num_procs") %] build
 make install
