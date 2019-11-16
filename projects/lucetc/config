@@ -11,6 +11,10 @@ var:
 
 input_files:
   - project: container-image
+  # Our clang still needs GCC parts (libstdc++ for instance) so we include that
+  # one here even though compilation gets done solely by clang.
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
   - name: cmake
     project: cmake
   - name: clang
