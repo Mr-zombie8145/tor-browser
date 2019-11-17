@@ -18,9 +18,8 @@ cd $builddir
 make WASM_CC=$distdir/clang/bin/clang \
      WASM_AR=$distdir/clang/bin/llvm-ar \
      WASM_NM=$distdir/clang/bin/llvm-nm \
-     SYSROOT=$(pwd)/wasi-sysroot \
-     INSTALL_DIR=$distdir/[% project %]
-make install
+     SYSROOT=$(pwd)/wasi-sysroot
+make install INSTALL_DIR=$distdir/[% project %]
 
 cd $distdir/[% project %]/[% project %]
 [% c('tar', {
