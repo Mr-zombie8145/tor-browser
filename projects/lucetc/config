@@ -1,0 +1,34 @@
+# vim: filetype=yaml sw=2
+filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
+version: '[% c("abbrev") %]'
+git_hash: 36f0e4deb5b080dfee73042fec655d3723c7a12b
+git_url: https://github.com/PLSysSec/lucet_sandbox_compiler/
+git_submodule: 1
+
+var:
+  container:
+    use_container: 1
+
+input_files:
+  - project: container-image
+  # Our clang still needs GCC parts (libstdc++ for instance) so we include that
+  # one here even though compilation gets done solely by clang.
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
+  - name: cmake
+    project: cmake
+  - name: clang
+    project: clang
+  - name: binutils
+    project: binutils
+  - name: rust
+    project: rust
+    input_file_var:
+      # lucetc needs Rust >= 1.36.0
+      rust_version: 1.36.0
+      prev_version: 1.35.0
+  - name: wasi-sysroot
+    project: wasi-sysroot
+  # `cargo vendor vendor` in the `lucetc` directory has vendored the sources.
+  - URL: https://people.torproject.org/~gk/mirrors/sources/lucetc-vendor.tar.bz2
+    sha256sum: 3284d3c805d71454f57902fd5376bef1381c9e204646181dc9cbd7bd7517a836
