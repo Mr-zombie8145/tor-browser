@@ -1,0 +1,18 @@
+# vim: filetype=yaml sw=2
+filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
+version: '[% c("abbrev") %]'
+git_hash: c35f0f5dd64ad982bbad71f3e3a8942a1029c1e6
+git_url: https://github.com/CraneStation/wasi-libc
+
+var:
+  container:
+    use_container: 1
+
+input_files:
+  - project: container-image
+  # Our clang still needs GCC parts (libstdc++ for instance) so we include that
+  # one here even though compilation gets done solely by clang.
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
+  - name: clang
+    project: clang
