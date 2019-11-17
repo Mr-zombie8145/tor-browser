@@ -23,5 +23,10 @@ input_files:
     project: binutils
   - name: rust
     project: rust
+    input_file_var:
+      # lucetc needs Rust >= 1.36.0
+      rust_version: 1.36.0
+      prev_version: 1.35.0
+  # `cargo vendor vendor` in the `lucetc` directory has vendored the sources.
   - URL: https://people.torproject.org/~gk/mirrors/sources/lucetc-vendor.tar.bz2
     sha256sum: 9f192ed01a040cb5ea86e2102fb06a5c08e0509312075baa8e72bd7d2ad6758d
