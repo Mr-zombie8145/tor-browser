@@ -21,7 +21,7 @@ make WASM_CC=$distdir/clang/bin/clang \
      SYSROOT=$(pwd)/wasi-sysroot
 make install INSTALL_DIR=$distdir/[% project %]
 
-cd $distdir/[% project %]
+cd $distdir
 [% c('tar', {
         tar_src => [ project ],
         tar_args => '-czf ' _ dest_dir _ '/' _ c('filename'),
