@@ -39,6 +39,16 @@ export LLVM_CONFIG="/var/tmp/dist/clang/bin/llvm-config"
   [% END -%]
 [% END -%]
 
+[% IF c("var/rlbox") -%]
+  tar -C /var/tmp/dist -xf [% c('input_files_by_name/wasi-sysroot') %]
+  # We need the libclang_rt.builtins-wasm32.a in our clang lib directory. Copy
+  # it over.
+  # TODO: do not hardcode 8.0.1
+  cp /var/tmp/dist/wasi-sysroot/lib/clang/8.0.1/lib/wasi/libclang_rt.builtins-wasm32.a /var/tmp/dist/clang/lib/clang/8.0.1/lib/wasi
+  tar -C /var/tmp/dist -xf [% c('input_files_by_name/lucetc') %]
+  export PATH="/var/tmp/dist/lucetc/bin:$PATH"
+[% END -%]
+
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 [% IF c("var/osx") %]
