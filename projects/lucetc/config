@@ -23,6 +23,8 @@ input_files:
     project: binutils
   - name: rust
     project: rust
+  - name: wasi-sysroot
+    project: wasi-sysroot
     input_file_var:
       # lucetc needs Rust >= 1.36.0
       rust_version: 1.36.0
