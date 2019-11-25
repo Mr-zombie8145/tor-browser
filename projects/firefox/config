@@ -3,7 +3,7 @@ version: '[% c("abbrev") %]'
 filename: 'firefox-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
 git_hash: 'tor-browser-[% c("var/firefox_version") %]-[% c("var/torbrowser_branch") %]-1-build1'
 tag_gpg_id: 1
-git_url: https://git.torproject.org/tor-browser.git
+git_url: https://git.torproject.org/user/gk/tor-browser.git
 git_submodule: 1
 gpg_keyring: torbutton.gpg
 
@@ -49,7 +49,7 @@ targets:
       branding_directory: '[% IF c("var/android") %]mobile/android[% ELSE %]browser[% END %]/branding/official'
 
   nightly:
-    git_hash: 'tor-browser-[% c("var/firefox_version") %]-[% c("var/torbrowser_branch") %]-1'
+    git_hash: 'bug_32380_v5'
     tag_gpg_id: 0
     var:
       branding_directory: '[% IF c("var/android") %]mobile/android[% ELSE %]browser[% END %]/branding/nightly'
