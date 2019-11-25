@@ -3,7 +3,7 @@ version: '[% c("abbrev") %]'
 filename: 'firefox-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
 git_hash: 'tor-browser-[% c("var/firefox_version") %]-[% c("var/torbrowser_branch") %]-1-build5'
 tag_gpg_id: 1
-git_url: https://git.torproject.org/tor-browser.git
+git_url: https://git.torproject.org/user/gk/tor-browser.git
 git_submodule: 1
 gpg_keyring: torbutton.gpg
 
@@ -51,7 +51,7 @@ targets:
       branding_directory: '[% IF c("var/android") %]mobile/android[% ELSE %]browser[% END %]/branding/official'
 
   nightly:
-    git_hash: 'tor-browser-[% c("var/firefox_version") %]-[% c("var/torbrowser_branch") %]-1'
+    git_hash: 'bug_32380_v5'
     tag_gpg_id: 0
     var:
       torbrowser_update_channel: default
@@ -146,6 +146,17 @@ input_files:
     enable: '[% c("var/windows") %]'
   - project: rust
     name: rust
+    input_file_var:
+      # lucetc needs Rust >= 1.36.0, let's see if all the remaining crates work
+      # with that new version as well
+      rust_version: 1.36.0
+      prev_version: 1.35.0
+    enable: '[% c("var/rlbox") %]'
+  - project: wasi-sysroot
+    name: wasi-sysroot
+  - project: rust
+    name: rust
+    enable: '[% !c("var/rlbox") %]'
   - project: cbindgen
     name: cbindgen
   - project: node
