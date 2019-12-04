@@ -116,7 +116,7 @@ do
     set +e
     ./mach build pre-export export toolkit/library/rust --verbose
     set -e
-    echo 'd9f70368e7588250ed078985ce4be303c8bcca76ebc361e5756841340e480742 obj-macos/x86_64-apple-darwin/release/deps/style-eb257c29b0562cc6.style.5crbtq6r-cgu.0.rcgu.no-opt.bc' | sha256sum -c # non lto 1.34.2
+    echo '1891480e059d77fa10db61c16a59acc25f3f966c14d7f80fdaa9bd7cf3ad7220 obj-macos/x86_64-apple-darwin/release/deps/style-eb257c29b0562cc6.style.5crbtq6r-cgu.0.rcgu.bc' | sha256sum -c # non lto 1.34.2
     find obj-macos -name *.a -exec rm {} +
     find obj-macos -name libstyle-* -exec rm {} + # rebuilding from stylo on
 done
