@@ -109,14 +109,14 @@ rm -f js/src/configure
 # Android does not support --enable-bundled-fonts option
 ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/torbrowser_update_channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
 
-for i in {1..100}
+for i in {1..200}
 do
     echo "STARTING BUILD $i..."
 
     set +e
     ./mach build pre-export export toolkit/library/rust --verbose
     set -e
-    echo '1891480e059d77fa10db61c16a59acc25f3f966c14d7f80fdaa9bd7cf3ad7220 obj-macos/x86_64-apple-darwin/release/deps/style-eb257c29b0562cc6.style.5crbtq6r-cgu.0.rcgu.bc' | sha256sum -c # non lto 1.34.2
+    echo 'ef0f6dcacbc2b0ac4eb37edd81ceb9bac56d0695759938678cd742ca296003bc obj-macos/x86_64-apple-darwin/release/deps/style-eb257c29b0562cc6.style.5crbtq6r-cgu.0.rcgu.bc' | sha256sum -c # non lto 1.34.2
     find obj-macos -name *.a -exec rm {} +
     find obj-macos -name libstyle-* -exec rm {} + # rebuilding from stylo on
 done
