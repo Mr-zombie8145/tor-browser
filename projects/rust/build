@@ -70,7 +70,6 @@ cd ../../
 mkdir build
 cd build
 ../configure --prefix=$distdir [% c("var/configure_opt") %]
-sed -i 's/#codegen-units = 1/codegen-units = 1/' config.toml
 make -j[% c("buildconf/num_procs") %]
 make install
 cd /var/tmp/dist
