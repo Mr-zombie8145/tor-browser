@@ -17,3 +17,5 @@ input_files:
     project: binutils
   - name: cmake
     project: cmake
+  - name: ninja
+    project: ninja
