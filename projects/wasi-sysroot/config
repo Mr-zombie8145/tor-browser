@@ -15,8 +15,8 @@ var:
 
 input_files:
   - project: container-image
-  - name: '[% c("var/compiler") %]'
-    project: '[% c("var/compiler") %]'
+  - name: gcc
+    project: gcc
   - name: binutils
     project: binutils
   - name: cmake
