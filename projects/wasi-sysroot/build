@@ -24,7 +24,6 @@ cd $builddir
 patch -p1 < $rootdir/no-git.patch
 
 make -j[% c("buildconf/num_procs") %] PREFIX=$distdir/[% project %]
-make install
 
 cd $distdir
 [% c('tar', {
