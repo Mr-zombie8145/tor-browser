@@ -19,8 +19,11 @@ tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 mv /var/tmp/build/[% project %]-[% c('version') %] $builddir
 cd $builddir
+# We have no .git in our tar ball but the Makefile depends on that. Just
+# hard-code the version for now.
+patch -p1 < $rootdir/no-git.patch
 
-make PREFIX=$distdir/[% project %]
+make -j[% c("buildconf/num_procs") %] PREFIX=$distdir/[% project %]
 make install
 
 cd $distdir

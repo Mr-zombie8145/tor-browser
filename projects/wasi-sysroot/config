@@ -8,10 +8,12 @@ git_submodule: 1
 var:
   container:
     use_container: 1
-  deps:
-    # Git is not strictly necessary but having it around avoids a non-fatal
-    # error during the build process
-    - git
+
+targets:
+  linux:
+    var:
+      arch_deps:
+        - patch
 
 input_files:
   - project: container-image
@@ -23,3 +25,4 @@ input_files:
     project: cmake
   - name: ninja
     project: ninja
+  - filename: no-git.patch
