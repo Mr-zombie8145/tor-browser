@@ -49,7 +49,7 @@ targets:
       branding_directory: '[% IF c("var/android") %]mobile/android[% ELSE %]browser[% END %]/branding/official'
 
   nightly:
-    git_hash: 'bug_32380_v5'
+    git_hash: 'bug_32380_v6'
     tag_gpg_id: 0
     var:
       branding_directory: '[% IF c("var/android") %]mobile/android[% ELSE %]browser[% END %]/branding/nightly'
