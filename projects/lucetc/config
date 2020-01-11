@@ -29,6 +29,7 @@ input_files:
       prev_version: 1.35.0
   - name: wasi-sysroot
     project: wasi-sysroot
-  # `cargo vendor vendor` in the `lucetc` directory has vendored the sources.
+  # `cargo vendor vendor` in the `lucetc-sandbox-compiler` directory has vendored
+  # the sources.
   - URL: https://people.torproject.org/~gk/mirrors/sources/lucetc-vendor.tar.bz2
-    sha256sum: 3284d3c805d71454f57902fd5376bef1381c9e204646181dc9cbd7bd7517a836
+    sha256sum: ea584cb1bb7608b6f271791fd58b7753a17f6b1197c3e8a46d20c0e35b1d7824
