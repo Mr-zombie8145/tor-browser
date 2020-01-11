@@ -43,9 +43,8 @@ export LLVM_CONFIG="/var/tmp/dist/clang/bin/llvm-config"
   tar -C /var/tmp/dist -xf [% c('input_files_by_name/wasi-sysroot') %]
   # We need the libclang_rt.builtins-wasm32.a in our clang lib directory. Copy
   # it over.
-  # TODO: do not hardcode 8.0.1
-  mkdir /var/tmp/dist/clang/lib/clang/8.0.1/lib/wasi
-  cp /var/tmp/dist/wasi-sysroot/lib/clang/8.0.1/lib/wasi/libclang_rt.builtins-wasm32.a /var/tmp/dist/clang/lib/clang/8.0.1/lib/wasi
+  mkdir /var/tmp/dist/clang/lib/clang/[% pc("clang", "version") %]/lib/wasi
+  cp /var/tmp/dist/wasi-sysroot/lib/clang/[% pc("clang", "version") %]/lib/wasi/libclang_rt.builtins-wasm32.a /var/tmp/dist/clang/lib/clang/[% pc("clang", "version") %]/lib/wasi
   tar -C /var/tmp/dist -xf [% c('input_files_by_name/lucetc') %]
   export PATH="/var/tmp/dist/lucetc/bin:$PATH"
 [% END -%]
