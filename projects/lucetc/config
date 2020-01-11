@@ -1,7 +1,7 @@
 # vim: filetype=yaml sw=2
 filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
 version: '[% c("abbrev") %]'
-git_hash: 36f0e4deb5b080dfee73042fec655d3723c7a12b
+git_hash: 5c22392b5b1aaa60e915c75e92b57391e1e61e6d
 git_url: https://github.com/PLSysSec/lucet_sandbox_compiler/
 git_submodule: 1
 
