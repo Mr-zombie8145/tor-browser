@@ -39,6 +39,16 @@ export LLVM_CONFIG="/var/tmp/dist/clang/bin/llvm-config"
   [% END -%]
 [% END -%]
 
+[% IF c("var/rlbox") -%]
+  tar -C /var/tmp/dist -xf [% c('input_files_by_name/wasi-sysroot') %]
+  # We need the libclang_rt.builtins-wasm32.a in our clang lib directory. Copy
+  # it over.
+  mkdir /var/tmp/dist/clang/lib/clang/[% pc("clang", "version") %]/lib/wasi
+  cp /var/tmp/dist/wasi-sysroot/lib/clang/[% pc("clang", "version") %]/lib/wasi/libclang_rt.builtins-wasm32.a /var/tmp/dist/clang/lib/clang/[% pc("clang", "version") %]/lib/wasi
+  tar -C /var/tmp/dist -xf [% c('input_files_by_name/lucetc') %]
+  export PATH="/var/tmp/dist/lucetc/bin:$PATH"
+[% END -%]
+
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 [% IF c("var/osx") %]
@@ -112,7 +122,7 @@ rm -f configure
 rm -f js/src/configure
 
 # Android does not support --enable-bundled-fonts option
-./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
+./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/channel") %] [% IF c("var/rlbox") -%]--with-wasm-sandboxed-libraries=graphite --with-wasi-sysroot=/var/tmp/dist/wasi-sysroot/share/wasi-sysroot[% END -%] [% IF ! c("var/android") %]--enable-bundled-fonts [% END -%] --with-branding=[% c("var/branding_directory") %]
 
 ./mach build --verbose
 
