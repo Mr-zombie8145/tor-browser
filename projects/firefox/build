@@ -118,6 +118,14 @@ fi
   popd
 [% END %]
 
+[% IF c("var/rlbox") %]
+  tar -C rlbox_patches -xjf $rootdir/rlbox_linux_patches.tar.bz2
+  for p in $(ls -1 rlbox_patches/*.patch | sort)
+  do
+    patch -p1 < $p
+  done
+[% END %]
+
 rm -f configure
 rm -f js/src/configure
 

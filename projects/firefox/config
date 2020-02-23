@@ -3,7 +3,7 @@ version: '[% c("abbrev") %]'
 filename: 'firefox-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
 git_hash: 'tor-browser-[% c("var/firefox_version") %]-[% c("var/torbrowser_branch") %]-1-build3'
 tag_gpg_id: 1
-git_url: https://git.torproject.org/tor-browser.git
+git_url: https://git.torproject.org/user/tor-browser.git
 git_submodule: 1
 gpg_keyring: torbutton.gpg
 
@@ -197,3 +197,6 @@ input_files:
     # TorButton patch authored by Arthur Edelstein, from https://github.com/arthuredelstein/torbutton/ branch 2.1.10-namecoin
   - filename: namecoin-etld.patch
     enable: '[% c("var/namecoin") %]'
+  - URL: https://people.torproject.org/~gk/mirrors/sources/rlbox_linux_patches.tar.bz2
+    sha256sum: e494e018e14060f5c3fb665d86dc52e37c72c070891e10f4fe8dd19ba4666780
+    enable: '[% c("var/rlbox") %]'
