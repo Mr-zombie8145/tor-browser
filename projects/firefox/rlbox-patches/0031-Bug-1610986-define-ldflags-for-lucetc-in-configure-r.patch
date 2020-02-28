@@ -1,0 +1,59 @@
+From e7a98180506a172711739e139090873978849643 Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Thu, 13 Feb 2020 21:20:11 +0000
+Subject: [PATCH 31/35] Bug 1610986 - define ldflags for lucetc in configure;
+ r=firefox-build-system-reviewers,rstewart
+
+These vary per-target, and it's nicer to define them here rather than
+define them somewhere in rules.mk.
+
+Depends on D62796
+
+Differential Revision: https://phabricator.services.mozilla.com/D62797
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/toolkit/moz.configure b/toolkit/moz.configure
+index 1a48030417cb..d3e5549bc5ea 100644
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -1861,9 +1861,32 @@ def wasm_ldflags(value):
+         return value
+ set_config('WASM_LDFLAGS', wasm_ldflags, when=requires_wasm_sandboxing)
+ 
+-    # Re-using the Rust target triple here is not exactly correct, but it is an
+-    # excellent approximation for the platforms we currently support
+-    set_config('LUCETC_TARGET', rust_target_triple)
++# This function is returning "ldflags" that lucetc will use when invoking
++# the linker, but really lucetc is going to be invoking the compiler, since
++# the compiler handles lots of details for us (like finding the linker in
++# cross-compilation scenarios).
++@depends(target)
++def lucetc_ldflags(target):
++    if target.kernel == 'Linux':
++        return [
++            '-Wl,-shared',
++            '-nostdlib',
++        ]
++
++    if target.kernel == 'Darwin':
++        return [
++            '-Wl,-dylib',
++            '-Wl,-dead_strip',
++            '-Wl,-export_dynamic',
++            '-Wl,-undefined,dynamic_lookup',
++            '-nostdlib',
++        ]
++
++set_config('LUCETC_LDFLAGS', lucetc_ldflags)
++
++# Re-using the Rust target triple here is not exactly correct, but it is an
++# excellent approximation for the platforms we currently support
++set_config('LUCETC_TARGET', rust_target_triple)
+ 
+ 
+ @depends('--with-wasm-sandboxed-libraries', target)
+-- 
+2.25.1
+

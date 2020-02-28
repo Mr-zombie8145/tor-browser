@@ -1,7 +1,7 @@
 From fb9896648e8554cd196702aca5be78fcb7c0777d Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Fri, 20 Sep 2019 19:44:33 +0000
-Subject: [PATCH 02/29] Bug 1582205 - add initial configuration support for
+Subject: [PATCH 02/35] Bug 1582205 - add initial configuration support for
  wasm sandboxed libraries; r=nalexander
 
 This patch duplicates the configuration work done in D43710, but this

@@ -1,7 +1,7 @@
 From cbab3fa828f088d126188f5ddab1d3e1417ba26a Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Wed, 30 Oct 2019 07:48:25 +0000
-Subject: [PATCH 05/29] Bug 1584000 - Migrate glyph to character association
+Subject: [PATCH 05/35] Bug 1584000 - Migrate glyph to character association
  code from libThebes to graphite for sandboxed libGraphite performance
  r=jfkthame,froydnj
 

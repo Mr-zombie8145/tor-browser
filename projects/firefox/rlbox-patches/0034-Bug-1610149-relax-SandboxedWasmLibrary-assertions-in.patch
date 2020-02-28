@@ -1,0 +1,32 @@
+From 5446506b9bb7c15a52ed62f4d1a2651f8f3871ff Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Thu, 13 Feb 2020 23:40:13 +0000
+Subject: [PATCH 34/35] Bug 1610149 - relax SandboxedWasmLibrary assertions in
+ the mozbuild frontend; r=firefox-build-system-reviewers,rstewart
+
+We're going to enable this on Mac, and it won't do to have configure
+assert when we actually do so.
+
+Differential Revision: https://phabricator.services.mozilla.com/D62799
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/python/mozbuild/mozbuild/frontend/data.py b/python/mozbuild/mozbuild/frontend/data.py
+index f438d0a146be..f63f1189e6ac 100644
+--- a/python/mozbuild/mozbuild/frontend/data.py
++++ b/python/mozbuild/mozbuild/frontend/data.py
+@@ -746,8 +746,8 @@ class SandboxedWasmLibrary(Library):
+         # TODO: WASM sandboxed libraries are in a weird place: they are
+         # built in a different way, but they should share some code with
+         # SharedLibrary.  This is the minimal configuration needed to work
+-        # with Linux, but it would need to be extended for other platforms.
+-        assert context.config.substs['OS_TARGET'] == 'Linux'
++        # on the below platforms.
++        assert context.config.substs['OS_TARGET'] in ('Linux', 'Darwin')
+ 
+         self.lib_name = '%s%s%s' % (
+             context.config.dll_prefix,
+-- 
+2.25.1
+

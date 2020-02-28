@@ -1,7 +1,7 @@
 From 9f680f7d75b6700397516ee1c6ed44045f8ba961 Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Mon, 23 Dec 2019 16:49:32 +0000
-Subject: [PATCH 22/29] Bug 1605537 - override optimization settings for wasm
+Subject: [PATCH 22/35] Bug 1605537 - override optimization settings for wasm
  compilation; r=firefox-build-system-reviewers,rstewart
 
 The optimization flags that may have been chosen for our target compiler

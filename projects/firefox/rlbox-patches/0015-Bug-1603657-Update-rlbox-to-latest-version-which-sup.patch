@@ -1,7 +1,7 @@
 From bc50ee8c958b197f38ffcad1a8953a57082f23e0 Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Mon, 16 Dec 2019 17:41:28 +0000
-Subject: [PATCH 15/29] Bug 1603657 - Update rlbox to latest version which
+Subject: [PATCH 15/35] Bug 1603657 - Update rlbox to latest version which
  supports disabling static inline thread_locals r=froydnj
 
 This is needed to work around mingw32's broken support of static inline thread_locals.

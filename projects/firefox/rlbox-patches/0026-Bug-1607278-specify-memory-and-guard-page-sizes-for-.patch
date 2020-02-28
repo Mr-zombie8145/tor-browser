@@ -1,7 +1,7 @@
 From 5cae41a0081ffe76934399b85c6bcddb58d90d3a Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Tue, 7 Jan 2020 19:29:24 +0000
-Subject: [PATCH 26/29] Bug 1607278 - specify memory and guard page sizes for
+Subject: [PATCH 26/35] Bug 1607278 - specify memory and guard page sizes for
  lucetc; r=firefox-build-system-reviewers,chmanchester
 
 ...and pull lucetc options out into a separate variable for readability.

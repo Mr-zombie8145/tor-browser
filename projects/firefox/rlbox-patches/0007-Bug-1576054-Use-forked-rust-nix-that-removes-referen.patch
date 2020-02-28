@@ -1,7 +1,7 @@
 From 9b5dfd06509ad450c6e9ece747d67346a5b5e6a9 Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Mon, 11 Nov 2019 09:19:29 +0000
-Subject: [PATCH 07/29] Bug 1576054 - Use forked rust/nix that removes
+Subject: [PATCH 07/35] Bug 1576054 - Use forked rust/nix that removes
  references to newer libc functions setns, process_vm_writv, process_vm_readv.
  References to these functions create missing symbols in gkrust, which is
  configured to a build failure in Firefox r=froydnj

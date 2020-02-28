@@ -1,7 +1,7 @@
 From 6978fc554c37158ca35976690d548fee808cddcf Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Mon, 23 Dec 2019 16:49:14 +0000
-Subject: [PATCH 23/29] Bug 1605537 - remove coverage and warning flags from
+Subject: [PATCH 23/35] Bug 1605537 - remove coverage and warning flags from
  wasm flags; r=firefox-build-system-reviewers,rstewart
 
 Warning flags might have been generated for a different compiler, so we

@@ -99,6 +99,8 @@ targets:
       martools_filename: mar-tools-mac64.zip
       arch_deps:
         - rsync
+        # Needed for RLBox, see: #32389
+        - git
 
   windows:
     var:

@@ -1,0 +1,35 @@
+From 850118e3046253908a4c494e7646f6225ec45683 Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Thu, 13 Feb 2020 23:40:13 +0000
+Subject: [PATCH 35/35] Bug 1610149 - let x86-64 Mac enable wasm sandboxing;
+ r=firefox-build-system-reviewers,rstewart
+
+Everything that we need is supported on Mac, too.
+
+Depends on D62799
+
+Differential Revision: https://phabricator.services.mozilla.com/D62800
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/toolkit/moz.configure b/toolkit/moz.configure
+index d3e5549bc5ea..997860282280 100644
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -1896,9 +1896,9 @@ def wasm_sandboxing(libraries, target):
+ 
+     # Wasm sandboxing is only enabled on specific targets.
+     if not (target.cpu in ('x86_64',) and \
+-            target.kernel == 'Linux' and \
+-            target.os != 'Android'):
+-        die('wasm sandboxing is only enabled on x86-64 Linux')
++            (target.kernel == 'Linux' and target.os != 'Android') or \
++            target.kernel == 'Darwin'):
++        die('wasm sandboxing is only enabled on x86-64 Linux and Mac')
+ 
+     return namespace(**{name: True for name in libraries})
+ 
+-- 
+2.25.1
+
