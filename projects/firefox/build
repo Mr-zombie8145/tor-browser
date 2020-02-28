@@ -121,12 +121,6 @@ fi
 [% IF c("var/rlbox") %]
   for p in `ls -1 $rootdir/rlbox-patches | sort`
   do
-    # Note: `patch` in Wheezy is too old to deal with git renames, which was
-    # supported in patch 2.7 first. Thus, the patches to apply got created with
-    # the `--no-renames` option of `git format-patch`, which makes them a bit
-    # larger. Alternatively, we could have used `git apply` for patch
-    # application but that would require adding `git` into the container, which
-    # is inconvenient, too.
     patch -p1 < $rootdir/rlbox-patches/$p
   done
 [% END %]
