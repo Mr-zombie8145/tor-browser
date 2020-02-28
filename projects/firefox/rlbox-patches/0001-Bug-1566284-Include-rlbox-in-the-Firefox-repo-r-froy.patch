@@ -1,0 +1,3690 @@
+From 5be62d8ad8b3d2e6adaf18e50582ae85f091dfa2 Mon Sep 17 00:00:00 2001
+From: "shravanrn@gmail.com" <shravanrn@gmail.com>
+Date: Fri, 26 Jul 2019 16:35:20 +0000
+Subject: [PATCH] Bug 1566284 - Include rlbox in the Firefox repo r=froydnj
+
+Differential Revision: https://phabricator.services.mozilla.com/D38946
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/third_party/moz.build b/third_party/moz.build
+index acdd252e232c..72481cd9707f 100644
+--- a/third_party/moz.build
++++ b/third_party/moz.build
+@@ -18,3 +18,6 @@ with Files('prio/**'):
+ 
+ with Files('msgpack/**'):
+     BUG_COMPONENT = ('Firefox Build System', 'General')
++
++with Files('rlbox/**'):
++    BUG_COMPONENT = ('Firefox Build System', 'General')
+diff --git a/third_party/rlbox/README-mozilla b/third_party/rlbox/README-mozilla
+new file mode 100644
+index 000000000000..ba64d730af5d
+--- /dev/null
++++ b/third_party/rlbox/README-mozilla
+@@ -0,0 +1,10 @@
++This directory contains the rlbox source from the upstream repo:
++https://github.com/PLSysSec/rlbox_api_cpp17/
++
++Current version: [commit f18f879f7c7cfb563d199a8649309fce31b304c6]
++
++UPDATING:
++
++This in-tree copy can be updated by running
++  sh update.sh
++from within the third_party/rlbox directory.
+diff --git a/third_party/rlbox/include/rlbox.hpp b/third_party/rlbox/include/rlbox.hpp
+new file mode 100644
+index 000000000000..707fc8f95f2d
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox.hpp
+@@ -0,0 +1,1012 @@
++#pragma once
++
++#include <array>
++#include <cstring>
++#include <memory>
++#include <type_traits>
++#include <utility>
++
++#include "rlbox_conversion.hpp"
++#include "rlbox_helpers.hpp"
++#include "rlbox_policy_types.hpp"
++#include "rlbox_range.hpp"
++#include "rlbox_sandbox.hpp"
++#include "rlbox_stdlib.hpp"
++#include "rlbox_struct_support.hpp"
++#include "rlbox_type_traits.hpp"
++#include "rlbox_types.hpp"
++#include "rlbox_unwrap.hpp"
++#include "rlbox_wrapper_traits.hpp"
++
++namespace rlbox {
++
++template<template<typename, typename> typename T_Wrap,
++         typename T,
++         typename T_Sbx>
++class tainted_base_impl
++{
++  KEEP_CLASSES_FRIENDLY
++  KEEP_CAST_FRIENDLY
++
++private:
++  inline auto& impl() { return *static_cast<T_Wrap<T, T_Sbx>*>(this); }
++  inline auto& impl() const
++  {
++    return *static_cast<const T_Wrap<T, T_Sbx>*>(this);
++  }
++
++public:
++  inline auto UNSAFE_unverified() { return impl().get_raw_value(); }
++  inline auto UNSAFE_sandboxed() { return impl().get_raw_sandbox_value(); }
++  inline auto UNSAFE_unverified() const { return impl().get_raw_value(); }
++  inline auto UNSAFE_sandboxed() const
++  {
++    return impl().get_raw_sandbox_value();
++  }
++
++#define BinaryOpValAndPtr(opSymbol)                                            \
++  template<typename T_Rhs>                                                     \
++  inline auto operator opSymbol(T_Rhs&& rhs)                                   \
++  {                                                                            \
++    static_assert(detail::is_basic_type_v<T>,                                  \
++                  "Operator " #opSymbol                                        \
++                  " only supported for primitive and pointer types");          \
++                                                                               \
++    auto raw_rhs = detail::unwrap_value(rhs);                                  \
++    static_assert(std::is_integral_v<decltype(raw_rhs)>,                       \
++                  "Can only operate on numeric types");                        \
++                                                                               \
++    if constexpr (std::is_pointer_v<T>) {                                      \
++      auto ptr = impl().get_raw_value();                                       \
++      detail::dynamic_check(ptr != nullptr,                                    \
++                            "Pointer arithmetic on a null pointer");           \
++      /* increment the target by size of the data structure */                 \
++      auto target =                                                            \
++        reinterpret_cast<uintptr_t>(ptr) opSymbol raw_rhs * sizeof(*impl());   \
++      auto no_overflow = rlbox_sandbox<T_Sbx>::is_in_same_sandbox(             \
++        reinterpret_cast<const void*>(ptr),                                    \
++        reinterpret_cast<const void*>(target));                                \
++      detail::dynamic_check(                                                   \
++        no_overflow,                                                           \
++        "Pointer arithmetic overflowed a pointer beyond sandbox memory");      \
++                                                                               \
++      return tainted<T, T_Sbx>::internal_factory(reinterpret_cast<T>(target)); \
++    } else {                                                                   \
++      auto raw = impl().get_raw_value();                                       \
++      auto ret = raw opSymbol raw_rhs;                                         \
++      using T_Ret = decltype(ret);                                             \
++      return tainted<T_Ret, T_Sbx>::internal_factory(ret);                     \
++    }                                                                          \
++  }                                                                            \
++  RLBOX_REQUIRE_SEMI_COLON
++
++  BinaryOpValAndPtr(+);
++  BinaryOpValAndPtr(-);
++
++#undef BinaryOpValAndPtr
++
++#define BinaryOp(opSymbol)                                                     \
++  template<typename T_Rhs>                                                     \
++  inline auto operator opSymbol(T_Rhs&& rhs)                                   \
++  {                                                                            \
++    static_assert(detail::is_basic_type_v<T>,                                  \
++                  "Operator " #opSymbol                                        \
++                  " only supported for primitive and pointer types");          \
++                                                                               \
++    auto raw = impl().get_raw_value();                                         \
++    auto raw_rhs = detail::unwrap_value(rhs);                                  \
++    static_assert(std::is_integral_v<decltype(raw_rhs)>,                       \
++                  "Can only operate on numeric types");                        \
++                                                                               \
++    auto ret = raw opSymbol raw_rhs;                                           \
++    using T_Ret = decltype(ret);                                               \
++    return tainted<T_Ret, T_Sbx>::internal_factory(ret);                       \
++  }                                                                            \
++  RLBOX_REQUIRE_SEMI_COLON
++
++  BinaryOp(*);
++  BinaryOp(/);
++  BinaryOp(%);
++  BinaryOp(^);
++  BinaryOp(&);
++  BinaryOp(|);
++  BinaryOp(<<);
++  BinaryOp(>>);
++
++#undef BinaryOp
++
++#define UnaryOp(opSymbol)                                                      \
++  inline auto operator opSymbol()                                              \
++  {                                                                            \
++    static_assert(detail::is_fundamental_or_enum_v<T>,                         \
++                  "Operator " #opSymbol " only supported for primitive");      \
++                                                                               \
++    auto raw = impl().get_raw_value();                                         \
++    auto ret = opSymbol raw;                                                   \
++    using T_Ret = decltype(ret);                                               \
++    return tainted<T_Ret, T_Sbx>::internal_factory(ret);                       \
++  }                                                                            \
++  RLBOX_REQUIRE_SEMI_COLON
++
++  UnaryOp(-);
++  UnaryOp(~);
++
++#undef UnaryOp
++
++private:
++  using T_OpSubscriptArrRet = std::conditional_t<
++    std::is_pointer_v<T>,
++    tainted_volatile<detail::dereference_result_t<T>, T_Sbx>, // is_pointer
++    T_Wrap<detail::dereference_result_t<T>, T_Sbx>            // is_array
++    >;
++
++public:
++  template<typename T_Rhs>
++  inline const T_OpSubscriptArrRet& operator[](T_Rhs&& rhs) const
++  {
++    static_assert(std::is_pointer_v<T> || detail::is_c_or_std_array_v<T>,
++                  "Operator [] supports pointers and arrays only");
++
++    auto raw_rhs = detail::unwrap_value(rhs);
++    static_assert(std::is_integral_v<decltype(raw_rhs)>,
++                  "Can only index with numeric types");
++
++    if constexpr (std::is_pointer_v<T>) {
++      auto ptr = this->impl().get_raw_value();
++
++      // increment the target by size of the data structure
++      auto target =
++        reinterpret_cast<uintptr_t>(ptr) + raw_rhs * sizeof(*this->impl());
++      auto no_overflow = rlbox_sandbox<T_Sbx>::is_in_same_sandbox(
++        ptr, reinterpret_cast<const void*>(target));
++      detail::dynamic_check(
++        no_overflow,
++        "Pointer arithmetic overflowed a pointer beyond sandbox memory");
++
++      auto target_wrap = tainted<const T, T_Sbx>::internal_factory(
++        reinterpret_cast<const T>(target));
++      return *target_wrap;
++    } else {
++      using T_Rhs_Unsigned = std::make_unsigned_t<decltype(raw_rhs)>;
++      detail::dynamic_check(
++        raw_rhs >= 0 && static_cast<T_Rhs_Unsigned>(raw_rhs) <
++                          std::extent_v<detail::std_array_to_c_arr_t<T>, 0>,
++        "Static array indexing overflow");
++
++      const void* target_ptr;
++      if constexpr (detail::rlbox_is_tainted_v<T_Wrap<T, T_Sbx>>) {
++        auto& data_ref = impl().get_raw_value_ref();
++        target_ptr = &(data_ref[raw_rhs]);
++      } else {
++        auto& data_ref = impl().get_sandbox_value_ref();
++        auto target_ptr_vol = &(data_ref[raw_rhs]);
++        // target_ptr is a volatile... remove this.
++        // Safe as we will return a tainted_volatile if this is the case
++        target_ptr = detail::remove_volatile_from_ptr_cast(target_ptr_vol);
++      }
++
++      using T_Target = const T_Wrap<detail::dereference_result_t<T>, T_Sbx>;
++      auto wrapped_target_ptr = reinterpret_cast<T_Target*>(target_ptr);
++      return *wrapped_target_ptr;
++    }
++  }
++
++  template<typename T_Rhs>
++  inline T_OpSubscriptArrRet& operator[](T_Rhs&& rhs)
++  {
++    rlbox_detail_forward_to_const_a(operator[], T_OpSubscriptArrRet&, rhs);
++  }
++
++private:
++  using T_OpDerefRet = tainted_volatile<std::remove_pointer_t<T>, T_Sbx>;
++
++public:
++  inline T_OpDerefRet& operator*() const
++  {
++    static_assert(std::is_pointer_v<T>, "Operator * only allowed on pointers");
++    auto ret_ptr_const =
++      reinterpret_cast<const T_OpDerefRet*>(impl().get_raw_value());
++    // Safe - If T_OpDerefRet is not a const ptr, this is trivially safe
++    //        If T_OpDerefRet is a const ptr, then the const is captured
++    //        inside the wrapper
++    auto ret_ptr = const_cast<T_OpDerefRet*>(ret_ptr_const);
++    return *ret_ptr;
++  }
++
++  inline T_OpDerefRet& operator*()
++  {
++    rlbox_detail_forward_to_const(operator*, T_OpDerefRet&);
++  }
++
++  // We need to implement the -> operator even though T is not a struct
++  // So that we can support code patterns such as the below
++  // tainted<T*> a;
++  // a->UNSAFE_unverified();
++  inline auto operator-> () const
++  {
++    static_assert(std::is_pointer_v<T>,
++                  "Operator -> only supported for pointer types");
++    auto ret = impl().get_raw_value();
++    using T_Ret = std::remove_pointer_t<T>;
++    using T_RetWrap = const tainted_volatile<T_Ret, T_Sbx>;
++    return reinterpret_cast<T_RetWrap*>(ret);
++  }
++
++  inline auto operator-> ()
++  {
++    using T_Ret = tainted_volatile<std::remove_pointer_t<T>, T_Sbx>*;
++    rlbox_detail_forward_to_const(operator->, T_Ret);
++  }
++
++  // The verifier should have the following signature for the given types
++  // If tainted type is simple such as int
++  //      using T_Func = T_Ret(*)(int)
++  // If tainted type is a pointer to a simple type such as int*
++  //      using T_Func = T_Ret(*)(unique_ptr<int>)
++  // If tainted type is a pointer to class such as Foo*
++  //      using T_Func = T_Ret(*)(unique_ptr<Foo>)
++  // If tainted type is an array such as int[4]
++  //      using T_Func = T_Ret(*)(std::array<int, 4>)
++  // For completeness, if tainted_type is a class such as Foo, the
++  //  copy_and_verify is implemented in rlbox_struct_support.hpp. The verifier
++  //  should be
++  //      using T_Func = T_Ret(*)(tainted<Foo>)
++  //
++  // In the above signatures T_Ret is not constrained, and can be anything the
++  // caller chooses.
++  template<typename T_Func>
++  inline auto copy_and_verify(T_Func verifier) const
++  {
++    using T_Deref = std::remove_cv_t<std::remove_pointer_t<T>>;
++
++    if_constexpr_named(cond1, detail::is_fundamental_or_enum_v<T>)
++    {
++      auto val = impl().get_raw_value();
++      return verifier(val);
++    }
++    else if_constexpr_named(
++      cond2, detail::is_one_level_ptr_v<T> && !std::is_class_v<T_Deref>)
++    {
++      static_assert(!std::is_void_v<T_Deref>,
++                    "copy_and_verify not recommended for void* as it could "
++                    "lead to some anti-patterns in verifiers. Cast it to a "
++                    "different tainted pointer with sandbox_reinterpret_cast "
++                    "and then call copy_and_verify. Alternately, you can use "
++                    "the UNSAFE_unverified API to do this without casting.");
++
++      auto val = impl().get_raw_value();
++      if (val == nullptr) {
++        return verifier(nullptr);
++      } else {
++        // Important to assign to a local variable (i.e. make a copy)
++        // Else, for tainted_volatile, this will allow a
++        // time-of-check-time-of-use attack
++        auto val_copy = std::make_unique<T_Deref>();
++        *val_copy = *val;
++        return verifier(std::move(val_copy));
++      }
++    }
++    else if_constexpr_named(
++      cond3, detail::is_one_level_ptr_v<T> && std::is_class_v<T_Deref>)
++    {
++      auto val_copy = std::make_unique<tainted<T_Deref, T_Sbx>>(*impl());
++      return verifier(std::move(val_copy));
++    }
++    else if_constexpr_named(cond4, std::is_array_v<T>)
++    {
++      static_assert(
++        detail::is_fundamental_or_enum_v<std::remove_all_extents_t<T>>,
++        "copy_and_verify on arrays is only safe for fundamental or enum types. "
++        "For arrays of other types, apply copy_and_verify on each element "
++        "individually --- a[i].copy_and_verify(...)");
++
++      auto copy = impl().get_raw_value();
++      return verifier(copy);
++    }
++    else
++    {
++      auto unknownCase = !(cond1 || cond2 || cond3 || cond4);
++      rlbox_detail_static_fail_because(
++        unknownCase,
++        "copy_and_verify not supported for this type as it may be unsafe");
++    }
++  }
++
++private:
++  using T_CopyAndVerifyRangeEl =
++    detail::valid_array_el_t<std::remove_cv_t<std::remove_pointer_t<T>>>;
++
++  // Template needed to ensure that function isn't instantiated for unsupported
++  // types like function pointers which causes compile errors...
++  template<typename T2 = T>
++  inline std::unique_ptr<T_CopyAndVerifyRangeEl[]> copy_and_verify_range_helper(
++    std::size_t count) const
++  {
++    static_assert(std::is_pointer_v<T>);
++    static_assert(detail::is_fundamental_or_enum_v<T_CopyAndVerifyRangeEl>);
++
++    detail::dynamic_check(
++      count != 0,
++      "Called copy_and_verify_range/copy_and_verify_string with count 0");
++
++    auto start = reinterpret_cast<const void*>(impl().get_raw_value());
++    if (start == nullptr) {
++      return nullptr;
++    }
++
++    detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(
++      start, count * sizeof(T_CopyAndVerifyRangeEl));
++
++    auto target = std::make_unique<T_CopyAndVerifyRangeEl[]>(count);
++
++    for (size_t i = 0; i < count; i++) {
++      auto p_src_i_tainted = &(impl()[i]);
++      auto p_src_i = p_src_i_tainted.get_raw_value();
++      detail::convert_type_fundamental_or_array(target[i], *p_src_i);
++    }
++
++    return std::move(target);
++  }
++
++public:
++  // The verifier should have the following signature.
++  // If the tainted type is int*
++  //      using T_Func = T_Ret(*)(unique_ptr<int[]>)
++  // T_Ret is not constrained, and can be anything the caller chooses.
++  template<typename T_Func>
++  inline auto copy_and_verify_range(T_Func verifier, std::size_t count) const
++  {
++    static_assert(std::is_pointer_v<T>,
++                  "Can only call copy_and_verify_range on pointers");
++
++    static_assert(
++      detail::is_fundamental_or_enum_v<T_CopyAndVerifyRangeEl>,
++      "copy_and_verify_range is only safe for ranges of "
++      "fundamental or enum types. For other types, call "
++      "copy_and_verify on each element --- a[i].copy_and_verify(...)");
++
++    std::unique_ptr<T_CopyAndVerifyRangeEl[]> target =
++      copy_and_verify_range_helper(count);
++    return verifier(std::move(target));
++  }
++
++  // The verifier should have the following signature.
++  //      using T_Func = T_Ret(*)(unique_ptr<char[]>)
++  // T_Ret is not constrained, and can be anything the caller chooses.
++  template<typename T_Func>
++  inline auto copy_and_verify_string(T_Func verifier) const
++  {
++    static_assert(std::is_pointer_v<T>,
++                  "Can only call copy_and_verify_string on pointers");
++
++    static_assert(std::is_same_v<char, T_CopyAndVerifyRangeEl>,
++                  "copy_and_verify_string only allows char*");
++
++    auto start = impl().get_raw_value();
++    if (start == nullptr) {
++      return verifier(nullptr);
++    }
++
++    // it is safe to run strlen on a tainted<string> as worst case, the string
++    // does not have a null and we try to copy all the memory out of the sandbox
++    // however, copy_and_verify_range ensures that we never copy memory outsider
++    // the range
++    auto str_len = std::strlen(start) + 1;
++    std::unique_ptr<T_CopyAndVerifyRangeEl[]> target =
++      copy_and_verify_range_helper(str_len);
++
++    // ensure the string has a trailing null
++    target[str_len - 1] = '\0';
++
++    return verifier(std::move(target));
++  }
++};
++
++namespace tainted_detail {
++  template<typename T, typename T_Sbx>
++  using tainted_repr_t = detail::c_to_std_array_t<T>;
++
++  template<typename T, typename T_Sbx>
++  using tainted_vol_repr_t =
++    detail::c_to_std_array_t<std::add_volatile_t<typename rlbox_sandbox<
++      T_Sbx>::template convert_to_sandbox_equivalent_nonclass_t<T>>>;
++}
++
++template<typename T, typename T_Sbx>
++class tainted : public tainted_base_impl<tainted, T, T_Sbx>
++{
++  KEEP_CLASSES_FRIENDLY
++  KEEP_CAST_FRIENDLY
++
++  // Classes recieve their own specialization
++  static_assert(
++    !std::is_class_v<T>,
++    "Missing specialization for class T. This error occurs for one "
++    "of 2 reasons.\n"
++    "  1) Make sure you have include a call rlbox_load_structs_from_library "
++    "for this library.\n"
++    "  2) Make sure you run (re-run) the struct-dump tool to list "
++    "all structs in use by your program.\n");
++
++  static_assert(
++    detail::is_basic_type_v<T> || std::is_array_v<T>,
++    "Tainted types only support fundamental, enum, pointer, array and struct "
++    "types. Please file a bug if more support is needed.");
++
++private:
++  using T_ClassBase = tainted_base_impl<tainted, T, T_Sbx>;
++  using T_AppType = tainted_detail::tainted_repr_t<T, T_Sbx>;
++  using T_SandboxedType = tainted_detail::tainted_vol_repr_t<T, T_Sbx>;
++  T_AppType data;
++
++  inline auto& get_raw_value_ref() noexcept { return data; }
++  inline auto& get_raw_value_ref() const noexcept { return data; }
++
++  inline std::remove_cv_t<T_AppType> get_raw_value() const noexcept
++  {
++    return data;
++  }
++
++  inline std::remove_cv_t<T_SandboxedType> get_raw_sandbox_value() const
++  {
++    std::remove_cv_t<T_SandboxedType> ret;
++    detail::convert_type_non_class<T_Sbx,
++                                   detail::adjust_type_direction::TO_SANDBOX>(
++      ret, data);
++    return ret;
++  };
++
++  inline std::remove_cv_t<T_AppType> get_raw_value() noexcept
++  {
++    rlbox_detail_forward_to_const(get_raw_value, std::remove_cv_t<T_AppType>);
++  }
++
++  inline std::remove_cv_t<T_SandboxedType> get_raw_sandbox_value()
++  {
++    rlbox_detail_forward_to_const(get_raw_sandbox_value,
++                                  std::remove_cv_t<T_SandboxedType>);
++  };
++
++  // Initializing with a pointer is dangerous and permitted only internally
++  template<typename T2 = T, RLBOX_ENABLE_IF(std::is_pointer_v<T2>)>
++  tainted(T2 val, const void* /* internal_tag */)
++    : data(val)
++  {
++    // Sanity check
++    static_assert(std::is_pointer_v<T>);
++  }
++
++  template<typename T_Rhs>
++  static inline tainted<T, T_Sbx> internal_factory(T_Rhs&& rhs)
++  {
++    if constexpr (std::is_pointer_v<std::remove_reference_t<T_Rhs>>) {
++      const void* internal_tag = nullptr;
++      return tainted(std::forward<T_Rhs>(rhs), internal_tag);
++    } else {
++      return tainted(std::forward<T_Rhs>(rhs));
++    }
++  }
++
++public:
++  tainted() = default;
++  tainted(const tainted<T, T_Sbx>& p) = default;
++
++  tainted(const tainted_volatile<T, T_Sbx>& p)
++  {
++    // Need to construct an example_unsandboxed_ptr for pointers or arrays of
++    // pointers. Since tainted_volatile is the type of data in sandbox memory,
++    // the address of data (&data) refers to a location in sandbox memory and
++    // can thus be the example_unsandboxed_ptr
++    const volatile void* p_data_ref = &p.get_sandbox_value_ref();
++    const void* example_unsandboxed_ptr = const_cast<const void*>(p_data_ref);
++    detail::convert_type_non_class<
++      T_Sbx,
++      detail::adjust_type_direction::TO_APPLICATION>(
++      get_raw_value_ref(), p.get_sandbox_value_ref(), example_unsandboxed_ptr);
++  }
++
++  // Initializing with a pointer is dangerous and permitted only internally
++  template<typename T2 = T, RLBOX_ENABLE_IF(std::is_pointer_v<T2>)>
++  tainted(T2 val)
++    : data(val)
++  {
++    rlbox_detail_static_fail_because(
++      std::is_pointer_v<T2>,
++      "Assignment of pointers is not safe as it could\n "
++      "1) Leak pointers from the appliction to the sandbox which may break "
++      "ASLR\n "
++      "2) Pass inaccessible pointers to the sandbox leading to crash\n "
++      "3) Break sandboxes that require pointers to be swizzled first\n "
++      "\n "
++      "Instead, if you want to pass in a pointer, do one of the following\n "
++      "1) Allocate with malloc_in_sandbox, and pass in a tainted pointer\n "
++      "2) For pointers that point to functions in the application, register "
++      "with sandbox.register_callback(\"foo\"), and pass in the registered "
++      "value\n "
++      "3) For pointers that point to functions in the sandbox, get the "
++      "address with sandbox_function_address(sandbox, foo), and pass in the "
++      "address\n "
++      "4) For raw pointers, use assign_raw_pointer which performs required "
++      "safety checks\n ");
++  }
++
++  tainted(
++    const sandbox_callback<
++      detail::function_ptr_t<T> // Need to ensure we never generate code that
++                                // creates a sandbox_callback of a non function
++      ,
++      T_Sbx>&)
++  {
++    rlbox_detail_static_fail_because(
++      detail::true_v<T>,
++      "RLBox does not support assigning sandbox_callback values to tainted "
++      "types (i.e. types that live in application memory).\n"
++      "If you still want to do this, consider changing your code to store the "
++      "value in sandbox memory as follows. Convert\n\n"
++      "sandbox_callback<T_Func, Sbx> cb = ...;\n"
++      "tainted<T_Func, Sbx> foo = cb;\n\n"
++      "to\n\n"
++      "tainted<T_Func*, Sbx> foo_ptr = sandbox.malloc_in_sandbox<T_Func*>();\n"
++      "*foo_ptr = cb;\n\n"
++      "This would keep the assignment in sandbox memory");
++  }
++
++  tainted(
++    const sandbox_function<
++      detail::function_ptr_t<T> // Need to ensure we never generate code that
++                                // creates a sandbox_function of a non function
++      ,
++      T_Sbx>&)
++  {
++    rlbox_detail_static_fail_because(
++      detail::true_v<T>,
++      "RLBox does not support assigning sandbox_function values to tainted "
++      "types (i.e. types that live in application memory).\n"
++      "If you still want to do this, consider changing your code to store the "
++      "value in sandbox memory as follows. Convert\n\n"
++      "sandbox_function<T_Func, Sbx> cb = ...;\n"
++      "tainted<T_Func, Sbx> foo = cb;\n\n"
++      "to\n\n"
++      "tainted<T_Func*, Sbx> foo_ptr = sandbox.malloc_in_sandbox<T_Func*>();\n"
++      "*foo_ptr = cb;\n\n"
++      "This would keep the assignment in sandbox memory");
++  }
++
++  tainted(const std::nullptr_t& arg)
++    : data(arg)
++  {
++    static_assert(std::is_pointer_v<T>);
++  }
++
++  // We explicitly disable this constructor if it has one of the signatures
++  // above, so that we give the above constructors a higher priority. We only
++  // allow this for fundamental types as this is potentially unsafe for pointers
++  // and structs
++  template<typename T_Arg,
++           RLBOX_ENABLE_IF(
++             !detail::rlbox_is_wrapper_v<std::remove_reference_t<T_Arg>> &&
++             detail::is_fundamental_or_enum_v<T> &&
++             detail::is_fundamental_or_enum_v<std::remove_reference_t<T_Arg>>)>
++  tainted(T_Arg&& arg)
++    : data(std::forward<T_Arg>(arg))
++  {}
++
++  template<typename T_Rhs>
++  void assign_raw_pointer(rlbox_sandbox<T_Sbx>& sandbox, T_Rhs val)
++  {
++    static_assert(std::is_pointer_v<T_Rhs>, "Must be a pointer");
++    static_assert(std::is_assignable_v<T&, T_Rhs>,
++                  "Should assign pointers of compatible types.");
++    // Maybe a function pointer, so we need to cast
++    const void* cast_val = reinterpret_cast<const void*>(val);
++    bool safe = sandbox.is_pointer_in_sandbox_memory(cast_val);
++    detail::dynamic_check(
++      safe,
++      "Tried to assign a pointer that is not in the sandbox.\n "
++      "This is not safe as it could\n "
++      "1) Leak pointers from the appliction to the sandbox which may break "
++      "ASLR\n "
++      "2) Pass inaccessible pointers to the sandbox leading to crash\n "
++      "3) Break sandboxes that require pointers to be swizzled first\n "
++      "\n "
++      "Instead, if you want to pass in a pointer, do one of the following\n "
++      "1) Allocate with malloc_in_sandbox, and pass in a tainted pointer\n "
++      "2) For pointers that point to functions in the application, register "
++      "with sandbox.register_callback(\"foo\"), and pass in the registered "
++      "value\n "
++      "3) For pointers that point to functions in the sandbox, get the "
++      "address with sandbox_function_address(sandbox, foo), and pass in the "
++      "address\n ");
++    data = val;
++  }
++
++  inline tainted_opaque<T, T_Sbx> to_opaque()
++  {
++    return *reinterpret_cast<tainted_opaque<T, T_Sbx>*>(this);
++  }
++
++  // In general comparison operators are unsafe.
++  // However comparing tainted with nullptr is fine because
++  // 1) tainted values are in application memory and thus cannot change the
++  // value after comparision
++  // 2) Checking that a pointer is null doesn't "really" taint the result as
++  // the result is always safe
++  template<typename T_Rhs>
++  inline bool operator==(T_Rhs&& arg) const
++  {
++    if_constexpr_named(
++      cond1,
++      !std::is_same_v<std::remove_const_t<std::remove_reference_t<T_Rhs>>,
++                      std::nullptr_t>)
++    {
++      rlbox_detail_static_fail_because(
++        cond1,
++        "Only comparisons to nullptr are allowed. All other comparisons to "
++        "tainted types create many antipatterns. Rather than comparing tainted "
++        "values directly, unwrap the values with the copy_and_verify API and "
++        "then perform the comparisons.");
++    }
++    else if_constexpr_named(cond2, std::is_pointer_v<T>)
++    {
++      return get_raw_value() == arg;
++    }
++    else
++    {
++      rlbox_detail_static_fail_because(
++        !cond2, "Comparisons to nullptr only permitted for pointer types");
++    }
++  }
++
++  template<typename T_Rhs>
++  inline bool operator!=(T_Rhs&& arg) const
++  {
++    if_constexpr_named(
++      cond1,
++      !std::is_same_v<std::remove_const_t<std::remove_reference_t<T_Rhs>>,
++                      std::nullptr_t>)
++    {
++      rlbox_detail_static_fail_because(
++        cond1,
++        "Only comparisons to nullptr are allowed. All other comparisons to "
++        "tainted types create many antipatterns. Rather than comparing tainted "
++        "values directly, unwrap the values with the copy_and_verify API and "
++        "then perform the comparisons.");
++    }
++    else if_constexpr_named(cond2, std::is_pointer_v<T>)
++    {
++      return get_raw_value() != arg;
++    }
++    else
++    {
++      rlbox_detail_static_fail_because(
++        !cond2, "Comparisons to nullptr only permitted for pointer types");
++    }
++  }
++
++  inline bool operator!()
++  {
++    if_constexpr_named(cond1, std::is_pointer_v<T>)
++    {
++      // Checking for null pointer
++      return get_raw_value() == nullptr;
++    }
++    else
++    {
++      auto unknownCase = !(cond1);
++      rlbox_detail_static_fail_because(
++        unknownCase,
++        "Operator ! only permitted for pointer types. For other types, unwrap "
++        "the tainted value with the copy_and_verify API and then use operator "
++        "!");
++    }
++  }
++
++  template<typename T_Dummy = void>
++  operator bool() const
++  {
++    if_constexpr_named(cond1, std::is_pointer_v<T>)
++    {
++      // Checking for null pointer
++      return get_raw_value() != nullptr;
++    }
++    else
++    {
++      auto unknownCase = !(cond1);
++      rlbox_detail_static_fail_because(
++        unknownCase,
++        "Implicit conversion to bool is only permitted for pointer types. For "
++        "other types, unwrap the tainted value with the copy_and_verify API "
++        "and then perform the required checks");
++    }
++  }
++};
++
++template<typename T, typename T_Sbx>
++inline tainted<T, T_Sbx> from_opaque(tainted_opaque<T, T_Sbx> val)
++{
++  return *reinterpret_cast<tainted<T, T_Sbx>*>(&val);
++}
++
++template<typename T, typename T_Sbx>
++class tainted_volatile : public tainted_base_impl<tainted_volatile, T, T_Sbx>
++{
++  KEEP_CLASSES_FRIENDLY
++  KEEP_CAST_FRIENDLY
++
++  // Classes recieve their own specialization
++  static_assert(
++    !std::is_class_v<T>,
++    "Missing specialization for class T. This error occurs for one "
++    "of 2 reasons.\n"
++    "  1) Make sure you have include a call rlbox_load_structs_from_library "
++    "for this library.\n"
++    "  2) Make sure you run (re-run) the struct-dump tool to list "
++    "all structs in use by your program.\n");
++
++  static_assert(
++    detail::is_basic_type_v<T> || std::is_array_v<T>,
++    "Tainted types only support fundamental, enum, pointer, array and struct "
++    "types. Please file a bug if more support is needed.");
++
++private:
++  using T_ClassBase = tainted_base_impl<tainted_volatile, T, T_Sbx>;
++  using T_AppType = tainted_detail::tainted_repr_t<T, T_Sbx>;
++  using T_SandboxedType = tainted_detail::tainted_vol_repr_t<T, T_Sbx>;
++  T_SandboxedType data;
++
++  inline auto& get_sandbox_value_ref() noexcept { return data; }
++  inline auto& get_sandbox_value_ref() const noexcept { return data; }
++
++  inline std::remove_cv_t<T_AppType> get_raw_value() const
++  {
++    std::remove_cv_t<T_AppType> ret;
++    // Need to construct an example_unsandboxed_ptr for pointers or arrays of
++    // pointers. Since tainted_volatile is the type of data in sandbox memory,
++    // the address of data (&data) refers to a location in sandbox memory and
++    // can thus be the example_unsandboxed_ptr
++    const volatile void* data_ref = &data;
++    const void* example_unsandboxed_ptr = const_cast<const void*>(data_ref);
++    detail::convert_type_non_class<
++      T_Sbx,
++      detail::adjust_type_direction::TO_APPLICATION>(
++      ret, data, example_unsandboxed_ptr);
++    return ret;
++  }
++
++  inline std::remove_cv_t<T_SandboxedType> get_raw_sandbox_value() const
++    noexcept
++  {
++    return data;
++  };
++
++  inline std::remove_cv_t<T_AppType> get_raw_value()
++  {
++    rlbox_detail_forward_to_const(get_raw_value, std::remove_cv_t<T_AppType>);
++  }
++
++  inline std::remove_cv_t<T_SandboxedType> get_raw_sandbox_value() noexcept
++  {
++    rlbox_detail_forward_to_const(get_raw_sandbox_value,
++                                  std::remove_cv_t<T_SandboxedType>);
++  };
++
++  tainted_volatile() = default;
++  tainted_volatile(const tainted_volatile<T, T_Sbx>& p) = default;
++
++public:
++  inline tainted<const T*, T_Sbx> operator&() const noexcept
++  {
++    auto ref =
++      detail::remove_volatile_from_ptr_cast(&this->get_sandbox_value_ref());
++    auto ref_cast = reinterpret_cast<const T*>(ref);
++    auto ret = tainted<const T*, T_Sbx>::internal_factory(ref_cast);
++    return ret;
++  }
++
++  inline tainted<T*, T_Sbx> operator&() noexcept
++  {
++    using T_Ret = tainted<T*, T_Sbx>;
++    rlbox_detail_forward_to_const(operator&, T_Ret);
++  }
++
++  // Needed as the definition of unary & above shadows the base's binary &
++  rlbox_detail_forward_binop_to_base(&, T_ClassBase);
++
++  template<typename T_RhsRef>
++  inline tainted_volatile<T, T_Sbx>& operator=(T_RhsRef&& val)
++  {
++    using T_Rhs = std::remove_reference_t<T_RhsRef>;
++    using T_Rhs_El = std::remove_all_extents_t<T_Rhs>;
++
++    if_constexpr_named(
++      cond1, std::is_same_v<std::remove_const_t<T_Rhs>, std::nullptr_t>)
++    {
++      static_assert(std::is_pointer_v<T>,
++                    "Null pointer can only be assigned to pointers");
++      // assign using an integer instead of nullptr, as the pointer field may be
++      // represented as integer
++      data = 0;
++    }
++    else if_constexpr_named(cond2, detail::rlbox_is_tainted_v<T_Rhs>)
++    {
++      // Need to construct an example_unsandboxed_ptr for pointers or arrays of
++      // pointers. Since tainted_volatile is the type of data in sandbox memory,
++      // the address of data (&data) refers to a location in sandbox memory and
++      // can thus be the example_unsandboxed_ptr
++      const volatile void* data_ref = &get_sandbox_value_ref();
++      const void* example_unsandboxed_ptr = const_cast<const void*>(data_ref);
++      detail::convert_type_non_class<T_Sbx,
++                                     detail::adjust_type_direction::TO_SANDBOX>(
++        get_sandbox_value_ref(),
++        val.get_raw_value_ref(),
++        example_unsandboxed_ptr);
++    }
++    else if_constexpr_named(cond3, detail::rlbox_is_tainted_volatile_v<T_Rhs>)
++    {
++      detail::convert_type_non_class<T_Sbx,
++                                     detail::adjust_type_direction::NO_CHANGE>(
++        get_sandbox_value_ref(), val.get_sandbox_value_ref());
++    }
++    else if_constexpr_named(cond4,
++                            detail::rlbox_is_sandbox_callback_v<T_Rhs> ||
++                              detail::rlbox_is_sandbox_function_v<T_Rhs>)
++    {
++      using T_RhsFunc = detail::rlbox_remove_wrapper_t<T_Rhs>;
++
++      // need to perform some typechecking to ensure we are assigning compatible
++      // function pointer types only
++      if_constexpr_named(subcond1, !std::is_assignable_v<T&, T_RhsFunc>)
++      {
++        rlbox_detail_static_fail_because(
++          subcond1,
++          "Trying to assign function pointer to field of incompatible types");
++      }
++      else
++      {
++        // Need to reinterpret_cast as the representation of the signature of a
++        // callback uses the machine model of the sandbox, while the field uses
++        // that of the application. But we have already checked above that this
++        // is safe.
++        auto func = val.get_raw_sandbox_value();
++        using T_Cast = std::remove_volatile_t<T_SandboxedType>;
++        get_sandbox_value_ref() = reinterpret_cast<T_Cast>(func);
++      }
++    }
++    else if_constexpr_named(
++      cond5,
++      detail::is_fundamental_or_enum_v<T> ||
++        (std::is_array_v<T> && !std::is_pointer_v<T_Rhs_El>))
++    {
++      detail::convert_type_fundamental_or_array(get_sandbox_value_ref(), val);
++    }
++    else if_constexpr_named(
++      cond6, std::is_pointer_v<T_Rhs> || std::is_pointer_v<T_Rhs_El>)
++    {
++      rlbox_detail_static_fail_because(
++        cond6,
++        "Assignment of pointers is not safe as it could\n "
++        "1) Leak pointers from the appliction to the sandbox which may break "
++        "ASLR\n "
++        "2) Pass inaccessible pointers to the sandbox leading to crash\n "
++        "3) Break sandboxes that require pointers to be swizzled first\n "
++        "\n "
++        "Instead, if you want to pass in a pointer, do one of the following\n "
++        "1) Allocate with malloc_in_sandbox, and pass in a tainted pointer\n "
++        "2) For pointers that point to functions in the application, register "
++        "with sandbox.register_callback(\"foo\"), and pass in the registered "
++        "value\n "
++        "3) For pointers that point to functions in the sandbox, get the "
++        "address with sandbox_function_address(sandbox, foo), and pass in the "
++        "address\n "
++        "4) For raw pointers, use assign_raw_pointer which performs required "
++        "safety checks\n ");
++    }
++    else
++    {
++      auto unknownCase =
++        !(cond1 || cond2 || cond3 || cond4 || cond5 /* || cond6 */);
++      rlbox_detail_static_fail_because(
++        unknownCase, "Assignment of the given type of value is not supported");
++    }
++
++    return *this;
++  }
++
++  template<typename T_Rhs>
++  void assign_raw_pointer(rlbox_sandbox<T_Sbx>& sandbox, T_Rhs val)
++  {
++    static_assert(std::is_pointer_v<T_Rhs>, "Must be a pointer");
++    static_assert(std::is_assignable_v<T&, T_Rhs>,
++                  "Should assign pointers of compatible types.");
++    // Maybe a function pointer, so we need to cast
++    const void* cast_val = reinterpret_cast<const void*>(val);
++    bool safe = sandbox.is_pointer_in_sandbox_memory(cast_val);
++    detail::dynamic_check(
++      safe,
++      "Tried to assign a pointer that is not in the sandbox.\n "
++      "This is not safe as it could\n "
++      "1) Leak pointers from the appliction to the sandbox which may break "
++      "ASLR\n "
++      "2) Pass inaccessible pointers to the sandbox leading to crash\n "
++      "3) Break sandboxes that require pointers to be swizzled first\n "
++      "\n "
++      "Instead, if you want to pass in a pointer, do one of the following\n "
++      "1) Allocate with malloc_in_sandbox, and pass in a tainted pointer\n "
++      "2) For pointers that point to functions in the application, register "
++      "with sandbox.register_callback(\"foo\"), and pass in the registered "
++      "value\n "
++      "3) For pointers that point to functions in the sandbox, get the "
++      "address with sandbox_function_address(sandbox, foo), and pass in the "
++      "address\n ");
++    get_sandbox_value_ref() =
++      sandbox.template get_sandboxed_pointer<T_Rhs>(cast_val);
++  }
++
++  // ==, != and ! are not supported for tainted_volatile, however, we implement
++  // this to ensure the user doesn't see a confusing error message
++  template<typename T_Rhs>
++  inline bool operator==(T_Rhs&&) const
++  {
++    rlbox_detail_static_fail_because(
++      detail::true_v<T_Rhs>,
++      "Cannot compare values that are located in sandbox memory. This error "
++      "occurs if you compare a dereferenced value such as the code shown "
++      "below\n\n"
++      "tainted<int**> a = ...;\n"
++      "assert(*a == nullptr);\n\n"
++      "Instead you can write this code as \n"
++      "tainted<int*> temp = *a;\n"
++      "assert(temp == nullptr);\n");
++    return false;
++  }
++
++  template<typename T_Rhs>
++  inline bool operator!=(const std::nullptr_t&) const
++  {
++    rlbox_detail_static_fail_because(
++      detail::true_v<T_Rhs>,
++      "Cannot compare values that are located in sandbox memory. This error "
++      "occurs if you compare a dereferenced value such as the code shown "
++      "below\n\n"
++      "tainted<int**> a = ...;\n"
++      "assert(*a != nullptr);\n\n"
++      "Instead you can write this code as \n"
++      "tainted<int*> temp = *a;\n"
++      "assert(temp != nullptr);\n");
++    return false;
++  }
++
++  template<typename T_Dummy = void>
++  inline bool operator!()
++  {
++    rlbox_detail_static_fail_because(
++      detail::true_v<T_Dummy>,
++      "Cannot apply 'operator not' on values that are located in sandbox "
++      "memory. This error occurs if you compare a dereferenced value such as "
++      "the code shown below\n\n"
++      "tainted<int**> a = ...;\n"
++      "assert(!(*a));\n\n"
++      "Instead you can write this code as \n"
++      "tainted<int*> temp = *a;\n"
++      "assert(!temp);\n");
++    return false;
++  }
++
++  template<typename T_Dummy = void>
++  operator bool() const
++  {
++    rlbox_detail_static_fail_because(
++      detail::true_v<T_Dummy>,
++      "Cannot apply implicit conversion to bool on values that are located in "
++      "sandbox memory. This error occurs if you compare a dereferenced value "
++      "such as the code shown below\n\n"
++      "tainted<int**> a = ...;\n"
++      "assert(*a);\n\n"
++      "Instead you can write this code as \n"
++      "tainted<int*> temp = *a;\n"
++      "assert(temp);\n");
++    return false;
++  }
++};
++
++}
+diff --git a/third_party/rlbox/include/rlbox_conversion.hpp b/third_party/rlbox/include/rlbox_conversion.hpp
+new file mode 100644
+index 000000000000..153a4aeae5fc
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_conversion.hpp
+@@ -0,0 +1,269 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <array>
++#include <cstring>
++#include <limits>
++#include <type_traits>
++
++#include "rlbox_helpers.hpp"
++#include "rlbox_type_traits.hpp"
++#include "rlbox_types.hpp"
++
++namespace rlbox::detail {
++
++template<typename T_To, typename T_From>
++inline constexpr void convert_type_fundamental(T_To& to, const T_From& from)
++{
++  using namespace std;
++
++  if_constexpr_named(cond1, !is_fundamental_or_enum_v<T_To>)
++  {
++    rlbox_detail_static_fail_because(
++      cond1, "Conversion target should be fundamental or enum type");
++  }
++  else if_constexpr_named(cond2, !is_fundamental_or_enum_v<T_From>)
++  {
++    rlbox_detail_static_fail_because(
++      cond2, "Conversion source should be fundamental or enum type");
++  }
++  else if_constexpr_named(cond3, is_enum_v<T_To> || is_enum_v<T_From>)
++  {
++    static_assert(std::is_same_v<T_To, T_From>);
++    to = from;
++  }
++  else if_constexpr_named(
++    cond4, is_floating_point_v<T_To> || is_floating_point_v<T_From>)
++  {
++    static_assert(is_floating_point_v<T_To> && is_floating_point_v<T_From>);
++    // language coerces different float types
++    to = from;
++  }
++  else if_constexpr_named(cond5, is_integral_v<T_To> || is_integral_v<T_From>)
++  {
++    static_assert(is_integral_v<T_To> && is_integral_v<T_From>);
++
++    const char* err_msg =
++      "Over/Underflow when converting between integer types";
++
++    // Some branches don't use the param
++    RLBOX_UNUSED(err_msg);
++
++    if constexpr (is_signed_v<T_To> == is_signed_v<T_From> &&
++                  sizeof(T_To) >= sizeof(T_From)) {
++      // Eg: int64_t from int32_t, uint64_t from uint32_t
++    } else if constexpr (is_unsigned_v<T_To> && is_unsigned_v<T_From>) {
++      // Eg: uint32_t from uint64_t
++      dynamic_check(from <= numeric_limits<T_To>::max(), err_msg);
++    } else if constexpr (is_signed_v<T_To> && is_signed_v<T_From>) {
++      // Eg: int32_t from int64_t
++      dynamic_check(from >= numeric_limits<T_To>::min(), err_msg);
++      dynamic_check(from <= numeric_limits<T_To>::max(), err_msg);
++    } else if constexpr (is_unsigned_v<T_To> && is_signed_v<T_From>) {
++      if constexpr (sizeof(T_To) < sizeof(T_From)) {
++        // Eg: uint32_t from int64_t
++        dynamic_check(from >= 0, err_msg);
++        auto to_max = numeric_limits<T_To>::max();
++        dynamic_check(from <= static_cast<T_From>(to_max), err_msg);
++      } else {
++        // Eg: uint32_t from int32_t, uint64_t from int32_t
++        dynamic_check(from >= 0, err_msg);
++      }
++    } else if constexpr (is_signed_v<T_To> && is_unsigned_v<T_From>) {
++      if constexpr (sizeof(T_To) <= sizeof(T_From)) {
++        // Eg: int32_t from uint32_t, int32_t from uint64_t
++        auto to_max = numeric_limits<T_To>::max();
++        dynamic_check(from <= static_cast<T_From>(to_max), err_msg);
++      } else {
++        // Eg: int64_t from uint32_t
++      }
++    }
++    to = static_cast<T_To>(from);
++  }
++  else
++  {
++    constexpr auto unknownCase = !(cond1 || cond2 || cond3 || cond4 || cond5);
++    rlbox_detail_static_fail_because(
++      unknownCase, "Unexpected case for convert_type_fundamental");
++  }
++}
++
++template<typename T_To, typename T_From>
++inline constexpr void convert_type_fundamental_or_array(T_To& to,
++                                                        const T_From& from)
++{
++  using namespace std;
++
++  using T_To_C = std_array_to_c_arr_t<T_To>;
++  using T_From_C = std_array_to_c_arr_t<T_From>;
++  using T_To_El = remove_all_extents_t<T_To_C>;
++  using T_From_El = remove_all_extents_t<T_From_C>;
++
++  if_constexpr_named(cond1, is_array_v<T_To_C> != is_array_v<T_From_C>)
++  {
++    rlbox_detail_static_fail_because(
++      cond1, "Conversion should not go between array and non array types");
++  }
++  else if constexpr (!is_array_v<T_To_C>)
++  {
++    return convert_type_fundamental(to, from);
++  }
++  else if_constexpr_named(cond2, !all_extents_same<T_To_C, T_From_C>)
++  {
++    rlbox_detail_static_fail_because(
++      cond2, "Conversion between arrays should have same dimensions");
++  }
++  else if_constexpr_named(cond3,
++                          is_pointer_v<T_To_El> || is_pointer_v<T_From_El>)
++  {
++    rlbox_detail_static_fail_because(cond3,
++                                     "convert_type_fundamental_or_array "
++                                     "does not allow arrays of pointers");
++  }
++  else
++  {
++    // Explicitly using size to check for element type as we may be going across
++    // different types of the same width such as void* and uintptr_t
++    if constexpr (sizeof(T_To_El) == sizeof(T_From_El) &&
++                  is_signed_v<T_To_El> == is_signed_v<T_From_El>) {
++      // Sanity check - this should definitely be true
++      static_assert(sizeof(T_From_C) == sizeof(T_To_C));
++      memcpy(&to, &from, sizeof(T_To_C));
++    } else {
++      for (size_t i = 0; i < std::extent_v<T_To_C>; i++) {
++        convert_type_fundamental_or_array(to[i], from[i]);
++      }
++    }
++  }
++}
++
++enum class adjust_type_direction
++{
++  TO_SANDBOX,
++  TO_APPLICATION,
++  NO_CHANGE
++};
++
++template<typename T_Sbx,
++         adjust_type_direction Direction,
++         typename T_To,
++         typename T_From>
++inline constexpr void convert_type_non_class(
++  T_To& to,
++  const T_From& from,
++  const void* example_unsandboxed_ptr)
++{
++  using namespace std;
++
++  // Some branches don't use the param
++  RLBOX_UNUSED(example_unsandboxed_ptr);
++
++  using T_To_C = std_array_to_c_arr_t<T_To>;
++  using T_From_C = std_array_to_c_arr_t<T_From>;
++  using T_To_El = remove_all_extents_t<T_To_C>;
++  using T_From_El = remove_all_extents_t<T_From_C>;
++
++  if constexpr (is_pointer_v<T_To_C> || is_pointer_v<T_From_C>) {
++
++    if constexpr (Direction == adjust_type_direction::NO_CHANGE) {
++
++      static_assert(is_pointer_v<T_To_C> && is_pointer_v<T_From_C> &&
++                    sizeof(T_To_C) == sizeof(T_From_C));
++      to = from;
++
++    } else if constexpr (Direction == adjust_type_direction::TO_SANDBOX) {
++
++      static_assert(is_pointer_v<T_From_C>);
++      to = rlbox_sandbox<T_Sbx>::template get_sandboxed_pointer_no_ctx<
++        remove_pointer_t<T_From_C>>(from);
++
++    } else if constexpr (Direction == adjust_type_direction::TO_APPLICATION) {
++
++      static_assert(is_pointer_v<T_To_C>);
++      to = rlbox_sandbox<T_Sbx>::template get_unsandboxed_pointer_no_ctx<
++        remove_pointer_t<T_To_C>>(from, example_unsandboxed_ptr);
++    }
++
++  } else if constexpr (is_pointer_v<T_To_El> || is_pointer_v<T_From_El>) {
++
++    if constexpr (Direction == adjust_type_direction::NO_CHANGE) {
++      // Sanity check - this should definitely be true
++      static_assert(sizeof(T_To_El) == sizeof(T_From_El) &&
++                    sizeof(T_From_C) == sizeof(T_To_C));
++      memcpy(&to, &from, sizeof(T_To_C));
++    } else {
++      for (size_t i = 0; i < std::extent_v<T_To_C>; i++) {
++        convert_type_non_class<T_Sbx, Direction>(
++          to[i], from[i], example_unsandboxed_ptr);
++      }
++    }
++
++  } else {
++    convert_type_fundamental_or_array(to, from);
++  }
++}
++
++template<typename T_Sbx,
++         adjust_type_direction Direction,
++         typename T_To,
++         typename T_From>
++inline constexpr void convert_type_non_class(T_To& to, const T_From& from)
++{
++  static_assert(
++    Direction == adjust_type_direction::NO_CHANGE ||
++      Direction == adjust_type_direction::TO_SANDBOX,
++    "Example pointer cannot be ommitted for direction TO_APPLICATION");
++  convert_type_non_class<T_Sbx, Direction>(
++    to, from, nullptr /* example_unsandboxed_ptr */);
++}
++
++// Structs implement their own convert_type by specializing this class
++// Have to do this via a class, as functions can't be partially specialized
++template<typename T_Sbx,
++         adjust_type_direction Direction,
++         typename T_To,
++         typename T_From>
++class convert_type_class;
++// The specialization implements the following
++// {
++//   static inline void run(T_To& to,
++//                          const T_From& from,
++//                          const void* example_unsandboxed_ptr);
++// }
++
++template<typename T_Sbx,
++         adjust_type_direction Direction,
++         typename T_To,
++         typename T_From>
++inline void convert_type(T_To& to,
++                         const T_From& from,
++                         const void* example_unsandboxed_ptr)
++{
++  if constexpr ((std::is_class_v<T_To> ||
++                 std::is_class_v<T_From>)&&!detail::is_std_array_v<T_To> &&
++                !detail::is_std_array_v<T_From>) {
++    // Sanity check
++    static_assert(std::is_class_v<T_From> && std::is_class_v<T_To>);
++    convert_type_class<T_Sbx, Direction, T_To, T_From>::run(
++      to, from, example_unsandboxed_ptr);
++  } else {
++    convert_type_non_class<T_Sbx, Direction>(to, from, example_unsandboxed_ptr);
++  }
++}
++
++template<typename T_Sbx,
++         adjust_type_direction Direction,
++         typename T_To,
++         typename T_From>
++inline constexpr void convert_type(T_To& to, const T_From& from)
++{
++  static_assert(
++    Direction == adjust_type_direction::NO_CHANGE ||
++      Direction == adjust_type_direction::TO_SANDBOX,
++    "Example pointer cannot be ommitted for direction TO_APPLICATION");
++  convert_type<T_Sbx, Direction>(
++    to, from, nullptr /* example_unsandboxed_ptr */);
++}
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_helpers.hpp b/third_party/rlbox/include/rlbox_helpers.hpp
+new file mode 100644
+index 000000000000..0e6e5376b17c
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_helpers.hpp
+@@ -0,0 +1,174 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <cstdlib>
++#include <iostream>
++#include <stdexcept>
++#include <type_traits>
++#include <utility>
++
++namespace rlbox {
++namespace detail {
++  const int CompileErrorCode = 42;
++
++  inline void dynamic_check(bool check, const char* const msg)
++  {
++    // clang-format off
++  if (!check) {
++    #if __cpp_exceptions && defined(RLBOX_USE_EXCEPTIONS)
++      throw std::runtime_error(msg);
++    #else
++      std::cerr << msg << std::endl;
++      std::abort();
++    #endif
++  }
++    // clang-format on
++  }
++
++#ifdef RLBOX_NO_COMPILE_CHECKS
++#  if __cpp_exceptions && defined(RLBOX_USE_EXCEPTIONS)
++#    define rlbox_detail_static_fail_because(CondExpr, Message)                \
++      ((void)(CondExpr)), throw std::runtime_error(Message)
++#  else
++#    define rlbox_detail_static_fail_because(CondExpr, Message) abort()
++#  endif
++#else
++#  define rlbox_detail_static_fail_because(CondExpr, Message)                  \
++    static_assert(!(CondExpr), Message)
++#endif
++
++#define RLBOX_UNUSED(...) (void)__VA_ARGS__
++
++#define RLBOX_REQUIRE_SEMI_COLON static_assert(true)
++
++#define if_constexpr_named(varName, ...)                                       \
++  if constexpr (constexpr auto varName = __VA_ARGS__; varName)
++
++  template<typename... TArgs>
++  void printTypes()
++  {
++#if defined(__clang__) || defined(__GNUC__) || defined(__GNUG__)
++    std::cout << __PRETTY_FUNCTION__ << std::endl; // NOLINT
++#elif defined(_MSC_VER)
++    std::cout << __FUNCSIG__ << std::endl; // NOLINT
++#else
++    std::cout << "Unsupported" << std::endl;
++#endif
++  }
++
++#define rlbox_detail_forward_binop_to_base(opSymbol, ...)                      \
++  template<typename T_Rhs>                                                     \
++  inline auto operator opSymbol(T_Rhs rhs)                                     \
++  {                                                                            \
++    auto b = static_cast<__VA_ARGS__*>(this);                                  \
++    return (*b)opSymbol rhs;                                                   \
++  }                                                                            \
++  RLBOX_REQUIRE_SEMI_COLON
++
++#define rlbox_detail_forward_to_const(func_name, result_type)                  \
++  using T_ConstClassPtr = std::add_pointer_t<                                  \
++    std::add_const_t<std::remove_pointer_t<decltype(this)>>>;                  \
++  if constexpr (detail::rlbox_is_tainted_v<result_type> &&                     \
++                !std::is_reference_v<result_type>) {                           \
++    return sandbox_const_cast<detail::rlbox_remove_wrapper_t<result_type>>(    \
++      const_cast<T_ConstClassPtr>(this)->func_name());                         \
++  } else if constexpr (detail::is_fundamental_or_enum_v<result_type> ||        \
++                       detail::is_std_array_v<result_type>) {                  \
++    return const_cast<T_ConstClassPtr>(this)->func_name();                     \
++  } else {                                                                     \
++    return const_cast<result_type>(                                            \
++      const_cast<T_ConstClassPtr>(this)->func_name());                         \
++  }
++
++#define rlbox_detail_forward_to_const_a(func_name, result_type, ...)           \
++  using T_ConstClassPtr = std::add_pointer_t<                                  \
++    std::add_const_t<std::remove_pointer_t<decltype(this)>>>;                  \
++  if constexpr (detail::rlbox_is_tainted_v<result_type> &&                     \
++                !std::is_reference_v<result_type>) {                           \
++    static_assert(detail::rlbox_is_tainted_v<result_type>);                    \
++    return sandbox_const_cast<detail::rlbox_remove_wrapper_t<result_type>>(    \
++      const_cast<T_ConstClassPtr>(this)->func_name(__VA_ARGS__));              \
++  } else if constexpr (detail::is_fundamental_or_enum_v<result_type> ||        \
++                       detail::is_std_array_v<result_type>) {                  \
++    return const_cast<T_ConstClassPtr>(this)->func_name(__VA_ARGS__);          \
++  } else {                                                                     \
++    return const_cast<result_type>(                                            \
++      const_cast<T_ConstClassPtr>(this)->func_name(__VA_ARGS__));              \
++  }
++
++  template<typename T>
++  inline auto remove_volatile_from_ptr_cast(T* ptr)
++  {
++    using T_Result = std::add_pointer_t<std::remove_volatile_t<T>>;
++    return const_cast<T_Result>(ptr);
++  }
++
++  // https://stackoverflow.com/questions/37602057/why-isnt-a-for-loop-a-compile-time-expression
++  namespace compile_time_for_detail {
++    template<std::size_t N>
++    struct num
++    {
++      static const constexpr auto value = N;
++    };
++
++    template<class F, std::size_t... Is>
++    inline void compile_time_for_helper(F func, std::index_sequence<Is...>)
++    {
++      (func(num<Is>{}), ...);
++    }
++  }
++
++  template<std::size_t N, typename F>
++  inline void compile_time_for(F func)
++  {
++    compile_time_for_detail::compile_time_for_helper(
++      func, std::make_index_sequence<N>());
++  }
++
++  template<typename T, typename T2>
++  inline auto return_first_result(T first_task, T2 second_task)
++  {
++    using T_Result = std::invoke_result_t<T>;
++
++    if constexpr (std::is_void_v<T_Result>) {
++      first_task();
++      second_task();
++    } else {
++      auto val = first_task();
++      second_task();
++      return val;
++    }
++  }
++
++/*
++Make sure classes can access the private memmbers of tainted<T1> and
++tainted_volatile. Ideally, this should be
++
++template <typename U1>
++friend class tainted<U1, T_Sandbox>;
++
++But C++ doesn't seem to allow the above
++*/
++#define KEEP_CLASSES_FRIENDLY                                                  \
++  template<template<typename, typename> typename U1, typename U2, typename U3> \
++  friend class tainted_base_impl;                                              \
++                                                                               \
++  template<typename U1, typename U2>                                           \
++  friend class tainted;                                                        \
++                                                                               \
++  template<typename U1, typename U2>                                           \
++  friend class tainted_volatile;                                               \
++                                                                               \
++  template<typename U1>                                                        \
++  friend class rlbox_sandbox;                                                  \
++                                                                               \
++  template<typename U1, typename U2>                                           \
++  friend class sandbox_callback;                                               \
++                                                                               \
++  template<typename U1, typename U2>                                           \
++  friend class sandbox_function;
++
++}
++
++}
+diff --git a/third_party/rlbox/include/rlbox_noop_sandbox.hpp b/third_party/rlbox/include/rlbox_noop_sandbox.hpp
+new file mode 100644
+index 000000000000..c7ca5a9dd0c0
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_noop_sandbox.hpp
+@@ -0,0 +1,191 @@
++#pragma once
++
++#include <cstdint>
++#include <cstdlib>
++#include <memory>
++#include <mutex>
++#include <utility>
++
++#include "rlbox_helpers.hpp"
++
++namespace rlbox {
++
++class rlbox_noop_sandbox
++{
++public:
++  // Stick with the system defaults
++  using T_LongLongType = long long;
++  using T_LongType = long;
++  using T_IntType = int;
++  using T_PointerType = uintptr_t;
++  using T_ShortType = short;
++
++private:
++  std::mutex callback_mutex;
++  static inline const uint32_t MAX_CALLBACKS = 64;
++  void* callback_unique_keys[MAX_CALLBACKS]{ 0 };
++  void* callbacks[MAX_CALLBACKS]{ 0 };
++
++  struct rlbox_noop_sandbox_thread_local
++  {
++    rlbox_noop_sandbox* sandbox;
++    uint32_t last_callback_invoked;
++  };
++
++  static inline std::unique_ptr<rlbox_noop_sandbox_thread_local> thread_data =
++    std::make_unique<rlbox_noop_sandbox_thread_local>();
++
++  template<uint32_t N, typename T_Ret, typename... T_Args>
++  static T_Ret callback_trampoline(T_Args... params)
++  {
++    thread_data->last_callback_invoked = N;
++    using T_Func = T_Ret (*)(T_Args...);
++    T_Func func = reinterpret_cast<T_Func>(thread_data->sandbox->callbacks[N]);
++    // Callbacks are invoked through function pointers, cannot use std::forward
++    // as we don't have caller context for T_Args, which means they are all
++    // effectively passed by value
++    return func(params...);
++  }
++
++protected:
++  inline void impl_create_sandbox() {}
++
++  inline void impl_destroy_sandbox() {}
++
++  template<typename T>
++  inline void* impl_get_unsandboxed_pointer(T_PointerType p) const
++  {
++    return reinterpret_cast<void*>(static_cast<uintptr_t>(p));
++  }
++
++  template<typename T>
++  inline T_PointerType impl_get_sandboxed_pointer(const void* p) const
++  {
++    return static_cast<T_PointerType>(reinterpret_cast<uintptr_t>(p));
++  }
++
++  template<typename T>
++  static inline void* impl_get_unsandboxed_pointer_no_ctx(T_PointerType p,
++                                                          const void*)
++  {
++    return reinterpret_cast<void*>(static_cast<uintptr_t>(p));
++  }
++
++  template<typename T>
++  static inline T_PointerType impl_get_sandboxed_pointer_no_ctx(const void* p)
++  {
++    return static_cast<T_PointerType>(reinterpret_cast<uintptr_t>(p));
++  }
++
++  inline T_PointerType impl_malloc_in_sandbox(size_t size)
++  {
++    void* p = std::malloc(size);
++    return reinterpret_cast<uintptr_t>(p);
++  }
++
++  inline void impl_free_in_sandbox(T_PointerType p)
++  {
++    std::free(reinterpret_cast<void*>(p));
++  }
++
++  static inline bool impl_is_in_same_sandbox(const void*, const void*)
++  {
++    return true;
++  }
++
++  inline bool impl_is_pointer_in_sandbox_memory(const void*) { return true; }
++  inline bool impl_is_pointer_in_app_memory(const void*) { return true; }
++
++  inline size_t impl_get_total_memory()
++  {
++    return std::numeric_limits<size_t>::max();
++  }
++
++  inline void* impl_get_memory_location()
++  {
++    // There isn't any sandbox memory for the noop_sandbox as we just redirect
++    // to the app. Also, this is mostly used for pointer swizzling or sandbox
++    // bounds checks which is also not present/not required. So we can just
++    // return null
++    return nullptr;
++  }
++
++  // adding a template so that we can use static_assert to fire only if this
++  // function is invoked
++  template<typename T = void>
++  void* impl_lookup_symbol(const char* /* func_name */)
++  {
++    // Will fire if this impl_lookup_symbol is ever called for the static
++    // sandbox
++    constexpr bool fail = std::is_same_v<T, void>;
++    rlbox_detail_static_fail_because(
++      fail,
++      "The no_op_sandbox uses static calls and thus developers should add\n\n"
++      "#define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol\n\n"
++      "to their code, to ensure that static calls are handled correctly.");
++
++    return nullptr;
++  }
++
++#define rlbox_noop_sandbox_lookup_symbol(sandbox, func_name)                   \
++  []() {                                                                       \
++    static_assert(                                                             \
++      std::is_same_v<std::remove_reference_t<decltype(sandbox)>,               \
++                     rlbox::rlbox_sandbox<rlbox::rlbox_noop_sandbox>>,         \
++      "Forwarding another sandboxes calls to rlbox_noop_sandbox. "             \
++      "Please check the use of RLBOX_USE_STATIC_CALLS.");                      \
++    return reinterpret_cast<void*>(&func_name); /* NOLINT */                   \
++  }()
++
++  template<typename T, typename T_Converted, typename... T_Args>
++  auto impl_invoke_with_func_ptr(T_Converted* func_ptr, T_Args&&... params)
++  {
++    thread_data->sandbox = this;
++    return (*func_ptr)(params...);
++  }
++
++  template<typename T_Ret, typename... T_Args>
++  inline T_PointerType impl_register_callback(void* key, void* callback)
++  {
++    std::lock_guard<std::mutex> lock(callback_mutex);
++
++    void* chosen_trampoline = nullptr;
++
++    // need a compile time for loop as we we need I to be a compile time value
++    // this is because we are returning the I'th callback trampoline
++    detail::compile_time_for<MAX_CALLBACKS>([&](auto I) {
++      if (!chosen_trampoline && callback_unique_keys[I.value] == nullptr) {
++        callback_unique_keys[I.value] = key;
++        callbacks[I.value] = callback;
++        chosen_trampoline = reinterpret_cast<void*>(
++          callback_trampoline<I.value, T_Ret, T_Args...>);
++      }
++    });
++
++    return reinterpret_cast<T_PointerType>(chosen_trampoline);
++  }
++
++  static inline std::pair<rlbox_noop_sandbox*, void*>
++  impl_get_executed_callback_sandbox_and_key()
++  {
++    auto sandbox = thread_data->sandbox;
++    auto callback_num = thread_data->last_callback_invoked;
++    void* key = sandbox->callback_unique_keys[callback_num];
++    return std::make_pair(sandbox, key);
++  }
++
++  template<typename T_Ret, typename... T_Args>
++  inline void impl_unregister_callback(void* key)
++  {
++    std::lock_guard<std::mutex> lock(callback_mutex);
++    for (uint32_t i = 0; i < MAX_CALLBACKS; i++) {
++      if (callback_unique_keys[i] == key) {
++        callback_unique_keys[i] = nullptr;
++        callbacks[i] = nullptr;
++        break;
++      }
++    }
++  }
++};
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_policy_types.hpp b/third_party/rlbox/include/rlbox_policy_types.hpp
+new file mode 100644
+index 000000000000..5df5c6e9787d
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_policy_types.hpp
+@@ -0,0 +1,184 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <type_traits>
++#include <utility>
++
++#include "rlbox_helpers.hpp"
++#include "rlbox_struct_support.hpp"
++#include "rlbox_types.hpp"
++
++namespace rlbox {
++
++template<typename T, typename T_Sbx>
++class sandbox_function
++{
++  KEEP_CLASSES_FRIENDLY
++private:
++  using T_Func = detail::convert_to_sandbox_equivalent_t<T, T_Sbx>;
++  T_Func data;
++
++  // Keep constructor private as only rlbox_sandbox should be able to create
++  // this object
++  sandbox_function(T_Func p_data)
++    : data(p_data)
++  {}
++
++  inline T_Func get_raw_sandbox_value() const noexcept { return data; }
++
++  inline T_Func get_raw_sandbox_value() noexcept { return data; }
++
++public:
++  sandbox_function(const sandbox_function<T, T_Sbx>& p) = default;
++
++  inline auto UNSAFE_sandboxed() const noexcept
++  {
++    return get_raw_sandbox_value();
++  }
++  inline auto UNSAFE_sandboxed() noexcept { return get_raw_sandbox_value(); }
++};
++
++namespace callback_detail {
++
++  // Compute the expected type of the callback
++  template<typename T_Sbx, typename T_Ret, typename... T_Args>
++  using T_Cb =
++    std::conditional_t<std::is_void_v<T_Ret>, void, tainted<T_Ret, T_Sbx>> (*)(
++      rlbox_sandbox<T_Sbx>&,
++      tainted<T_Args, T_Sbx>...);
++
++  template<typename T_Sbx, typename T_Ret, typename... T_Args>
++  T_Cb<T_Sbx, T_Ret, T_Args...> callback_type_helper(T_Ret (*)(T_Args...));
++
++  // Compute the expected type of the interceptor
++  template<typename T_Sbx, typename T_Ret, typename... T_Args>
++  using T_I = detail::convert_to_sandbox_equivalent_t<T_Ret, T_Sbx> (*)(
++    detail::convert_to_sandbox_equivalent_t<T_Args, T_Sbx>...);
++
++  template<typename T_Sbx, typename T_Ret, typename... T_Args>
++  T_I<T_Sbx, T_Ret, T_Args...> interceptor_type_helper(T_Ret (*)(T_Args...));
++}
++
++template<typename T, typename T_Sbx>
++class sandbox_callback
++{
++  KEEP_CLASSES_FRIENDLY
++
++private:
++  rlbox_sandbox<T_Sbx>* sandbox;
++
++  using T_Callback =
++    decltype(callback_detail::callback_type_helper<T_Sbx>(std::declval<T>()));
++  T_Callback callback;
++
++  // The interceptor is the function that runs between the sandbox invoking the
++  // callback and the actual callback running The interceptor is responsible for
++  // wrapping and converting callback arguments, returns etc. to their
++  // appropriate representations
++  using T_Interceptor = decltype(
++    callback_detail::interceptor_type_helper<T_Sbx>(std::declval<T>()));
++  T_Interceptor callback_interceptor;
++
++  // The trampoline is the internal sandbox representation of the callback
++  // Depending on the sandbox type, this could be the callback pointer directly
++  // or a trampoline function that gates exits from the sandbox.
++  using T_Trampoline = detail::convert_to_sandbox_equivalent_t<T, T_Sbx>;
++  T_Trampoline callback_trampoline;
++
++  // The unique key representing the callback to pass to unregister_callback on
++  // destruction
++  void* key;
++
++  inline void move_obj(sandbox_callback&& other)
++  {
++    sandbox = other.sandbox;
++    callback = other.callback;
++    callback_interceptor = other.callback_interceptor;
++    callback_trampoline = other.callback_trampoline;
++    key = other.key;
++    other.sandbox = nullptr;
++    other.callback = nullptr;
++    other.callback_interceptor = nullptr;
++    other.callback_trampoline = 0;
++    other.key = nullptr;
++  }
++
++  template<typename T_Ret, typename... T_Args>
++  inline void unregister_helper(T_Ret (*)(T_Args...))
++  {
++    if (callback != nullptr) {
++      // Don't need to worry about race between unregister and move as
++      // 1) this will not happen in a correctly written program
++      // 2) if this does happen, the worst that can happen is an invocation of a
++      // null function pointer, which causes a crash that cannot be exploited
++      // for RCE
++      sandbox->template unregister_callback<T_Ret, T_Args...>(key);
++      sandbox = nullptr;
++      callback = nullptr;
++      callback_interceptor = nullptr;
++      callback_trampoline = 0;
++      key = nullptr;
++    }
++  }
++
++  inline T_Callback get_raw_value() const noexcept { return callback; }
++  inline T_Trampoline get_raw_sandbox_value() const noexcept
++  {
++    return callback_trampoline;
++  }
++  inline T_Callback get_raw_value() noexcept { return callback; }
++  inline T_Trampoline get_raw_sandbox_value() noexcept
++  {
++    return callback_trampoline;
++  }
++
++  // Keep constructor private as only rlbox_sandbox should be able to create
++  // this object
++  sandbox_callback(rlbox_sandbox<T_Sbx>* p_sandbox,
++                   T_Callback p_callback,
++                   T_Interceptor p_callback_interceptor,
++                   T_Trampoline p_callback_trampoline,
++                   void* p_key)
++    : sandbox(p_sandbox)
++    , callback(p_callback)
++    , callback_interceptor(p_callback_interceptor)
++    , callback_trampoline(p_callback_trampoline)
++    , key(p_key)
++  {
++    detail::dynamic_check(sandbox != nullptr,
++                          "Unexpected null sandbox when creating a callback");
++  }
++
++public:
++  sandbox_callback(sandbox_callback&& other)
++  {
++    move_obj(std::forward<sandbox_callback>(other));
++  }
++
++  inline sandbox_callback& operator=(sandbox_callback&& other)
++  {
++    if (this != &other) {
++      move_obj(std::forward<sandbox_callback>(other));
++    }
++    return *this;
++  }
++
++  void unregister()
++  {
++    T dummy = nullptr;
++    unregister_helper(dummy);
++  }
++
++  ~sandbox_callback() { unregister(); }
++
++  inline auto UNSAFE_unverified() const noexcept { return get_raw_value(); }
++  inline auto UNSAFE_sandboxed() const noexcept
++  {
++    return get_raw_sandbox_value();
++  }
++  inline auto UNSAFE_unverified() noexcept { return get_raw_value(); }
++  inline auto UNSAFE_sandboxed() noexcept { return get_raw_sandbox_value(); }
++};
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_range.hpp b/third_party/rlbox/include/rlbox_range.hpp
+new file mode 100644
+index 000000000000..3dafcbd024c9
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_range.hpp
+@@ -0,0 +1,32 @@
++
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <cstdint>
++
++#include "rlbox_types.hpp"
++
++namespace rlbox::detail {
++
++// Checks that a given range is either entirely in a sandbox or entirely
++// outside
++template<typename T_Sbx>
++inline void check_range_doesnt_cross_app_sbx_boundary(const void* ptr,
++                                                      size_t size)
++{
++  auto ptr_start_val = reinterpret_cast<uintptr_t>(ptr);
++  detail::dynamic_check(
++    ptr_start_val,
++    "Performing memory operation memset/memcpy on a null pointer");
++  auto ptr_end_val = ptr_start_val + size - 1;
++
++  auto ptr_start = reinterpret_cast<void*>(ptr_start_val);
++  auto ptr_end = reinterpret_cast<void*>(ptr_end_val);
++
++  detail::dynamic_check(
++    rlbox_sandbox<T_Sbx>::is_in_same_sandbox(ptr_start, ptr_end),
++    "range has overflowed sandbox bounds");
++}
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_sandbox.hpp b/third_party/rlbox/include/rlbox_sandbox.hpp
+new file mode 100644
+index 000000000000..7a7d022884f3
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_sandbox.hpp
+@@ -0,0 +1,574 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <algorithm>
++#include <cstdlib>
++#include <map>
++#include <mutex>
++#include <type_traits>
++#include <utility>
++#include <vector>
++
++#include "rlbox_conversion.hpp"
++#include "rlbox_helpers.hpp"
++#include "rlbox_struct_support.hpp"
++#include "rlbox_type_traits.hpp"
++#include "rlbox_wrapper_traits.hpp"
++
++namespace rlbox {
++
++namespace convert_fn_ptr_to_sandbox_equivalent_detail {
++  template<typename T, typename T_Sbx>
++  using conv = ::rlbox::detail::convert_to_sandbox_equivalent_t<T, T_Sbx>;
++
++  template<typename T_Ret, typename... T_Args>
++  using T_Func = T_Ret (*)(T_Args...);
++
++  template<typename T_Sbx, typename T_Ret, typename... T_Args>
++  T_Func<conv<T_Ret, T_Sbx>, conv<T_Args, T_Sbx>...> helper(
++    T_Ret (*)(T_Args...));
++}
++
++template<typename T_Sbx>
++class rlbox_sandbox : protected T_Sbx
++{
++  KEEP_CLASSES_FRIENDLY
++
++private:
++  std::mutex func_ptr_cache_lock;
++  std::map<std::string, void*> func_ptr_map;
++
++  std::mutex creation_lock;
++  // This variable tracks of the sandbox has already been created/destroyed.
++  // APIs in this class should be called only when the sandbox is created.
++  // However, it is expensive to check in APIs such as invoke or in the callback
++  // interceptor. Instead we leave it up to the user to ensure these APIs are
++  // never called prior to sandbox construction. We perform checks, where they
++  // would not add too much overhead
++  bool sandbox_created = false;
++
++  std::mutex callback_lock;
++  std::vector<void*> callback_keys;
++
++  template<typename T>
++  using convert_fn_ptr_to_sandbox_equivalent_t = decltype(
++    ::rlbox::convert_fn_ptr_to_sandbox_equivalent_detail::helper<T_Sbx>(
++      std::declval<T>()));
++
++  template<typename T>
++  inline constexpr void check_invoke_param_type_is_ok()
++  {
++    using T_NoRef = std::remove_reference_t<T>;
++    if_constexpr_named(cond1,
++                       detail::rlbox_is_wrapper_v<T_NoRef> ||
++                         std::is_null_pointer_v<T_NoRef> ||
++                         detail::is_fundamental_or_enum_v<T_NoRef>)
++    {}
++    else
++    {
++      constexpr auto unknownCase = !(cond1);
++      rlbox_detail_static_fail_because(
++        unknownCase,
++        "Arguments to a sandbox function call should be primitives  or wrapped "
++        "types like tainted, callbacks etc.");
++    }
++  }
++
++  template<typename T>
++  inline auto invoke_process_param(T&& param)
++  {
++    check_invoke_param_type_is_ok<T>();
++
++    using T_NoRef = std::remove_reference_t<T>;
++
++    if constexpr (detail::rlbox_is_tainted_opaque_v<T_NoRef>) {
++      auto ret = from_opaque(param);
++      return ret.UNSAFE_sandboxed();
++    } else if constexpr (detail::rlbox_is_wrapper_v<T_NoRef>) {
++      return param.UNSAFE_sandboxed();
++    } else if constexpr (std::is_null_pointer_v<T_NoRef>) {
++      tainted<void*, T_Sbx> ret = nullptr;
++      return ret.UNSAFE_sandboxed();
++    } else if constexpr (detail::is_fundamental_or_enum_v<T_NoRef>) {
++      // For unwrapped primitives, assign to a tainted var and then unwrap so
++      // that we adjust for machine model
++      tainted<T_NoRef, T_Sbx> copy = param;
++      return copy.UNSAFE_sandboxed();
++    } else {
++      rlbox_detail_static_fail_because(detail::true_v<T_NoRef>, "Unknown case");
++    }
++  }
++
++  template<typename T, typename T_Arg>
++  inline tainted<T, T_Sbx> sandbox_callback_intercept_convert_param(
++    const T_Arg& arg,
++    const void* example_unsandboxed_ptr)
++  {
++    tainted<T, T_Sbx> ret;
++    detail::convert_type<T_Sbx, detail::adjust_type_direction::TO_APPLICATION>(
++      ret.get_raw_value_ref(), arg, example_unsandboxed_ptr);
++    return ret;
++  }
++
++  template<typename T_Ret, typename... T_Args>
++  static detail::convert_to_sandbox_equivalent_t<T_Ret, T_Sbx>
++  sandbox_callback_interceptor(
++    detail::convert_to_sandbox_equivalent_t<T_Args, T_Sbx>... args)
++  {
++    std::pair<T_Sbx*, void*> context =
++      T_Sbx::impl_get_executed_callback_sandbox_and_key();
++    auto& sandbox = *(reinterpret_cast<rlbox_sandbox<T_Sbx>*>(context.first));
++    auto key = context.second;
++
++    using T_Func_Ret =
++      std::conditional_t<std::is_void_v<T_Ret>, void, tainted<T_Ret, T_Sbx>>;
++    using T_Func =
++      T_Func_Ret (*)(rlbox_sandbox<T_Sbx>&, tainted<T_Args, T_Sbx>...);
++    auto target_fn_ptr = reinterpret_cast<T_Func>(key);
++    const void* example_unsandboxed_ptr = sandbox.get_memory_location();
++
++    // Some branches (after inlining function calls) don't use the param
++    RLBOX_UNUSED(example_unsandboxed_ptr);
++
++    if constexpr (std::is_void_v<T_Func_Ret>) {
++      (*target_fn_ptr)(
++        sandbox,
++        sandbox.template sandbox_callback_intercept_convert_param<T_Args>(
++          args, example_unsandboxed_ptr)...);
++      return;
++    } else {
++      auto tainted_ret = (*target_fn_ptr)(
++        sandbox,
++        sandbox.template sandbox_callback_intercept_convert_param<T_Args>(
++          args, example_unsandboxed_ptr)...);
++
++      detail::convert_to_sandbox_equivalent_t<T_Ret, T_Sbx> ret;
++      detail::convert_type<T_Sbx, detail::adjust_type_direction::TO_SANDBOX>(
++        ret, tainted_ret.get_raw_value_ref());
++      return ret;
++    }
++  }
++
++  template<typename T_Ret, typename... T_Args>
++  inline void unregister_callback(void* key)
++  {
++    {
++      std::lock_guard<std::mutex> lock(creation_lock);
++      // Silent failure is better here as RAII types may try to invoke this
++      // after destruction
++      if (!sandbox_created) {
++        return;
++      }
++    }
++
++    this->template impl_unregister_callback<T_Ret, T_Args...>(key);
++
++    std::lock_guard<std::mutex> lock(callback_lock);
++    auto el_ref = std::find(callback_keys.begin(), callback_keys.end(), key);
++    detail::dynamic_check(
++      el_ref != callback_keys.end(),
++      "Unexpected state. Unregistering a callback that was never registered.");
++    callback_keys.erase(el_ref);
++  }
++
++public:
++  /***** Function to adjust for custom machine models *****/
++
++  template<typename T>
++  using convert_to_sandbox_equivalent_nonclass_t =
++    detail::convert_base_types_t<T,
++                                 typename T_Sbx::T_ShortType,
++                                 typename T_Sbx::T_IntType,
++                                 typename T_Sbx::T_LongType,
++                                 typename T_Sbx::T_LongLongType,
++                                 typename T_Sbx::T_PointerType>;
++
++  T_Sbx* get_sandbox_impl() { return this; }
++
++  template<typename... T_Args>
++  inline auto create_sandbox(T_Args... args)
++  {
++    detail::return_first_result(
++      [&]() {
++        return this->impl_create_sandbox(std::forward<T_Args>(args)...);
++      },
++      [&]() {
++        std::lock_guard<std::mutex> lock(creation_lock);
++        sandbox_created = true;
++      });
++  }
++
++  inline auto destroy_sandbox()
++  {
++    {
++      std::lock_guard<std::mutex> lock(creation_lock);
++      detail::dynamic_check(sandbox_created,
++                            "destroy_sandbox called without sandbox creation");
++      sandbox_created = false;
++    }
++
++    return this->impl_destroy_sandbox();
++  }
++
++  template<typename T>
++  inline T* get_unsandboxed_pointer(
++    convert_to_sandbox_equivalent_nonclass_t<T*> p) const
++  {
++    if (p == 0) {
++      return nullptr;
++    }
++    auto ret = this->template impl_get_unsandboxed_pointer<T>(p);
++    return reinterpret_cast<T*>(ret);
++  }
++
++  template<typename T>
++  inline convert_to_sandbox_equivalent_nonclass_t<T*> get_sandboxed_pointer(
++    const void* p) const
++  {
++    if (p == nullptr) {
++      return 0;
++    }
++    return this->template impl_get_sandboxed_pointer<T>(p);
++  }
++
++  template<typename T>
++  static inline T* get_unsandboxed_pointer_no_ctx(
++    convert_to_sandbox_equivalent_nonclass_t<T*> p,
++    const void* example_unsandboxed_ptr)
++  {
++    if (p == 0) {
++      return nullptr;
++    }
++    auto ret = T_Sbx::template impl_get_unsandboxed_pointer_no_ctx<T>(
++      p, example_unsandboxed_ptr);
++    return reinterpret_cast<T*>(ret);
++  }
++
++  template<typename T>
++  static inline convert_to_sandbox_equivalent_nonclass_t<T*>
++  get_sandboxed_pointer_no_ctx(const void* p)
++  {
++    if (p == nullptr) {
++      return 0;
++    }
++    return T_Sbx::template impl_get_sandboxed_pointer_no_ctx<T>(p);
++  }
++
++  /**
++   * @brief Create a pointer accessible to the sandbox. The pointer is allocated
++   * in sandbox memory.
++   *
++   * @tparam T - the type of the pointer you want to create. If T=int, this
++   * would return a pointer to an int, accessible to the sandbox which is
++   * tainted.
++   * @return tainted<T*, T_Sbx> - Tainted pointer accessible to the sandbox.
++   */
++  template<typename T>
++  inline tainted<T*, T_Sbx> malloc_in_sandbox()
++  {
++    const uint32_t defaultCount = 1;
++    return malloc_in_sandbox<T>(defaultCount);
++  }
++  template<typename T>
++  inline tainted<T*, T_Sbx> malloc_in_sandbox(uint32_t count)
++  {
++    {
++      std::lock_guard<std::mutex> lock(creation_lock);
++      // Silent failure is better here as RAII types may try to invoke this
++      // after destruction
++      if (!sandbox_created) {
++        return tainted<T*, T_Sbx>::internal_factory(nullptr);
++      }
++    }
++
++    detail::dynamic_check(count != 0, "Malloc tried to allocate 0 bytes");
++    auto ptr_in_sandbox = this->impl_malloc_in_sandbox(sizeof(T) * count);
++    auto ptr = get_unsandboxed_pointer<T>(ptr_in_sandbox);
++    detail::dynamic_check(is_pointer_in_sandbox_memory(ptr),
++                          "Malloc returned pointer outside the sandbox memory");
++    auto ptr_end = reinterpret_cast<uintptr_t>(ptr + (count - 1));
++    detail::dynamic_check(
++      is_in_same_sandbox(ptr, reinterpret_cast<void*>(ptr_end)),
++      "Malloc returned a pointer whose range goes beyond sandbox memory");
++    auto cast_ptr = reinterpret_cast<T*>(ptr);
++    return tainted<T*, T_Sbx>::internal_factory(cast_ptr);
++  }
++
++  template<typename T>
++  inline void free_in_sandbox(tainted<T*, T_Sbx> ptr)
++  {
++    {
++      std::lock_guard<std::mutex> lock(creation_lock);
++      // Silent failure is better here as RAII types may try to invoke this
++      // after destruction
++      if (!sandbox_created) {
++        return;
++      }
++    }
++
++    this->impl_free_in_sandbox(ptr.get_raw_sandbox_value());
++  }
++
++  static inline bool is_in_same_sandbox(const void* p1, const void* p2)
++  {
++    return T_Sbx::impl_is_in_same_sandbox(p1, p2);
++  }
++
++  inline bool is_pointer_in_sandbox_memory(const void* p)
++  {
++    return this->impl_is_pointer_in_sandbox_memory(p);
++  }
++
++  inline bool is_pointer_in_app_memory(const void* p)
++  {
++    return this->impl_is_pointer_in_app_memory(p);
++  }
++
++  inline size_t get_total_memory() { return this->impl_get_total_memory(); }
++
++  inline void* get_memory_location()
++  {
++    return this->impl_get_memory_location();
++  }
++
++  void* lookup_symbol(const char* func_name)
++  {
++    std::lock_guard<std::mutex> lock(func_ptr_cache_lock);
++
++    auto func_ptr_ref = func_ptr_map.find(func_name);
++
++    void* func_ptr;
++    if (func_ptr_ref == func_ptr_map.end()) {
++      func_ptr = this->impl_lookup_symbol(func_name);
++      func_ptr_map[func_name] = func_ptr;
++    } else {
++      func_ptr = func_ptr_ref->second;
++    }
++
++    return func_ptr;
++  }
++
++  template<typename T, typename... T_Args>
++  auto invoke_with_func_ptr(void* func_ptr, T_Args&&... params)
++  {
++    (check_invoke_param_type_is_ok<T_Args>(), ...);
++
++    static_assert(
++      std::is_invocable_v<
++        T,
++        detail::rlbox_remove_wrapper_t<std::remove_reference_t<T_Args>>...>,
++      "Mismatched arguments types for function");
++
++    using T_Result = std::invoke_result_t<
++      T,
++      detail::rlbox_remove_wrapper_t<std::remove_reference_t<T_Args>>...>;
++
++    using T_Converted =
++      std::remove_pointer_t<convert_fn_ptr_to_sandbox_equivalent_t<T*>>;
++
++    if constexpr (std::is_void_v<T_Result>) {
++      this->template impl_invoke_with_func_ptr<T>(
++        reinterpret_cast<T_Converted*>(func_ptr),
++        invoke_process_param(params)...);
++      return;
++    } else {
++      auto raw_result = this->template impl_invoke_with_func_ptr<T>(
++        reinterpret_cast<T_Converted*>(func_ptr),
++        invoke_process_param(params)...);
++      tainted<T_Result, T_Sbx> wrapped_result;
++      const void* example_unsandboxed_ptr = get_memory_location();
++      detail::convert_type<T_Sbx,
++                           detail::adjust_type_direction::TO_APPLICATION>(
++        wrapped_result.get_raw_value_ref(),
++        raw_result,
++        example_unsandboxed_ptr);
++      return wrapped_result;
++    }
++  }
++
++  // Useful in the porting stage to temporarily allow non tainted pointers to go
++  // through. This will only ever work in the rlbox_noop_sandbox. Any sandbox
++  // that actually enforces isolation will crash here.
++  template<typename T2>
++  tainted<T2, T_Sbx> UNSAFE_accept_pointer(T2 ptr)
++  {
++    static_assert(std::is_pointer_v<T2>,
++                  "UNSAFE_accept_pointer expects a pointer param");
++    tainted<T2, T_Sbx> ret;
++    ret.assign_raw_pointer(*this, ptr);
++    return ret;
++  }
++
++  template<typename T_Ret, typename... T_Args>
++  using T_Cb_no_wrap = detail::rlbox_remove_wrapper_t<T_Ret>(
++    detail::rlbox_remove_wrapper_t<T_Args>...);
++
++  template<typename T_Ret>
++  sandbox_callback<T_Cb_no_wrap<T_Ret>*, T_Sbx> register_callback(T_Ret (*)())
++  {
++    rlbox_detail_static_fail_because(
++      detail::true_v<T_Ret>,
++      "Modify the callback to change the first parameter to a sandbox."
++      "For instance if a callback has type\n\n"
++      "int foo() {...}\n\n"
++      "Change this to \n\n"
++      "tainted<int, T_Sbx> foo(rlbox_sandbox<T_Sbx>& sandbox) {...}\n");
++
++    // this is never executed, but we need it for the function to type-check
++    std::abort();
++  }
++
++  template<typename T_RL, typename T_Ret, typename... T_Args>
++  sandbox_callback<T_Cb_no_wrap<T_Ret, T_Args...>*, T_Sbx> register_callback(
++    T_Ret (*func_ptr)(T_RL, T_Args...))
++  {
++    // Some branches don't use the param
++    RLBOX_UNUSED(func_ptr);
++
++    if_constexpr_named(cond1, !std::is_same_v<T_RL, rlbox_sandbox<T_Sbx>&>)
++    {
++      rlbox_detail_static_fail_because(
++        cond1,
++        "Modify the callback to change the first parameter to a sandbox."
++        "For instance if a callback has type\n\n"
++        "int foo(int a, int b) {...}\n\n"
++        "Change this to \n\n"
++        "tainted<int, T_Sbx> foo(rlbox_sandbox<T_Sbx>& sandbox,"
++        "tainted<int, T_Sbx> a, tainted<int, T_Sbx> b) {...}\n");
++    }
++    else if_constexpr_named(
++      cond2, !(detail::rlbox_is_tainted_or_opaque_v<T_Args> && ...))
++    {
++      rlbox_detail_static_fail_because(
++        cond2,
++        "Change all arguments to the callback have to be tainted or "
++        "tainted_opaque."
++        "For instance if a callback has type\n\n"
++        "int foo(int a, int b) {...}\n\n"
++        "Change this to \n\n"
++        "tainted<int, T_Sbx> foo(rlbox_sandbox<T_Sbx>& sandbox,"
++        "tainted<int, T_Sbx> a, tainted<int, T_Sbx> b) {...}\n");
++    }
++    else if_constexpr_named(
++      cond3, (std::is_array_v<detail::rlbox_remove_wrapper_t<T_Args>> || ...))
++    {
++      rlbox_detail_static_fail_because(
++        cond3,
++        "Change all static array arguments to the callback to be pointers."
++        "For instance if a callback has type\n\n"
++        "int foo(int a[4]) {...}\n\n"
++        "Change this to \n\n"
++        "tainted<int, T_Sbx> foo(rlbox_sandbox<T_Sbx>& sandbox,"
++        "tainted<int*, T_Sbx> a) {...}\n");
++    }
++    else if_constexpr_named(
++      cond4,
++      !(std::is_void_v<T_Ret> || detail::rlbox_is_tainted_or_opaque_v<T_Ret>))
++    {
++      rlbox_detail_static_fail_because(
++        cond4,
++        "Change the callback return type to be tainted or tainted_opaque if it "
++        "is not void."
++        "For instance if a callback has type\n\n"
++        "int foo(int a, int b) {...}\n\n"
++        "Change this to \n\n"
++        "tainted<int, T_Sbx> foo(rlbox_sandbox<T_Sbx>& sandbox,"
++        "tainted<int, T_Sbx> a, tainted<int, T_Sbx> b) {...}\n");
++    }
++    else
++    {
++      {
++        std::lock_guard<std::mutex> lock(creation_lock);
++        detail::dynamic_check(
++          sandbox_created, "register_callback called without sandbox creation");
++      }
++      // Need unique key for each callback we register - just use the func addr
++      void* unique_key = reinterpret_cast<void*>(func_ptr);
++
++      // Make sure that the user hasn't previously registered this function...
++      // If they have, we would returning 2 owning types (sandbox_callback) to
++      // the same callback which would be bad
++      {
++        std::lock_guard<std::mutex> lock(callback_lock);
++        bool exists =
++          std::find(callback_keys.begin(), callback_keys.end(), unique_key) !=
++          callback_keys.end();
++        detail::dynamic_check(
++          !exists, "You have previously already registered this callback.");
++        callback_keys.push_back(unique_key);
++      }
++
++      auto callback_interceptor =
++        sandbox_callback_interceptor<detail::rlbox_remove_wrapper_t<T_Ret>,
++                                     detail::rlbox_remove_wrapper_t<T_Args>...>;
++
++      auto callback_trampoline = this->template impl_register_callback<
++        detail::rlbox_remove_wrapper_t<T_Ret>,
++        detail::rlbox_remove_wrapper_t<T_Args>...>(
++        unique_key, reinterpret_cast<void*>(callback_interceptor));
++
++      auto tainted_func_ptr = reinterpret_cast<
++        detail::rlbox_tainted_opaque_to_tainted_t<T_Ret, T_Sbx> (*)(
++          T_RL, detail::rlbox_tainted_opaque_to_tainted_t<T_Args, T_Sbx>...)>(
++        func_ptr);
++
++      auto ret = sandbox_callback<T_Cb_no_wrap<T_Ret, T_Args...>*, T_Sbx>(
++        this,
++        tainted_func_ptr,
++        callback_interceptor,
++        callback_trampoline,
++        unique_key);
++      return ret;
++    }
++  }
++
++  // this is an internal function, but as it is invoked from macros it needs to
++  // be public
++  template<typename T>
++  inline sandbox_function<T*, T_Sbx> INTERNAL_get_sandbox_function(
++    void* func_ptr)
++  {
++    auto internal_func_ptr = get_sandboxed_pointer<T*>(func_ptr);
++    return sandbox_function<T*, T_Sbx>(internal_func_ptr);
++  }
++};
++
++#if defined(__clang__)
++#  pragma clang diagnostic push
++#  pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
++#elif defined(__GNUC__) || defined(__GNUG__)
++// Can't turn off the variadic macro warning emitted from -pedantic so use a
++// hack to stop GCC emitting warnings for the reminder of this file
++#  pragma GCC system_header
++#elif defined(_MSC_VER)
++// Doesn't seem to emit the warning
++#else
++// Don't know the compiler... just let it go through
++#endif
++
++#if defined(RLBOX_USE_STATIC_CALLS)
++#  define sandbox_lookup_symbol_helper(prefix, sandbox, func_name)             \
++    prefix(sandbox, func_name)
++
++#  define sandbox_lookup_symbol(sandbox, func_name)                            \
++    sandbox_lookup_symbol_helper(RLBOX_USE_STATIC_CALLS(), sandbox, func_name)
++#else
++#  define sandbox_lookup_symbol(sandbox, func_name)                            \
++    (sandbox).lookup_symbol(#func_name)
++#endif
++
++#define sandbox_invoke(sandbox, func_name, ...)                                \
++  (sandbox).template invoke_with_func_ptr<decltype(func_name)>(                \
++    sandbox_lookup_symbol(sandbox, func_name), ##__VA_ARGS__)
++
++#define sandbox_function_address(sandbox, func_name)                           \
++  (sandbox).template INTERNAL_get_sandbox_function<decltype(func_name)>(       \
++    sandbox_lookup_symbol(sandbox, func_name))
++
++#if defined(__clang__)
++#  pragma clang diagnostic pop
++#else
++#endif
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_stdlib.hpp b/third_party/rlbox/include/rlbox_stdlib.hpp
+new file mode 100644
+index 000000000000..5a171477099b
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_stdlib.hpp
+@@ -0,0 +1,131 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <cstring>
++#include <type_traits>
++
++#include "rlbox_helpers.hpp"
++#include "rlbox_types.hpp"
++#include "rlbox_unwrap.hpp"
++#include "rlbox_wrapper_traits.hpp"
++
++namespace rlbox {
++#define KEEP_CAST_FRIENDLY                                                     \
++  template<typename T_C_Lhs,                                                   \
++           typename T_C_Rhs,                                                   \
++           typename T_C_Sbx,                                                   \
++           template<typename, typename>                                        \
++           typename T_C_Wrap>                                                  \
++  friend inline tainted<T_C_Lhs, T_C_Sbx> sandbox_reinterpret_cast(            \
++    const T_C_Wrap<T_C_Rhs, T_C_Sbx>& rhs) noexcept;                           \
++                                                                               \
++  template<typename T_C_Lhs,                                                   \
++           typename T_C_Rhs,                                                   \
++           typename T_C_Sbx,                                                   \
++           template<typename, typename>                                        \
++           typename T_C_Wrap>                                                  \
++  friend inline tainted<T_C_Lhs, T_C_Sbx> sandbox_const_cast(                  \
++    const T_C_Wrap<T_C_Rhs, T_C_Sbx>& rhs) noexcept;
++
++template<typename T_Lhs,
++         typename T_Rhs,
++         typename T_Sbx,
++         template<typename, typename>
++         typename T_Wrap>
++inline tainted<T_Lhs, T_Sbx> sandbox_reinterpret_cast(
++  const T_Wrap<T_Rhs, T_Sbx>& rhs) noexcept
++{
++  static_assert(detail::rlbox_is_wrapper_v<T_Wrap<T_Rhs, T_Sbx>> &&
++                  std::is_pointer_v<T_Lhs> && std::is_pointer_v<T_Rhs>,
++                "sandbox_reinterpret_cast on incompatible types");
++
++  tainted<T_Rhs, T_Sbx> taintedVal = rhs;
++  auto raw = reinterpret_cast<T_Lhs>(taintedVal.UNSAFE_unverified());
++  auto ret = tainted<T_Lhs, T_Sbx>::internal_factory(raw);
++  return ret;
++}
++
++template<typename T_Lhs,
++         typename T_Rhs,
++         typename T_Sbx,
++         template<typename, typename>
++         typename T_Wrap>
++inline tainted<T_Lhs, T_Sbx> sandbox_const_cast(
++  const T_Wrap<T_Rhs, T_Sbx>& rhs) noexcept
++{
++  static_assert(detail::rlbox_is_wrapper_v<T_Wrap<T_Rhs, T_Sbx>>,
++                "sandbox_const_cast on incompatible types");
++
++  tainted<T_Rhs, T_Sbx> taintedVal = rhs;
++  auto raw = const_cast<T_Lhs>(taintedVal.UNSAFE_unverified());
++  auto ret = tainted<T_Lhs, T_Sbx>::internal_factory(raw);
++  return ret;
++}
++
++template<typename T_Sbx,
++         typename T_Rhs,
++         typename T_Val,
++         typename T_Num,
++         template<typename, typename>
++         typename T_Wrap>
++inline T_Wrap<T_Rhs*, T_Sbx> memset(rlbox_sandbox<T_Sbx>& sandbox,
++                                    T_Wrap<T_Rhs*, T_Sbx> ptr,
++                                    T_Val value,
++                                    T_Num num)
++{
++
++  static_assert(detail::rlbox_is_tainted_or_vol_v<T_Wrap<T_Rhs, T_Sbx>>,
++                "memset called on non wrapped type");
++
++  static_assert(!std::is_const_v<T_Rhs>, "Destination is const");
++
++  auto num_val = detail::unwrap_value(num);
++  detail::dynamic_check(num_val <= sandbox.get_total_memory(),
++                        "Called memset for memory larger than the sandbox");
++
++  tainted<T_Rhs*, T_Sbx> ptr_tainted = ptr;
++  void* dest_start = ptr_tainted.UNSAFE_unverified();
++  detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(dest_start, num_val);
++
++  std::memset(dest_start, detail::unwrap_value(value), num_val);
++  return ptr;
++}
++
++template<typename T_Sbx,
++         typename T_Rhs,
++         typename T_Lhs,
++         typename T_Num,
++         template<typename, typename>
++         typename T_Wrap>
++inline T_Wrap<T_Rhs*, T_Sbx> memcpy(rlbox_sandbox<T_Sbx>& sandbox,
++                                    T_Wrap<T_Rhs*, T_Sbx> dest,
++                                    T_Lhs src,
++                                    T_Num num)
++{
++
++  static_assert(detail::rlbox_is_tainted_or_vol_v<T_Wrap<T_Rhs, T_Sbx>>,
++                "memcpy called on non wrapped type");
++
++  static_assert(!std::is_const_v<T_Rhs>, "Destination is const");
++
++  auto num_val = detail::unwrap_value(num);
++  detail::dynamic_check(num_val <= sandbox.get_total_memory(),
++                        "Called memcpy for memory larger than the sandbox");
++
++  tainted<T_Rhs*, T_Sbx> dest_tainted = dest;
++  void* dest_start = dest_tainted.UNSAFE_unverified();
++  detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(dest_start, num_val);
++
++  // src also needs to be checked, as we don't want to allow a src rand to start
++  // inside the sandbox and end outside, and vice versa
++  // src may or may not be a wrapper, so use unwrap_value
++  const void* src_start = detail::unwrap_value(src);
++  detail::check_range_doesnt_cross_app_sbx_boundary<T_Sbx>(src_start, num_val);
++
++  std::memcpy(dest_start, src_start, num_val);
++
++  return dest;
++}
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_struct_support.hpp b/third_party/rlbox/include/rlbox_struct_support.hpp
+new file mode 100644
+index 000000000000..c1308a855ff2
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_struct_support.hpp
+@@ -0,0 +1,318 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <cstring>
++#include <type_traits>
++
++#include "rlbox_conversion.hpp"
++#include "rlbox_helpers.hpp"
++#include "rlbox_types.hpp"
++#include "rlbox_wrapper_traits.hpp"
++
++namespace rlbox::detail {
++
++template<typename T, typename T_Sbx, typename T_Enable = void>
++struct convert_to_sandbox_equivalent_helper;
++
++template<typename T, typename T_Sbx>
++struct convert_to_sandbox_equivalent_helper<
++  T,
++  T_Sbx,
++  std::enable_if_t<!std::is_class_v<T>>>
++{
++  using type = typename rlbox_sandbox<
++    T_Sbx>::template convert_to_sandbox_equivalent_nonclass_t<T>;
++};
++
++template<typename T, typename T_Sbx>
++using convert_to_sandbox_equivalent_t =
++  typename convert_to_sandbox_equivalent_helper<T, T_Sbx>::type;
++
++}
++
++#define helper_create_converted_field(fieldType, fieldName, isFrozen)          \
++  typename detail::convert_to_sandbox_equivalent_t<fieldType, T_Sbx> fieldName;
++
++#define helper_no_op()
++
++#define sandbox_equivalent_specialization(T, libId)                            \
++  template<typename T_Sbx>                                                     \
++  struct Sbx_##libId##_##T                                                     \
++  {                                                                            \
++    sandbox_fields_reflection_##libId##_class_##T(                             \
++      helper_create_converted_field,                                           \
++      helper_no_op)                                                            \
++  };                                                                           \
++                                                                               \
++  /* add convert_to_sandbox_equivalent_t specialization for new struct */      \
++  namespace detail {                                                           \
++    template<typename T_Template, typename T_Sbx>                              \
++    struct convert_to_sandbox_equivalent_helper<                               \
++      T_Template,                                                              \
++      T_Sbx,                                                                   \
++      std::enable_if_t<std::is_same_v<T_Template, T>>>                         \
++    {                                                                          \
++      using type = Sbx_##libId##_##T<T_Sbx>;                                   \
++    };                                                                         \
++  }
++
++#define helper_create_tainted_field(fieldType, fieldName, isFrozen)            \
++  tainted<fieldType, T_Sbx> fieldName;
++
++#define helper_create_tainted_v_field(fieldType, fieldName, isFrozen)          \
++  tainted_volatile<fieldType, T_Sbx> fieldName;
++
++#define helper_convert_type(fieldType, fieldName, isFrozen)                    \
++  ::rlbox::detail::convert_type<T_Sbx, Direction>(                             \
++    lhs.fieldName, rhs.fieldName, example_unsandboxed_ptr);
++
++#define tainted_data_specialization(T, libId)                                  \
++                                                                               \
++  template<typename T_Sbx>                                                     \
++  class tainted_volatile<T, T_Sbx>                                             \
++  {                                                                            \
++    KEEP_CLASSES_FRIENDLY                                                      \
++    KEEP_CAST_FRIENDLY                                                         \
++                                                                               \
++  private:                                                                     \
++    inline Sbx_##libId##_##T<T_Sbx>& get_sandbox_value_ref() noexcept          \
++    {                                                                          \
++      return *reinterpret_cast<Sbx_##libId##_##T<T_Sbx>*>(this);               \
++    }                                                                          \
++                                                                               \
++    inline const Sbx_##libId##_##T<T_Sbx>& get_sandbox_value_ref() const       \
++      noexcept                                                                 \
++    {                                                                          \
++      return *reinterpret_cast<const Sbx_##libId##_##T<T_Sbx>*>(this);         \
++    }                                                                          \
++                                                                               \
++    inline T get_raw_value() const noexcept                                    \
++    {                                                                          \
++      T lhs;                                                                   \
++      auto& rhs = get_sandbox_value_ref();                                     \
++      constexpr auto Direction =                                               \
++        detail::adjust_type_direction::TO_APPLICATION;                         \
++      /* This is a tainted_volatile, so its address is a valid for use as */   \
++      /* example_unsandboxed_ptr */                                            \
++      const void* example_unsandboxed_ptr = &rhs;                              \
++      sandbox_fields_reflection_##libId##_class_##T(helper_convert_type,       \
++                                                    helper_no_op)              \
++                                                                               \
++        return lhs;                                                            \
++    }                                                                          \
++                                                                               \
++    /* get_raw_sandbox_value has to return a custom struct to deal with the    \
++     * adjusted machine model, to ensure */                                    \
++    inline Sbx_##libId##_##T<T_Sbx> get_raw_sandbox_value() const noexcept     \
++    {                                                                          \
++      auto ret_ptr = reinterpret_cast<const Sbx_##libId##_##T<T_Sbx>*>(this);  \
++      return *ret_ptr;                                                         \
++    }                                                                          \
++                                                                               \
++    inline std::remove_cv_t<T> get_raw_value() noexcept                        \
++    {                                                                          \
++      rlbox_detail_forward_to_const(get_raw_value, std::remove_cv_t<T>);       \
++    }                                                                          \
++                                                                               \
++    inline std::remove_cv_t<Sbx_##libId##_##T<T_Sbx>>                          \
++    get_raw_sandbox_value() noexcept                                           \
++    {                                                                          \
++      rlbox_detail_forward_to_const(                                           \
++        get_raw_sandbox_value, std::remove_cv_t<Sbx_##libId##_##T<T_Sbx>>);    \
++    }                                                                          \
++                                                                               \
++    tainted_volatile() = default;                                              \
++    tainted_volatile(const tainted_volatile<T, T_Sbx>& p) = default;           \
++                                                                               \
++  public:                                                                      \
++    sandbox_fields_reflection_##libId##_class_##T(                             \
++      helper_create_tainted_v_field,                                           \
++      helper_no_op)                                                            \
++                                                                               \
++      inline tainted<T*, T_Sbx>                                                \
++      operator&() noexcept                                                     \
++    {                                                                          \
++      auto ref_cast = reinterpret_cast<T*>(&get_sandbox_value_ref());          \
++      auto ret = tainted<T*, T_Sbx>::internal_factory(ref_cast);               \
++      return ret;                                                              \
++    }                                                                          \
++                                                                               \
++    inline auto UNSAFE_unverified() { return get_raw_value(); }                \
++    inline auto UNSAFE_sandboxed() { return get_raw_sandbox_value(); }         \
++    inline auto UNSAFE_unverified() const { return get_raw_value(); }          \
++    inline auto UNSAFE_sandboxed() const { return get_raw_sandbox_value(); }   \
++                                                                               \
++    T copy_and_verify(std::function<T(tainted<T, T_Sbx>)> verifier)            \
++    {                                                                          \
++      tainted<T, T_Sbx> val(*this);                                            \
++      return verifier(val);                                                    \
++    }                                                                          \
++                                                                               \
++    /* Can't define this yet due, to mutually dependent definition between     \
++    tainted and tainted_volatile for structs */                                \
++    inline tainted_volatile<T, T_Sbx>& operator=(                              \
++      const tainted<T, T_Sbx>&& rhs);                                          \
++  };                                                                           \
++                                                                               \
++  template<typename T_Sbx>                                                     \
++  class tainted<T, T_Sbx>                                                      \
++  {                                                                            \
++    KEEP_CLASSES_FRIENDLY                                                      \
++    KEEP_CAST_FRIENDLY                                                         \
++                                                                               \
++  private:                                                                     \
++    inline T& get_raw_value_ref() noexcept                                     \
++    {                                                                          \
++      return *reinterpret_cast<T*>(this);                                      \
++    }                                                                          \
++                                                                               \
++    inline const T& get_raw_value_ref() const noexcept                         \
++    {                                                                          \
++      return *reinterpret_cast<const T*>(this);                                \
++    }                                                                          \
++                                                                               \
++    inline T get_raw_value() const noexcept                                    \
++    {                                                                          \
++      auto ret_ptr = reinterpret_cast<const T*>(this);                         \
++      return *ret_ptr;                                                         \
++    }                                                                          \
++                                                                               \
++    /* get_raw_sandbox_value has to return a custom struct to deal with the    \
++     * adjusted machine model, to ensure */                                    \
++    inline Sbx_##libId##_##T<T_Sbx> get_raw_sandbox_value() const noexcept     \
++    {                                                                          \
++      Sbx_##libId##_##T<T_Sbx> lhs;                                            \
++      auto& rhs = get_raw_value_ref();                                         \
++      constexpr auto Direction = detail::adjust_type_direction::TO_SANDBOX;    \
++      /* Since direction is TO_SANDBOX, we don't need a */                     \
++      /* example_unsandboxed_ptr */                                            \
++      const void* example_unsandboxed_ptr = nullptr;                           \
++      sandbox_fields_reflection_##libId##_class_##T(helper_convert_type,       \
++                                                    helper_no_op)              \
++                                                                               \
++        return lhs;                                                            \
++    }                                                                          \
++                                                                               \
++    inline std::remove_cv_t<T> get_raw_value() noexcept                        \
++    {                                                                          \
++      rlbox_detail_forward_to_const(get_raw_value, std::remove_cv_t<T>);       \
++    }                                                                          \
++                                                                               \
++    inline std::remove_cv_t<Sbx_##libId##_##T<T_Sbx>>                          \
++    get_raw_sandbox_value() noexcept                                           \
++    {                                                                          \
++      rlbox_detail_forward_to_const(                                           \
++        get_raw_sandbox_value, std::remove_cv_t<Sbx_##libId##_##T<T_Sbx>>);    \
++    }                                                                          \
++                                                                               \
++  public:                                                                      \
++    sandbox_fields_reflection_##libId##_class_##T(helper_create_tainted_field, \
++                                                  helper_no_op)                \
++                                                                               \
++      tainted() = default;                                                     \
++    tainted(const tainted<T, T_Sbx>& p) = default;                             \
++                                                                               \
++    tainted(const tainted_volatile<T, T_Sbx>& p)                               \
++    {                                                                          \
++      auto& lhs = get_raw_value_ref();                                         \
++      auto& rhs = p.get_sandbox_value_ref();                                   \
++      constexpr auto Direction =                                               \
++        detail::adjust_type_direction::TO_APPLICATION;                         \
++      /* This is a tainted_volatile, so its address is a valid for use as */   \
++      /* example_unsandboxed_ptr */                                            \
++      const void* example_unsandboxed_ptr = &rhs;                              \
++      sandbox_fields_reflection_##libId##_class_##T(helper_convert_type,       \
++                                                    helper_no_op)              \
++    }                                                                          \
++                                                                               \
++    inline tainted_opaque<T, T_Sbx> to_opaque()                                \
++    {                                                                          \
++      return *reinterpret_cast<tainted_opaque<T, T_Sbx>*>(this);               \
++    }                                                                          \
++                                                                               \
++    inline auto UNSAFE_unverified() { return get_raw_value(); }                \
++    inline auto UNSAFE_sandboxed() { return get_raw_sandbox_value(); }         \
++    inline auto UNSAFE_unverified() const { return get_raw_value(); }          \
++    inline auto UNSAFE_sandboxed() const { return get_raw_sandbox_value(); }   \
++                                                                               \
++    T copy_and_verify(std::function<T(tainted<T, T_Sbx>)> verifier)            \
++    {                                                                          \
++      return verifier(*this);                                                  \
++    }                                                                          \
++  };                                                                           \
++                                                                               \
++  /* Had to delay the definition due, to mutually dependence between           \
++    tainted and tainted_volatile for structs */                                \
++  template<typename T_Sbx>                                                     \
++  inline tainted_volatile<T, T_Sbx>& tainted_volatile<T, T_Sbx>::operator=(    \
++    const tainted<T, T_Sbx>&& rhs_wrap)                                        \
++  {                                                                            \
++    auto& lhs = get_sandbox_value_ref();                                       \
++    auto& rhs = rhs_wrap.get_raw_value_ref();                                  \
++    constexpr auto Direction = detail::adjust_type_direction::TO_SANDBOX;      \
++    /* Since direction is TO_SANDBOX, we don't need a */                       \
++    /* example_unsandboxed_ptr*/                                               \
++    const void* example_unsandboxed_ptr = nullptr;                             \
++    sandbox_fields_reflection_##libId##_class_##T(helper_convert_type,         \
++                                                  helper_no_op)                \
++                                                                               \
++      return *this;                                                            \
++  }                                                                            \
++                                                                               \
++  namespace detail {                                                           \
++    template<typename T_Sbx,                                                   \
++             detail::adjust_type_direction Direction,                          \
++             typename T_From>                                                  \
++    class convert_type_class<T_Sbx, Direction, T, T_From>                      \
++    {                                                                          \
++    public:                                                                    \
++      static inline void run(T& lhs,                                           \
++                             const T_From& rhs,                                \
++                             const void* example_unsandboxed_ptr)              \
++      {                                                                        \
++        sandbox_fields_reflection_##libId##_class_##T(helper_convert_type,     \
++                                                      helper_no_op)            \
++      }                                                                        \
++    };                                                                         \
++                                                                               \
++    template<typename T_Sbx,                                                   \
++             detail::adjust_type_direction Direction,                          \
++             typename T_From>                                                  \
++    class convert_type_class<T_Sbx,                                            \
++                             Direction,                                        \
++                             Sbx_##libId##_##T<T_Sbx>,                         \
++                             T_From>                                           \
++    {                                                                          \
++    public:                                                                    \
++      static inline void run(Sbx_##libId##_##T<T_Sbx>& lhs,                    \
++                             const T_From& rhs,                                \
++                             const void* example_unsandboxed_ptr)              \
++      {                                                                        \
++        sandbox_fields_reflection_##libId##_class_##T(helper_convert_type,     \
++                                                      helper_no_op)            \
++      }                                                                        \
++    };                                                                         \
++  }
++
++// clang-format off
++#define rlbox_load_structs_from_library(libId)                                 \
++  namespace rlbox {                                                            \
++    namespace detail {                                                         \
++      struct markerStruct                                                      \
++      {};                                                                      \
++    }                                                                          \
++    /* check that this macro is called in a global namespace */                \
++    static_assert(                                                             \
++      ::rlbox::detail::is_member_of_rlbox_detail<detail::markerStruct>,        \
++      "Invoke rlbox_load_structs_from_library in the global namespace");       \
++                                                                               \
++    sandbox_fields_reflection_##libId##_allClasses(                            \
++      sandbox_equivalent_specialization)                                       \
++                                                                               \
++    sandbox_fields_reflection_##libId##_allClasses(                            \
++      tainted_data_specialization)                                             \
++  }                                                                            \
++  RLBOX_REQUIRE_SEMI_COLON
++
++// clang-format on
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_type_traits.hpp b/third_party/rlbox/include/rlbox_type_traits.hpp
+new file mode 100644
+index 000000000000..417d39983d1a
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_type_traits.hpp
+@@ -0,0 +1,472 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <array>
++#include <type_traits>
++
++namespace rlbox::detail {
++
++#define RLBOX_ENABLE_IF(...) std::enable_if_t<__VA_ARGS__>* = nullptr
++
++template<typename T>
++constexpr bool true_v = true;
++
++template<typename T>
++constexpr bool is_fundamental_or_enum_v =
++  std::is_fundamental_v<T> || std::is_enum_v<T>;
++
++template<typename T>
++constexpr bool is_basic_type_v =
++  std::is_fundamental_v<T> || std::is_enum_v<T> || std::is_pointer_v<T>;
++
++template<typename T>
++using valid_return_t =
++  std::conditional_t<std::is_function_v<T>, void*, std::decay_t<T>>;
++
++template<typename T>
++using valid_param_t = std::conditional_t<std::is_void_v<T>, void*, T>;
++
++template<typename T>
++using valid_array_el_t =
++  std::conditional_t<std::is_void_v<T> || std::is_function_v<T>, int, T>;
++
++template<typename T>
++constexpr bool is_func_or_func_ptr =
++  std::is_function_v<T> || std::is_function_v<std::remove_pointer_t<T>> ||
++  std::is_member_function_pointer_v<T>;
++
++template<typename T>
++constexpr bool is_one_level_ptr_v =
++  std::is_pointer_v<T> && !std::is_pointer_v<std::remove_pointer_t<T>>;
++
++template<typename T_To, typename T_From>
++constexpr bool is_same_or_same_ref_v =
++  std::is_same_v<T_To, T_From>&& std::is_reference_v<T_To&, T_From>;
++
++template<typename T_This, typename T_Target>
++using add_const_if_this_const_t =
++  std::conditional_t<std::is_const_v<std::remove_pointer_t<T_This>>,
++                     std::add_const_t<T_Target>,
++                     T_Target>;
++
++template<typename T>
++using remove_const_from_pointer = std::conditional_t<
++  std::is_pointer_v<T>,
++  std::add_pointer_t<std::remove_const_t<std::remove_pointer_t<T>>>,
++  T>;
++
++template<typename T>
++using add_const_from_pointer = std::conditional_t<
++  std::is_pointer_v<T>,
++  std::remove_pointer_t<std::add_const_t<std::remove_pointer_t<T>>>,
++  T>;
++
++template<typename T>
++using c_to_std_array_t =
++  std::conditional_t<std::is_array_v<T>,
++                     std::array<std::remove_extent_t<T>, std::extent_v<T>>,
++                     T>;
++
++namespace std_array_to_c_arr_detail {
++  template<typename T>
++  struct W
++  {
++    using type = T;
++  };
++
++  template<typename T, size_t N>
++  W<T[N]> std_array_to_c_arr_helper(std::array<T, N>);
++
++  template<typename T>
++  W<T> std_array_to_c_arr_helper(T&&);
++}
++
++template<typename T>
++using std_array_to_c_arr_t =
++  typename decltype(std_array_to_c_arr_detail::std_array_to_c_arr_helper(
++    std::declval<T>()))::type;
++
++template<typename T>
++using dereference_result_t =
++  std::conditional_t<std::is_pointer_v<T>,
++                     std::remove_pointer_t<T>,
++                     std::remove_extent_t<std_array_to_c_arr_t<T>> // is_array
++                     >;
++
++template<typename T>
++using value_type_t =
++  std::conditional_t<std::is_array_v<T>, c_to_std_array_t<T>, T>;
++
++template<typename T>
++using function_ptr_t =
++  std::conditional_t<std::is_pointer_v<T> &&
++                       std::is_function_v<std::remove_pointer_t<T>>,
++                     T,
++                     int (*)(int)>;
++
++namespace is_c_or_std_array_detail {
++  template<typename T, typename T_Enable = void>
++  struct is_c_or_std_array_helper;
++
++  template<typename T>
++  struct is_c_or_std_array_helper<T, std::enable_if_t<std::is_array_v<T>>>
++    : std::true_type
++  {};
++
++  template<typename T, size_t N>
++  std::true_type is_std_array_helper(std::array<T, N>*);
++
++  template<typename T>
++  std::false_type is_std_array_helper(T*);
++
++  template<typename T>
++  constexpr bool is_std_array_v =
++    decltype(is_std_array_helper(std::declval<std::add_pointer_t<T>>()))::value;
++
++  template<typename T>
++  struct is_c_or_std_array_helper<T, std::enable_if_t<is_std_array_v<T>>>
++    : std::true_type
++  {};
++
++  template<typename T>
++  struct is_c_or_std_array_helper<
++    T,
++    std::enable_if_t<!std::is_array_v<T> && !is_std_array_v<T>>>
++    : std::false_type
++  {};
++}
++
++template<typename T>
++constexpr bool is_std_array_v = is_c_or_std_array_detail::is_std_array_v<T>;
++
++template<typename T>
++constexpr bool is_c_or_std_array_v =
++  is_c_or_std_array_detail::is_c_or_std_array_helper<T>::value;
++
++namespace std_array_el_detail {
++  template<typename T>
++  struct W
++  {
++    using type = T;
++  };
++
++  template<typename T, size_t N>
++  W<T> is_std_array_helper(std::array<T, N>*);
++
++  template<typename T>
++  W<void> is_std_array_helper(T*);
++
++  template<typename T>
++  using std_array_el_t = decltype(std_array_el_detail::is_std_array_helper(
++    std::declval<std::add_pointer_t<T>>));
++}
++
++template<typename T>
++using std_array_el_t = typename std_array_el_detail::std_array_el_t<T>::type;
++
++namespace all_extents_same_detail {
++
++  template<typename T1, typename T2, typename T_Enable = void>
++  struct all_extents_same_helper;
++
++  template<typename T1, typename T2>
++  struct all_extents_same_helper<
++    T1,
++    T2,
++    std::enable_if_t<std::rank_v<T1> != std::rank_v<T2>>> : std::false_type
++  {};
++
++  template<typename T1, typename T2>
++  struct all_extents_same_helper<
++    T1,
++    T2,
++    std::enable_if_t<std::rank_v<T1> == std::rank_v<T2> &&
++                     !std::is_array_v<T1> && !std::is_array_v<T2>>>
++    : std::true_type
++  {};
++
++  template<typename T1, typename T2>
++  struct all_extents_same_helper<
++    T1,
++    T2,
++    std::enable_if_t<std::rank_v<T1> == std::rank_v<T2> &&
++                     std::is_array_v<T1> && std::is_array_v<T2> &&
++                     std::extent_v<T1> != std::extent_v<T2>>> : std::false_type
++  {};
++
++  template<typename T1, typename T2>
++  struct all_extents_same_helper<
++    T1,
++    T2,
++    std::enable_if_t<std::rank_v<T1> == std::rank_v<T2> &&
++                     std::is_array_v<T1> && std::is_array_v<T2> &&
++                     std::extent_v<T1> == std::extent_v<T2>>>
++  {
++    static constexpr bool value =
++      all_extents_same_helper<std::remove_extent_t<T1>,
++                              std::remove_extent_t<T2>>::value;
++  };
++}
++
++template<typename T1, typename T2>
++constexpr bool all_extents_same =
++  all_extents_same_detail::all_extents_same_helper<T1, T2>::value;
++
++// remove all pointers/extent types
++namespace remove_all_pointers_detail {
++  template<typename T>
++  struct remove_all_pointers
++  {
++    typedef T type;
++  };
++
++  template<typename T>
++  struct remove_all_pointers<T*>
++  {
++    typedef typename remove_all_pointers<T>::type type;
++  };
++}
++
++template<typename T>
++using remove_all_pointers_t =
++  typename remove_all_pointers_detail::remove_all_pointers<T>::type;
++
++// remove all pointers/extent types
++namespace base_type_detail {
++  template<typename T>
++  struct base_type
++  {
++    typedef T type;
++  };
++
++  template<typename T>
++  struct base_type<T*>
++  {
++    typedef typename base_type<T>::type type;
++  };
++
++  template<typename T>
++  struct base_type<T[]>
++  {
++    typedef typename base_type<T>::type type;
++  };
++
++  template<typename T, std::size_t N>
++  struct base_type<T[N]>
++  {
++    typedef typename base_type<T>::type type;
++  };
++}
++
++template<typename T>
++using base_type_t = typename base_type_detail::base_type<T>::type;
++
++// convert types
++namespace convert_detail {
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType,
++           typename T_Enable = void>
++  struct convert_base_types_t_helper;
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<
++    T,
++    T_ShortType,
++    T_IntType,
++    T_LongType,
++    T_LongLongType,
++    T_PointerType,
++    std::enable_if_t<std::is_same_v<short, T> && !std::is_const_v<T>>>
++  {
++    using type = T_ShortType;
++  };
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<
++    T,
++    T_ShortType,
++    T_IntType,
++    T_LongType,
++    T_LongLongType,
++    T_PointerType,
++    std::enable_if_t<std::is_same_v<int, T> && !std::is_const_v<T>>>
++  {
++    using type = T_IntType;
++  };
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<
++    T,
++    T_ShortType,
++    T_IntType,
++    T_LongType,
++    T_LongLongType,
++    T_PointerType,
++    std::enable_if_t<std::is_same_v<long, T> && !std::is_const_v<T>>>
++  {
++    using type = T_LongType;
++  };
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<
++    T,
++    T_ShortType,
++    T_IntType,
++    T_LongType,
++    T_LongLongType,
++    T_PointerType,
++    std::enable_if_t<std::is_same_v<long long, T> && !std::is_const_v<T>>>
++  {
++    using type = T_LongLongType;
++  };
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<
++    T,
++    T_ShortType,
++    T_IntType,
++    T_LongType,
++    T_LongLongType,
++    T_PointerType,
++    std::enable_if_t<std::is_pointer_v<T> && !std::is_const_v<T>>>
++  {
++    using type = T_PointerType;
++  };
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<
++    T,
++    T_ShortType,
++    T_IntType,
++    T_LongType,
++    T_LongLongType,
++    T_PointerType,
++    std::enable_if_t<std::is_unsigned_v<T> && !std::is_const_v<T>>>
++  {
++    using type = std::make_unsigned_t<
++      typename convert_base_types_t_helper<std::make_signed_t<T>,
++                                           T_ShortType,
++                                           T_IntType,
++                                           T_LongType,
++                                           T_LongLongType,
++                                           T_PointerType>::type>;
++  };
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<
++    T,
++    T_ShortType,
++    T_IntType,
++    T_LongType,
++    T_LongLongType,
++    T_PointerType,
++    std::enable_if_t<(std::is_same_v<bool, T> || std::is_same_v<void, T> ||
++                      std::is_same_v<char, T> || std::is_floating_point_v<T> ||
++                      std::is_enum_v<T>)&&!std::is_const_v<T>>>
++  {
++    using type = T;
++  };
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<
++    T,
++    T_ShortType,
++    T_IntType,
++    T_LongType,
++    T_LongLongType,
++    T_PointerType,
++    std::enable_if_t<std::is_array_v<T> && !std::is_const_v<T>>>
++  {
++    using type = typename convert_base_types_t_helper<
++      std::remove_extent_t<T>,
++      T_ShortType,
++      T_IntType,
++      T_LongType,
++      T_LongLongType,
++      T_PointerType>::type[std::extent_v<T>];
++  };
++
++  template<typename T,
++           typename T_ShortType,
++           typename T_IntType,
++           typename T_LongType,
++           typename T_LongLongType,
++           typename T_PointerType>
++  struct convert_base_types_t_helper<T,
++                                     T_ShortType,
++                                     T_IntType,
++                                     T_LongType,
++                                     T_LongLongType,
++                                     T_PointerType,
++                                     std::enable_if_t<std::is_const_v<T>>>
++  {
++    using type = std::add_const_t<
++      typename convert_base_types_t_helper<std::remove_const_t<T>,
++                                           T_ShortType,
++                                           T_IntType,
++                                           T_LongType,
++                                           T_LongLongType,
++                                           T_PointerType>::type>;
++  };
++}
++
++template<typename T,
++         typename T_ShortType,
++         typename T_IntType,
++         typename T_LongType,
++         typename T_LongLongType,
++         typename T_PointerType>
++using convert_base_types_t =
++  typename convert_detail::convert_base_types_t_helper<T,
++                                                       T_ShortType,
++                                                       T_IntType,
++                                                       T_LongType,
++                                                       T_LongLongType,
++                                                       T_PointerType>::type;
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_types.hpp b/third_party/rlbox/include/rlbox_types.hpp
+new file mode 100644
+index 000000000000..156ac75c6e36
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_types.hpp
+@@ -0,0 +1,30 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++namespace rlbox {
++
++template<typename T, typename T_Sbx>
++class tainted;
++
++template<typename T, typename T_Sbx>
++class tainted_opaque
++{
++private:
++  T data {0};
++};
++
++template<typename T, typename T_Sbx>
++class tainted_volatile;
++
++template<typename T_Sbx>
++class rlbox_sandbox;
++
++template<typename T, typename T_Sbx>
++class sandbox_callback;
++
++template<typename T, typename T_Sbx>
++class sandbox_function;
++
++class rlbox_noop_sandbox;
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_unwrap.hpp b/third_party/rlbox/include/rlbox_unwrap.hpp
+new file mode 100644
+index 000000000000..3dc3c65e8e2a
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_unwrap.hpp
+@@ -0,0 +1,22 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <type_traits>
++
++#include "rlbox_type_traits.hpp"
++#include "rlbox_types.hpp"
++
++namespace rlbox::detail {
++
++template<typename T_Rhs>
++inline auto unwrap_value(const T_Rhs& rhs) noexcept
++{
++  if constexpr (detail::rlbox_is_wrapper_v<T_Rhs>) {
++    return rhs.UNSAFE_unverified();
++  } else {
++    return rhs;
++  }
++}
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/include/rlbox_wrapper_traits.hpp b/third_party/rlbox/include/rlbox_wrapper_traits.hpp
+new file mode 100644
+index 000000000000..1f727278e14e
+--- /dev/null
++++ b/third_party/rlbox/include/rlbox_wrapper_traits.hpp
+@@ -0,0 +1,119 @@
++#pragma once
++// IWYU pragma: private, include "rlbox.hpp"
++// IWYU pragma: friend "rlbox_.*\.hpp"
++
++#include <type_traits>
++
++#include "rlbox_types.hpp"
++
++namespace rlbox::detail {
++
++#define rlbox_generate_wrapper_check(name)                                     \
++  namespace detail_rlbox_is_##name                                             \
++  {                                                                            \
++    template<typename T>                                                       \
++    struct unwrapper : std::false_type                                         \
++    {};                                                                        \
++                                                                               \
++    template<typename T, typename T_Sbx>                                       \
++    struct unwrapper<name<T, T_Sbx>> : std::true_type                          \
++    {};                                                                        \
++  }                                                                            \
++                                                                               \
++  template<typename T>                                                         \
++  constexpr bool rlbox_is_##name##_v =                                         \
++    detail_rlbox_is_##name::unwrapper<T>::value;                               \
++  RLBOX_REQUIRE_SEMI_COLON
++
++rlbox_generate_wrapper_check(tainted);
++rlbox_generate_wrapper_check(tainted_volatile);
++rlbox_generate_wrapper_check(tainted_opaque);
++rlbox_generate_wrapper_check(sandbox_callback);
++rlbox_generate_wrapper_check(sandbox_function);
++
++#undef rlbox_generate_wrapper_check
++
++template<typename T>
++constexpr bool rlbox_is_tainted_or_vol_v =
++  rlbox_is_tainted_v<T> || rlbox_is_tainted_volatile_v<T>;
++
++template<typename T>
++constexpr bool rlbox_is_tainted_or_opaque_v =
++  rlbox_is_tainted_v<T> || rlbox_is_tainted_opaque_v<T>;
++
++template<typename T>
++constexpr bool rlbox_is_wrapper_v =
++  rlbox_is_tainted_v<T> || rlbox_is_tainted_volatile_v<T> ||
++  rlbox_is_tainted_opaque_v<T> || rlbox_is_sandbox_callback_v<T> ||
++  rlbox_is_sandbox_function_v<T>;
++
++namespace detail_rlbox_remove_wrapper {
++  template<typename T>
++  struct unwrapper
++  {
++    using type = T;
++  };
++
++  template<typename T, typename T_Sbx>
++  struct unwrapper<tainted<T, T_Sbx>>
++  {
++    using type = T;
++  };
++
++  template<typename T, typename T_Sbx>
++  struct unwrapper<tainted_volatile<T, T_Sbx>>
++  {
++    using type = T;
++  };
++
++  template<typename T, typename T_Sbx>
++  struct unwrapper<tainted_opaque<T, T_Sbx>>
++  {
++    using type = T;
++  };
++
++  template<typename T, typename T_Sbx>
++  struct unwrapper<sandbox_callback<T, T_Sbx>>
++  {
++    using type = T;
++  };
++
++  template<typename T, typename T_Sbx>
++  struct unwrapper<sandbox_function<T, T_Sbx>>
++  {
++    using type = T;
++  };
++}
++
++template<typename T>
++using rlbox_remove_wrapper_t =
++  typename detail_rlbox_remove_wrapper::unwrapper<T>::type;
++
++template<typename T, typename T_Sbx>
++using rlbox_tainted_opaque_to_tainted_t =
++  std::conditional_t<rlbox_is_tainted_opaque_v<T>,
++                     tainted<rlbox_remove_wrapper_t<T>, T_Sbx>,
++                     T>;
++
++// https://stackoverflow.com/questions/34974844/check-if-a-type-is-from-a-particular-namespace
++namespace detail_is_member_of_rlbox_detail {
++  template<typename T, typename = void>
++  struct is_member_of_rlbox_detail_helper : std::false_type
++  {};
++
++  template<typename T>
++  struct is_member_of_rlbox_detail_helper<
++    T,
++    decltype(struct_is_member_of_rlbox_detail(std::declval<T>()))>
++    : std::true_type
++  {};
++}
++
++template<typename T>
++void struct_is_member_of_rlbox_detail(T&&);
++
++template<typename T>
++constexpr auto is_member_of_rlbox_detail =
++  detail_is_member_of_rlbox_detail::is_member_of_rlbox_detail_helper<T>::value;
++
++}
+\ No newline at end of file
+diff --git a/third_party/rlbox/update.sh b/third_party/rlbox/update.sh
+new file mode 100755
+index 000000000000..b4fc5a1ef51e
+--- /dev/null
++++ b/third_party/rlbox/update.sh
+@@ -0,0 +1,27 @@
++#!/bin/sh
++
++# Script to update the mozilla in-tree copy of the rlbox library.
++# Run this within the /third_party/rlbox directory of the source tree.
++
++MY_TEMP_DIR=`mktemp -d -t rlbox_update.XXXXXX` || exit 1
++
++git clone https://github.com/PLSysSec/rlbox_api_cpp17 ${MY_TEMP_DIR}/rlbox
++
++COMMIT=$(git -C ${MY_TEMP_DIR}/rlbox rev-parse HEAD)
++perl -p -i -e "s/\[commit [0-9a-f]{40}\]/[commit ${COMMIT}]/" README-mozilla;
++
++FILES="include"
++
++for f in $FILES; do
++    rm -rf $f
++    mv ${MY_TEMP_DIR}/rlbox/code/$f $f
++done
++
++rm -rf ${MY_TEMP_DIR}
++
++hg addremove $FILES
++
++echo "###"
++echo "### Updated rlbox to $COMMIT."
++echo "### Remember to verify and commit the changes to source control!"
++echo "###"
+-- 
+2.25.1
+

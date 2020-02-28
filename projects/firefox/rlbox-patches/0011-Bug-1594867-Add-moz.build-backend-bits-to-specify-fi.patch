@@ -1,0 +1,913 @@
+From cd8e9bee30549bcdfaab526bb7a3f4c3f3a23378 Mon Sep 17 00:00:00 2001
+From: Ricky Stewart <rstewart@mozilla.com>
+Date: Wed, 27 Nov 2019 20:11:59 +0000
+Subject: [PATCH] Bug 1594867 - Add moz.build/backend bits to specify files
+ that should be built as a sandboxed wasm library
+ r=firefox-build-system-reviewers,mshal
+
+Add backend stuff to build sandboxed wasm libraries. (Don't actually update any moz.build files to consume this yet.)
+
+Differential Revision: https://phabricator.services.mozilla.com/D54152
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/config/config.mk b/config/config.mk
+index 36f9016f9c8d..98fd0e093613 100644
+--- a/config/config.mk
++++ b/config/config.mk
+@@ -194,6 +194,10 @@ HOST_CXXFLAGS = $(COMPUTED_HOST_CXXFLAGS) $(_DEPEND_CFLAGS)
+ HOST_C_LDFLAGS = $(COMPUTED_HOST_C_LDFLAGS)
+ HOST_CXX_LDFLAGS = $(COMPUTED_HOST_CXX_LDFLAGS)
+ 
++WASM_CFLAGS = $(COMPUTED_WASM_CFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
++WASM_CXXFLAGS = $(COMPUTED_WASM_CXXFLAGS) $(PGO_CFLAGS) $(_DEPEND_CFLAGS) $(MK_COMPILE_DEFINES)
++WASM_LDFLAGS = $(COMPUTED_WASM_LDFLAGS)
++
+ ifdef MOZ_LTO
+ ifeq (Darwin,$(OS_TARGET))
+ # When linking on macOS, debug info is not linked along with the final binary,
+@@ -229,6 +233,9 @@ color_flags_vars := \
+   COMPILE_CMFLAGS \
+   COMPILE_CMMFLAGS \
+   LDFLAGS \
++  WASM_LDFLAGS \
++  WASM_CFLAGS \
++  WASM_CXXFLAGS \
+   $(NULL)
+ 
+ ifdef MACH_STDOUT_ISATTY
+diff --git a/config/rules.mk b/config/rules.mk
+index 15946d86b0ad..60cf7e7d1305 100644
+--- a/config/rules.mk
++++ b/config/rules.mk
+@@ -180,7 +180,7 @@ endif
+ 
+ ifdef COMPILE_ENVIRONMENT
+ ifndef TARGETS
+-TARGETS			= $(LIBRARY) $(SHARED_LIBRARY) $(PROGRAM) $(SIMPLE_PROGRAMS) $(HOST_PROGRAM) $(HOST_SIMPLE_PROGRAMS) $(HOST_SHARED_LIBRARY)
++TARGETS			= $(LIBRARY) $(SHARED_LIBRARY) $(PROGRAM) $(SIMPLE_PROGRAMS) $(HOST_PROGRAM) $(HOST_SIMPLE_PROGRAMS) $(HOST_SHARED_LIBRARY) $(WASM_LIBRARY)
+ endif
+ 
+ ifdef MOZ_PROFILE_GENERATE
+@@ -188,16 +188,18 @@ CPPSRCS := $(CPPSRCS) $(PGO_GEN_ONLY_CPPSRCS)
+ endif
+ 
+ COBJS = $(notdir $(CSRCS:.c=.$(OBJ_SUFFIX)))
++CWASMOBJS = $(notdir $(WASM_CSRCS:.c=.$(WASM_OBJ_SUFFIX)))
+ SOBJS = $(notdir $(SSRCS:.S=.$(OBJ_SUFFIX)))
+ # CPPSRCS can have different extensions (eg: .cpp, .cc)
+ CPPOBJS = $(notdir $(addsuffix .$(OBJ_SUFFIX),$(basename $(CPPSRCS))))
++CPPWASMOBJS = $(notdir $(addsuffix .$(WASM_OBJ_SUFFIX),$(basename $(WASM_CPPSRCS))))
+ CMOBJS = $(notdir $(CMSRCS:.m=.$(OBJ_SUFFIX)))
+ CMMOBJS = $(notdir $(CMMSRCS:.mm=.$(OBJ_SUFFIX)))
+ # ASFILES can have different extensions (.s, .asm)
+ ASOBJS = $(notdir $(addsuffix .$(OBJ_SUFFIX),$(basename $(ASFILES))))
+ RS_STATICLIB_CRATE_OBJ = $(addprefix lib,$(notdir $(RS_STATICLIB_CRATE_SRC:.rs=.$(LIB_SUFFIX))))
+ ifndef OBJS
+-_OBJS = $(COBJS) $(SOBJS) $(CPPOBJS) $(CMOBJS) $(CMMOBJS) $(ASOBJS)
++_OBJS = $(COBJS) $(SOBJS) $(CPPOBJS) $(CMOBJS) $(CMMOBJS) $(ASOBJS) $(CWASMOBJS) $(CPPWASMOBJS)
+ OBJS = $(strip $(_OBJS))
+ endif
+ 
+@@ -220,8 +222,11 @@ SIMPLE_PROGRAMS :=
+ HOST_SHARED_LIBRARY :=
+ HOST_PROGRAM :=
+ HOST_SIMPLE_PROGRAMS :=
++WASM_LIBRARY :=
+ endif
+ 
++WASM_ARCHIVE = $(addsuffix .$(WASM_OBJ_SUFFIX),$(WASM_LIBRARY))
++
+ ALL_TRASH = \
+ 	$(GARBAGE) $(TARGETS) $(OBJS) $(PROGOBJS) LOGS TAGS a.out \
+ 	$(filter-out $(ASFILES),$(OBJS:.$(OBJ_SUFFIX)=.s)) $(OBJS:.$(OBJ_SUFFIX)=.ii) \
+@@ -233,7 +238,7 @@ ALL_TRASH = \
+ 	$(PROGRAM:$(BIN_SUFFIX)=.exp) $(SIMPLE_PROGRAMS:$(BIN_SUFFIX)=.exp) \
+ 	$(PROGRAM:$(BIN_SUFFIX)=.lib) $(SIMPLE_PROGRAMS:$(BIN_SUFFIX)=.lib) \
+ 	$(SIMPLE_PROGRAMS:$(BIN_SUFFIX)=.$(OBJ_SUFFIX)) \
+-	$(wildcard gts_tmp_*) $(LIBRARY:%.a=.%.timestamp)
++	$(WASM_ARCHIVE) $(wildcard gts_tmp_*) $(LIBRARY:%.a=.%.timestamp)
+ ALL_TRASH_DIRS = \
+ 	$(GARBAGE_DIRS) /no-such-file
+ 
+@@ -436,7 +441,7 @@ compile:: host target
+ 
+ host:: $(HOST_OBJS) $(HOST_PROGRAM) $(HOST_SIMPLE_PROGRAMS) $(HOST_RUST_PROGRAMS) $(HOST_RUST_LIBRARY_FILE) $(HOST_SHARED_LIBRARY)
+ 
+-target:: $(filter-out $(MOZBUILD_NON_DEFAULT_TARGETS),$(LIBRARY) $(SHARED_LIBRARY) $(PROGRAM) $(SIMPLE_PROGRAMS) $(RUST_LIBRARY_FILE) $(RUST_PROGRAMS))
++target:: $(filter-out $(MOZBUILD_NON_DEFAULT_TARGETS),$(LIBRARY) $(SHARED_LIBRARY) $(PROGRAM) $(SIMPLE_PROGRAMS) $(RUST_LIBRARY_FILE) $(RUST_PROGRAMS) $(WASM_LIBRARY))
+ 
+ ifndef LIBRARY
+ ifdef OBJS
+@@ -498,7 +503,7 @@ ifneq (,$(filter target,$(MAKECMDGOALS)))
+ ifdef GNU_CC
+ # Force rebuilding libraries and programs in both passes because each
+ # pass uses different object files.
+-$(PROGRAM) $(SHARED_LIBRARY) $(LIBRARY): FORCE
++$(PROGRAM) $(SHARED_LIBRARY) $(LIBRARY) $(WASM_LIBRARY): FORCE
+ endif
+ endif
+ endif
+@@ -651,6 +656,15 @@ $(LIBRARY): $(OBJS) $(STATIC_LIBS) $(EXTRA_DEPS) $(GLOBAL_DEPS)
+ 	$(RM) $(REAL_LIBRARY)
+ 	$(AR) $(AR_FLAGS) $($@_$(OBJS_VAR_SUFFIX))
+ 
++$(WASM_ARCHIVE): $(CWASMOBJS) $(CPPWASMOBJS) $(STATIC_LIBS) $(EXTRA_DEPS) $(GLOBAL_DEPS)
++	$(REPORT_BUILD_VERBOSE)
++	$(RM) $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX)
++	$(WASM_CXX) $(OUTOPTION)$@ -Wl,--export-all $(WASM_LDFLAGS) $(CWASMOBJS) $(CPPWASMOBJS)
++$(WASM_LIBRARY): $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX)
++	$(REPORT_BUILD)
++	$(RM) $(WASM_LIBRARY)
++	$(LUCETC) --bindings $(topsrcdir)/third_party/rust/lucet-wasi/bindings.json $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX) --opt-level 2 -o $(WASM_LIBRARY)
++
+ ifeq ($(OS_ARCH),WINNT)
+ # Import libraries are created by the rules creating shared libraries.
+ # The rules to copy them to $(DIST)/lib depend on $(IMPORT_LIBRARY),
+@@ -720,6 +734,7 @@ $(basename $3$(notdir $1)).$2: $1 $$(call mkdir_deps,$$(MDDEPDIR))
+ endef
+ $(foreach f,$(CSRCS) $(SSRCS) $(CPPSRCS) $(CMSRCS) $(CMMSRCS) $(ASFILES),$(eval $(call src_objdep,$(f),$(OBJ_SUFFIX))))
+ $(foreach f,$(HOST_CSRCS) $(HOST_CPPSRCS) $(HOST_CMSRCS) $(HOST_CMMSRCS),$(eval $(call src_objdep,$(f),$(_OBJ_SUFFIX),host_)))
++$(foreach f,$(WASM_CSRCS) $(WASM_CPPSRCS),$(eval $(call src_objdep,$(f),wasm)))
+ 
+ # The Rust compiler only outputs library objects, and so we need different
+ # mangling to generate dependency rules for it.
+@@ -769,6 +784,10 @@ $(filter qrc_%.cpp,$(CPPSRCS)): qrc_%.cpp: %.qrc
+ 	$(REPORT_BUILD_VERBOSE)
+ 	$(RCC) -name $* $< $(OUTOPTION)$@
+ 
++$(CWASMOBJS):
++	$(REPORT_BUILD_VERBOSE)
++	$(WASM_CC) $(OUTOPTION)$@ -c $(WASM_CFLAGS) $($(notdir $<)_FLAGS) $<
++
+ ifdef ASFILES
+ # The AS_DASH_C_FLAG is needed cause not all assemblers (Solaris) accept
+ # a '-c' flag.
+@@ -827,6 +846,11 @@ $(CPPOBJS):
+ 	$(call BUILDSTATUS,OBJECT_FILE $@)
+ 	$(CCC) $(OUTOPTION)$@ -c $(COMPILE_CXXFLAGS) $($(notdir $<)_FLAGS) $(_VPATH_SRCS)
+ 
++$(CPPWASMOBJS):
++	$(REPORT_BUILD_VERBOSE)
++	$(call BUILDSTATUS,OBJECT_FILE $@)
++	$(WASM_CXX) $(OUTOPTION)$@ -c $(WASM_CXXFLAGS) $($(notdir $<)_FLAGS) $<
++
+ $(CMMOBJS):
+ 	$(REPORT_BUILD_VERBOSE)
+ 	$(CCC) -o $@ -c $(COMPILE_CXXFLAGS) $(COMPILE_CMMFLAGS) $($(notdir $<)_FLAGS) $(_VPATH_SRCS)
+@@ -1330,6 +1354,7 @@ FREEZE_VARIABLES = \
+   EXPORTS \
+   DIRS \
+   LIBRARY \
++  WASM_LIBRARY \
+   MODULE \
+   $(NULL)
+ 
+diff --git a/moz.configure b/moz.configure
+index 2484ad553645..c80eae6ecae4 100755
+--- a/moz.configure
++++ b/moz.configure
+@@ -247,6 +247,7 @@ add_old_configure_assignment('OBJ_SUFFIX', library_name_info.obj.suffix)
+ set_config('IMPORT_LIB_SUFFIX', library_name_info.import_lib.suffix)
+ set_define('MOZ_DLL_PREFIX', depends(library_name_info.dll.prefix)(lambda s: '"%s"' % s))
+ set_define('MOZ_DLL_SUFFIX', depends(library_name_info.dll.suffix)(lambda s: '"%s"' % s))
++set_config('WASM_OBJ_SUFFIX', 'wasm')
+ 
+ include(include_project_configure)
+ 
+diff --git a/python/mozbuild/mozbuild/backend/common.py b/python/mozbuild/mozbuild/backend/common.py
+index dcfb6c1cee49..211dc0dc3115 100644
+--- a/python/mozbuild/mozbuild/backend/common.py
++++ b/python/mozbuild/mozbuild/backend/common.py
+@@ -38,6 +38,7 @@ from mozbuild.frontend.data import (
+     LocalizedPreprocessedFiles,
+     LocalizedFiles,
+     RustLibrary,
++    SandboxedWasmLibrary,
+     SharedLibrary,
+     StaticLibrary,
+     UnifiedSources,
+@@ -255,7 +256,8 @@ class CommonBackend(BuildBackend):
+                     no_pgo_objs.append(o)
+ 
+         def expand(lib, recurse_objs, system_libs):
+-            if isinstance(lib, (HostLibrary, StaticLibrary)):
++            if isinstance(lib, (HostLibrary, StaticLibrary,
++                                SandboxedWasmLibrary)):
+                 if not isinstance(lib, HostLibrary) and lib.no_expand_lib:
+                     static_libs.append(lib)
+                     recurse_objs = False
+@@ -278,11 +280,13 @@ class CommonBackend(BuildBackend):
+ 
+         add_objs(input_bin)
+ 
+-        system_libs = not isinstance(input_bin, (HostLibrary, StaticLibrary))
++        system_libs = not isinstance(input_bin, (HostLibrary, StaticLibrary,
++                                                 SandboxedWasmLibrary))
+         for lib in input_bin.linked_libraries:
+             if isinstance(lib, RustLibrary):
+                 continue
+-            elif isinstance(lib, (HostLibrary, StaticLibrary)):
++            elif isinstance(lib, (HostLibrary, StaticLibrary,
++                                SandboxedWasmLibrary)):
+                 expand(lib, True, system_libs)
+             elif isinstance(lib, SharedLibrary):
+                 if lib not in seen_libs:
+diff --git a/python/mozbuild/mozbuild/backend/recursivemake.py b/python/mozbuild/mozbuild/backend/recursivemake.py
+index d550cd876f53..df7ee2da342b 100644
+--- a/python/mozbuild/mozbuild/backend/recursivemake.py
++++ b/python/mozbuild/mozbuild/backend/recursivemake.py
+@@ -66,12 +66,15 @@ from ..frontend.data import (
+     HostRustLibrary,
+     RustProgram,
+     RustTests,
++    SandboxedWasmLibrary,
+     SharedLibrary,
+     SimpleProgram,
+     Sources,
+     StaticLibrary,
+     TestManifest,
+     VariablePassthru,
++    WasmGeneratedSources,
++    WasmSources,
+     XPIDLModule,
+ )
+ from ..util import (
+@@ -500,6 +503,30 @@ class RecursiveMakeBackend(CommonBackend):
+                 f = mozpath.relpath(f, base)
+                 for var in variables:
+                     backend_file.write('%s += %s\n' % (var, f))
++        elif isinstance(obj, (WasmSources, WasmGeneratedSources)):
++            suffix_map = {
++                '.c': 'WASM_CSRCS',
++                '.cpp': 'WASM_CPPSRCS',
++            }
++            variables = [suffix_map[obj.canonical_suffix]]
++            if isinstance(obj, WasmGeneratedSources):
++                variables.append('GARBAGE')
++                base = backend_file.objdir
++                cls = ObjDirPath
++                prefix = '!'
++            else:
++                base = backend_file.srcdir
++                cls = SourcePath
++                prefix = ''
++            for f in sorted(obj.files):
++                p = self._pretty_path(
++                    cls(obj._context, prefix + mozpath.relpath(f, base)),
++                    backend_file,
++                )
++                for var in variables:
++                    backend_file.write('%s += %s\n' % (var, p))
++            self._compile_graph[mozpath.join(
++                backend_file.relobjdir, 'target-objects')]
+         elif isinstance(obj, VariablePassthru):
+             # Sorted so output is consistent and we don't bump mtimes.
+             for k, v in sorted(obj.variables.items()):
+@@ -694,6 +721,10 @@ class RecursiveMakeBackend(CommonBackend):
+             self._process_static_library(obj, backend_file)
+             self._process_linked_libraries(obj, backend_file)
+ 
++        elif isinstance(obj, SandboxedWasmLibrary):
++            self._process_sandboxed_wasm_library(obj, backend_file)
++            self._process_linked_libraries(obj, backend_file)
++
+         elif isinstance(obj, HostLibrary):
+             self._process_linked_libraries(obj, backend_file)
+ 
+@@ -1333,6 +1364,9 @@ class RecursiveMakeBackend(CommonBackend):
+         if libdef.no_expand_lib:
+             backend_file.write('NO_EXPAND_LIBS := 1\n')
+ 
++    def _process_sandboxed_wasm_library(self, libdef, backend_file):
++        backend_file.write('WASM_LIBRARY := %s\n' % libdef.lib_name)
++
+     def _process_rust_library(self, libdef, backend_file):
+         backend_file.write_once('%s := %s\n' % (libdef.LIB_FILE_VAR, libdef.import_name))
+         backend_file.write_once('CARGO_FILE := $(srcdir)/Cargo.toml\n')
+@@ -1413,15 +1447,18 @@ class RecursiveMakeBackend(CommonBackend):
+         # accommodates clang-plugin, where we would otherwise pass an
+         # incorrect list file format to the host compiler as well as when
+         # creating an archive with AR, which doesn't understand list files.
+-        if (objs == obj.objs and not isinstance(obj, (HostLibrary, StaticLibrary)) or
+-          isinstance(obj, StaticLibrary) and obj.no_expand_lib):
++        if (objs == obj.objs and not isinstance(obj, (HostLibrary, StaticLibrary,
++                                                      SandboxedWasmLibrary)) or
++            isinstance(obj, (StaticLibrary, SandboxedWasmLibrary)) and
++            obj.no_expand_lib):
+             backend_file.write_once('%s_OBJS := %s\n' % (obj.name,
+                                                          objs_ref))
+             if profile_gen_objs:
+                 backend_file.write_once('%s_PGO_OBJS := %s\n' % (obj.name,
+                                                                  pgo_objs_ref))
+             write_obj_deps(obj_target, objs_ref, pgo_objs_ref)
+-        elif not isinstance(obj, (HostLibrary, StaticLibrary)):
++        elif not isinstance(obj, (HostLibrary, StaticLibrary,
++                                  SandboxedWasmLibrary)):
+             list_file_path = '%s.list' % obj.name.replace('.', '_')
+             list_file_ref = self._make_list_file(obj.KIND, obj.objdir, objs,
+                                                  list_file_path)
+diff --git a/python/mozbuild/mozbuild/frontend/context.py b/python/mozbuild/mozbuild/frontend/context.py
+index cf2761999f65..d6d7e5ead3a4 100644
+--- a/python/mozbuild/mozbuild/frontend/context.py
++++ b/python/mozbuild/mozbuild/frontend/context.py
+@@ -425,19 +425,20 @@ class TargetCompileFlags(BaseCompileFlags):
+     """Base class that encapsulates some common logic between CompileFlags and
+     WasmCompileFlags.
+     """
+-    def __init__(self, context, prefix='', additionally=()):
++    def __init__(self, context, prefix='', additionally=(), instead={}):
+         # `prefix` is a string to be prepended to all dest_var names.
+         # `additionally` is a sequence of (flat, default, dest_vars) to be added
+         # to the flag_variables tuple.
++        # `instead` is a string-to-string map that maps base dest_var names to
++        # replacement names; e.g., if instead={'FOO':'BAR'}, then 'FOO' is
++        # replaced with 'BAR' wherever it would occur in a dest_var.
+         main_src_dir = mozpath.dirname(context.main_path)
+         self._context = context
+ 
+         self.flag_variables = tuple(list(additionally) + [
+-            (flag, default, tuple(prefix + dest_var for dest_var in dest_vars))
++            (flag, default, tuple(set(instead.get(prefix + dest_var, prefix + dest_var)
++                                      for dest_var in dest_vars)))
+             for flag, default, dest_vars in (
+-                    ('STL', context.config.substs.get('STL_FLAGS'),
+-                     ('CXXFLAGS',)),
+-                    ('DEFINES', None, ('CXXFLAGS', 'CFLAGS')),
+                     ('LIBRARY_DEFINES', None, ('CXXFLAGS', 'CFLAGS')),
+                     ('BASE_INCLUDES',
+                      ['-I%s' % main_src_dir, '-I%s' % context.objdir],
+@@ -528,6 +529,9 @@ class TargetCompileFlags(BaseCompileFlags):
+ class CompileFlags(TargetCompileFlags):
+     def __init__(self, context):
+         TargetCompileFlags.__init__(self, context, prefix='', additionally=(
++            ('DEFINES', None, ('CXXFLAGS', 'CFLAGS')),
++            ('STL', context.config.substs.get('STL_FLAGS'),
++             ('CXXFLAGS',)),
+             ('VISIBILITY', context.config.substs.get('VISIBILITY_FLAGS'),
+              ('CXXFLAGS', 'CFLAGS')),
+             ('OS_COMPILE_CFLAGS',
+@@ -547,9 +551,19 @@ class CompileFlags(TargetCompileFlags):
+ class WasmFlags(TargetCompileFlags):
+     def __init__(self, context):
+         TargetCompileFlags.__init__(
+-            self, context, prefix='WASM_', additionally=tuple(
+-                (name, context.config.substs.get(name), (name,))
+-                for name in ('WASM_CFLAGS', 'WASM_CXXFLAGS', 'WASM_LDFLAGS')))
++            self, context, prefix='WASM_', additionally=(
++                tuple(
++                    (name, context.config.substs.get(name), (name,))
++                    for name in ('WASM_CFLAGS', 'WASM_CXXFLAGS', 'WASM_LDFLAGS')) +
++                (('WASM_DEFINES', None, ('WASM_CFLAGS', 'WASM_CXXFLAGS')),
++                 ('MOZBUILD_WASM_CFLAGS', None, ('WASM_CFLAGS',)),
++                 ('MOZBUILD_WASM_CXXFLAGS', None, ('WASM_CXXFLAGS',)))),
++            # Unlike target/host compilation, we don't distinguish between
++            # LDFLAGS for C and C++.
++            instead={
++                'WASM_C_LDFLAGS': 'WASM_LDFLAGS',
++                'WASM_CXX_LDFLAGS': 'WASM_LDFLAGS',
++            })
+ 
+ 
+ class FinalTargetValue(ContextDerivedValue, unicode):
+@@ -1550,6 +1564,10 @@ VARIABLES = {
+         with the host compiler.
+         """),
+ 
++    'WASM_SOURCES': (ContextDerivedTypedList(Path, StrictOrderingOnAppendList), list,
++                     """Source code files to compile with the wasm compiler.
++        """),
++
+     'HOST_LIBRARY_NAME': (unicode, unicode,
+         """Name of target library generated when cross compiling.
+         """),
+@@ -1580,6 +1598,11 @@ VARIABLES = {
+         Implies FORCE_SHARED_LIB.
+         """),
+ 
++    'SANDBOXED_WASM_LIBRARY_NAME': (
++        unicode, unicode,
++        """The name of the static sandboxed wasm library generated for a directory.
++        """),
++
+     'SHARED_LIBRARY_OUTPUT_CATEGORY': (unicode, unicode,
+         """The output category for this context's shared library. If set this will
+         correspond to the build command that will build this shared library, and
+@@ -2132,6 +2155,11 @@ VARIABLES = {
+            appear in the moz.build file.
+         """),
+ 
++    'WASM_DEFINES': (InitializedDefines, dict,
++                     """Dictionary of compiler defines to declare for wasm compilation.
++        See ``DEFINES`` for specifics.
++        """),
++
+     'CMFLAGS': (List, list,
+         """Flags passed to the Objective-C compiler for all of the Objective-C
+            source files declared in this directory.
+diff --git a/python/mozbuild/mozbuild/frontend/data.py b/python/mozbuild/mozbuild/frontend/data.py
+index ff317b02b978..e436fcfb6713 100644
+--- a/python/mozbuild/mozbuild/frontend/data.py
++++ b/python/mozbuild/mozbuild/frontend/data.py
+@@ -238,6 +238,9 @@ class Defines(BaseDefines):
+ class HostDefines(BaseDefines):
+     pass
+ 
++class WasmDefines(BaseDefines):
++    pass
++
+ class WebIDLCollection(ContextDerived):
+     """Collects WebIDL info referenced during the build."""
+ 
+@@ -466,9 +469,13 @@ class Linkable(ContextDerived):
+ 
+         return [mozpath.join(self.objdir, '%s%s.%s' % (obj_prefix,
+                                                        mozpath.splitext(mozpath.basename(f))[0],
+-                                                       self.config.substs.get('OBJ_SUFFIX', '')))
++                                                       self._obj_suffix()))
+                 for f in sources]
+ 
++    def _obj_suffix(self):
++        """Can be overridden by a base class for custom behavior."""
++        return self.config.substs.get('OBJ_SUFFIX', '')
++
+     @property
+     def no_pgo_objs(self):
+         return self._get_objs(self.no_pgo_sources)
+@@ -727,6 +734,20 @@ class RustLibrary(StaticLibrary):
+         self.deps_path = mozpath.join(build_dir, 'deps')
+ 
+ 
++class SandboxedWasmLibrary(Library):
++    """Context derived container object for a static sandboxed wasm library"""
++    # This is a real static library; make it known to the build system.
++    no_expand_lib = True
++    KIND = 'wasm'
++
++    def __init__(self, context, basename, real_name=None):
++        Library.__init__(self, context, basename, real_name)
++
++    def _obj_suffix(self):
++        """Can be overridden by a base class for custom behavior."""
++        return self.config.substs.get('WASM_OBJ_SUFFIX', '')
++
++
+ class SharedLibrary(Library):
+     """Context derived container object for a shared library"""
+     __slots__ = (
+@@ -1011,6 +1032,20 @@ class HostGeneratedSources(HostMixin, BaseSources):
+         BaseSources.__init__(self, context, files, canonical_suffix)
+ 
+ 
++class WasmSources(BaseSources):
++    """Represents files to be compiled with the wasm compiler during the build."""
++
++    def __init__(self, context, files, canonical_suffix):
++        BaseSources.__init__(self, context, files, canonical_suffix)
++
++
++class WasmGeneratedSources(BaseSources):
++    """Represents generated files to be compiled with the wasm compiler during the build."""
++
++    def __init__(self, context, files, canonical_suffix):
++        BaseSources.__init__(self, context, files, canonical_suffix)
++
++
+ class UnifiedSources(BaseSources):
+     """Represents files to be compiled in a unified fashion during the build."""
+ 
+diff --git a/python/mozbuild/mozbuild/frontend/emitter.py b/python/mozbuild/mozbuild/frontend/emitter.py
+index d897c1741d33..b550a97644e3 100644
+--- a/python/mozbuild/mozbuild/frontend/emitter.py
++++ b/python/mozbuild/mozbuild/frontend/emitter.py
+@@ -64,6 +64,7 @@ from .data import (
+     HostRustLibrary,
+     RustProgram,
+     RustTests,
++    SandboxedWasmLibrary,
+     SharedLibrary,
+     SimpleProgram,
+     Sources,
+@@ -72,6 +73,9 @@ from .data import (
+     TestManifest,
+     UnifiedSources,
+     VariablePassthru,
++    WasmDefines,
++    WasmGeneratedSources,
++    WasmSources,
+     XPCOMComponentManifests,
+     XPIDLModule,
+ )
+@@ -127,6 +131,7 @@ class TreeMetadataEmitter(LoggingMixin):
+         self._binaries = OrderedDict()
+         self._compile_dirs = set()
+         self._host_compile_dirs = set()
++        self._wasm_compile_dirs = set()
+         self._asm_compile_dirs = set()
+         self._compile_flags = dict()
+         self._compile_as_flags = dict()
+@@ -329,16 +334,19 @@ class TreeMetadataEmitter(LoggingMixin):
+     LIBRARY_NAME_VAR = {
+         'host': 'HOST_LIBRARY_NAME',
+         'target': 'LIBRARY_NAME',
++        'wasm': 'SANDBOXED_WASM_LIBRARY_NAME',
+     }
+ 
+     LIBSTDCXX_VAR = {
+         'host': 'MOZ_LIBSTDCXX_HOST_VERSION',
+         'target': 'MOZ_LIBSTDCXX_TARGET_VERSION',
++        'wasm': 'MOZ_LIBSTDCXX_TARGET_VERSION',
+     }
+ 
+     STDCXXCOMPAT_NAME = {
+         'host': 'host_stdc++compat',
+         'target': 'stdc++compat',
++        'wasm': 'stdc++compat',
+     }
+ 
+     def _link_libraries(self, context, obj, variable, extra_sources):
+@@ -573,6 +581,8 @@ class TreeMetadataEmitter(LoggingMixin):
+     def _handle_linkables(self, context, passthru, generated_files):
+         linkables = []
+         host_linkables = []
++        wasm_linkables = []
++
+         def add_program(prog, var):
+             if var.startswith('HOST_'):
+                 host_linkables.append(prog)
+@@ -678,6 +688,8 @@ class TreeMetadataEmitter(LoggingMixin):
+ 
+         lib_defines = context.get('LIBRARY_DEFINES')
+ 
++        wasm_lib = context.get('SANDBOXED_WASM_LIBRARY_NAME')
++
+         shared_args = {}
+         static_args = {}
+ 
+@@ -821,10 +833,33 @@ class TreeMetadataEmitter(LoggingMixin):
+                         'LIBRARY_NAME to take effect', context)
+                 lib.lib_defines.update(lib_defines)
+ 
++        if wasm_lib:
++            if wasm_lib == libname:
++                raise SandboxValidationError(
++                    'SANDBOXED_WASM_LIBRARY_NAME and LIBRARY_NAME must have a '
++                    'different value.', context)
++            if wasm_lib == host_libname:
++                raise SandboxValidationError(
++                    'SANDBOXED_WASM_LIBRARY_NAME and HOST_LIBRARY_NAME must '
++                    'have a different value.', context)
++            if wasm_lib == shared_name:
++                raise SandboxValidationError(
++                    'SANDBOXED_WASM_LIBRARY_NAME and SHARED_NAME must have a '
++                    'different value.', context)
++            if wasm_lib == static_name:
++                raise SandboxValidationError(
++                    'SANDBOXED_WASM_LIBRARY_NAME and STATIC_NAME must have a '
++                    'different value.', context)
++            lib = SandboxedWasmLibrary(context, libname, real_name=wasm_lib)
++            self._libs[libname].append(lib)
++            self._linkage.append((context, lib, 'USE_LIBS'))
++            wasm_linkables.append(lib)
++            self._wasm_compile_dirs.add(context.objdir)
++
+         # Only emit sources if we have linkables defined in the same context.
+         # Note the linkables are not emitted in this function, but much later,
+         # after aggregation (because of e.g. USE_LIBS processing).
+-        if not (linkables or host_linkables):
++        if not (linkables or host_linkables or wasm_linkables):
+             return
+ 
+         self._compile_dirs.add(context.objdir)
+@@ -841,7 +876,7 @@ class TreeMetadataEmitter(LoggingMixin):
+         gen_sources = defaultdict(list)
+         pgo_generate_only = set()
+         all_flags = {}
+-        for symbol in ('SOURCES', 'HOST_SOURCES', 'UNIFIED_SOURCES'):
++        for symbol in ('SOURCES', 'HOST_SOURCES', 'UNIFIED_SOURCES', 'WASM_SOURCES'):
+             srcs = sources[symbol]
+             gen_srcs = gen_sources[symbol]
+             context_srcs = context.get(symbol, [])
+@@ -929,6 +964,12 @@ class TreeMetadataEmitter(LoggingMixin):
+             HOST_SOURCES=(HostSources, HostGeneratedSources, ['.c', '.mm', '.cpp']),
+             UNIFIED_SOURCES=(UnifiedSources, None, ['.c', '.mm', '.cpp']),
+         )
++        # Only include a WasmSources or WasmGeneratedSources context if there
++        # are any WASM_SOURCES. (This is going to matter later because we inject
++        # an extra .c file to compile with the wasm compiler if, and only if,
++        # there are any WASM sources.)
++        if sources['WASM_SOURCES'] or gen_sources['WASM_SOURCES']:
++            varmap['WASM_SOURCES'] = (WasmSources, WasmGeneratedSources, ['.c', '.cpp'])
+         # Track whether there are any C++ source files.
+         # Technically this won't do the right thing for SIMPLE_PROGRAMS in
+         # a directory with mixed C and C++ source, but it's not that important.
+@@ -953,6 +994,12 @@ class TreeMetadataEmitter(LoggingMixin):
+                 if variable == 'SOURCES' and pgo_gen_only_sources:
+                     srcs = [s for s in srcs if s not in pgo_gen_only_sources]
+                 # Now sort the files to let groupby work.
++                srcs = list(srcs)
++                if cls is WasmSources:
++                    srcs.append(
++                        mozpath.join(self.config.topsrcdir,
++                                     ('third_party/rust/rlbox_lucet_sandbox/'
++                                      'c_src/lucet_sandbox_wrapper.c')))
+                 sorted_files = sorted(srcs, key=canonical_suffix_for_file)
+                 for canonical_suffix, files in itertools.groupby(
+                         sorted_files, canonical_suffix_for_file):
+@@ -964,7 +1011,7 @@ class TreeMetadataEmitter(LoggingMixin):
+                     if variable.startswith('UNIFIED_'):
+                         arglist.append(context.get('FILES_PER_UNIFIED_FILE', 16))
+                     obj = cls(*arglist)
+-                    srcs = obj.files
++                    srcs = list(obj.files)
+                     if isinstance(obj, UnifiedSources) and obj.have_unified_mapping:
+                         srcs = dict(obj.unified_source_mapping).keys()
+                     ctxt_sources[variable][canonical_suffix] += sorted(srcs)
+@@ -984,6 +1031,9 @@ class TreeMetadataEmitter(LoggingMixin):
+             for host_linkable in host_linkables:
+                 for suffix, srcs in ctxt_sources['HOST_SOURCES'].items():
+                     host_linkable.sources[suffix] += srcs
++            for wasm_linkable in wasm_linkables:
++                for suffix, srcs in ctxt_sources['WASM_SOURCES'].items():
++                    wasm_linkable.sources[suffix] += srcs
+ 
+         for f, flags in all_flags.iteritems():
+             if flags.flags:
+@@ -1031,6 +1081,7 @@ class TreeMetadataEmitter(LoggingMixin):
+         computed_link_flags = ComputedFlags(context, context['LINK_FLAGS'])
+         computed_host_flags = ComputedFlags(context, context['HOST_COMPILE_FLAGS'])
+         computed_as_flags = ComputedFlags(context, context['ASM_FLAGS'])
++        computed_wasm_flags = ComputedFlags(context, context['WASM_FLAGS'])
+ 
+         # Proxy some variables as-is until we have richer classes to represent
+         # them. We should aim to keep this set small because it violates the
+@@ -1067,6 +1118,10 @@ class TreeMetadataEmitter(LoggingMixin):
+             if v in context and context[v]:
+                 computed_flags.resolve_flags('MOZBUILD_%s' % v, context[v])
+ 
++        for v in ['WASM_CFLAGS', 'WASM_CXXFLAGS', 'WASM_LDFLAGS']:
++            if v in context and context[v]:
++                computed_wasm_flags.resolve_flags('MOZBUILD_%s' % v, context[v])
++
+         for v in ['HOST_CXXFLAGS', 'HOST_CFLAGS']:
+             if v in context and context[v]:
+                 computed_host_flags.resolve_flags('MOZBUILD_%s' % v, context[v])
+@@ -1130,6 +1185,7 @@ class TreeMetadataEmitter(LoggingMixin):
+                                               '-finstrument-functions-after-inlining'])
+             if not context.config.substs.get('CROSS_COMPILE'):
+                 computed_host_flags.resolve_flags('RTL', [rtl_flag])
++            computed_wasm_flags.resolve_flags('RTL', [rtl_flag])
+ 
+         generated_files = set()
+         localized_generated_files = set()
+@@ -1146,8 +1202,10 @@ class TreeMetadataEmitter(LoggingMixin):
+             generated_files.add(str(sub.relpath))
+             yield sub
+ 
+-        for defines_var, cls, backend_flags in (('DEFINES', Defines, (computed_flags, computed_as_flags)),
+-                                                ('HOST_DEFINES', HostDefines, (computed_host_flags,))):
++        for defines_var, cls, backend_flags in (
++                ('DEFINES', Defines, (computed_flags, computed_as_flags,)),
++                ('HOST_DEFINES', HostDefines, (computed_host_flags,)),
++                ('WASM_DEFINES', WasmDefines, (computed_wasm_flags,))):
+             defines = context.get(defines_var)
+             if defines:
+                 defines_obj = cls(context, defines)
+@@ -1207,6 +1265,7 @@ class TreeMetadataEmitter(LoggingMixin):
+         computed_flags.resolve_flags('LOCAL_INCLUDES', ['-I%s' % p for p in local_includes])
+         computed_as_flags.resolve_flags('LOCAL_INCLUDES', ['-I%s' % p for p in local_includes])
+         computed_host_flags.resolve_flags('LOCAL_INCLUDES', ['-I%s' % p for p in local_includes])
++        computed_wasm_flags.resolve_flags('LOCAL_INCLUDES', ['-I%s' % p for p in local_includes])
+ 
+         for obj in self._handle_linkables(context, passthru, generated_files):
+             yield obj
+@@ -1380,6 +1439,8 @@ class TreeMetadataEmitter(LoggingMixin):
+         if context.objdir in self._host_compile_dirs:
+             yield computed_host_flags
+ 
++        if context.objdir in self._wasm_compile_dirs:
++            yield computed_wasm_flags
+ 
+     def _create_substitution(self, cls, context, path):
+         sub = cls(context)
+diff --git a/python/mozbuild/mozbuild/test/backend/data/sources/moz.build b/python/mozbuild/mozbuild/test/backend/data/sources/moz.build
+index d31acae3d40a..383c343a4a7c 100644
+--- a/python/mozbuild/mozbuild/test/backend/data/sources/moz.build
++++ b/python/mozbuild/mozbuild/test/backend/data/sources/moz.build
+@@ -19,3 +19,6 @@ SOURCES += ['bar.c', 'foo.c']
+ SOURCES += ['bar.mm', 'foo.mm']
+ 
+ SOURCES += ['baz.S', 'foo.S']
++
++WASM_SOURCES += ['bar.cpp']
++WASM_SOURCES += ['bar.c']
+diff --git a/python/mozbuild/mozbuild/test/backend/test_recursivemake.py b/python/mozbuild/mozbuild/test/backend/test_recursivemake.py
+index 0d6fd5214fef..89309ca87224 100644
+--- a/python/mozbuild/mozbuild/test/backend/test_recursivemake.py
++++ b/python/mozbuild/mozbuild/test/backend/test_recursivemake.py
+@@ -342,7 +342,7 @@ class TestRecursiveMakeBackend(BackendTester):
+             self.assertEqual(found, val)
+ 
+     def test_sources(self):
+-        """Ensure SOURCES and HOST_SOURCES are handled properly."""
++        """Ensure SOURCES, HOST_SOURCES and WASM_SOURCES are handled properly."""
+         env = self._consume('sources', RecursiveMakeBackend)
+ 
+         backend_path = mozpath.join(env.topobjdir, 'backend.mk')
+@@ -373,6 +373,14 @@ class TestRecursiveMakeBackend(BackendTester):
+                 'SSRCS += baz.S',
+                 'SSRCS += foo.S',
+             ],
++            'WASM_CSRCS': [
++                'WASM_CSRCS += $(srcdir)/bar.c',
++                ('WASM_CSRCS += $(srcdir)/third_party/rust/rlbox_lucet_sandbox/'
++                 'c_src/lucet_sandbox_wrapper.c'),
++            ],
++            'WASM_CPPSRCS': [
++                'WASM_CPPSRCS += $(srcdir)/bar.cpp',
++            ],
+         }
+ 
+         for var, val in expected.items():
+diff --git a/python/mozbuild/mozbuild/test/frontend/data/wasm-compile-flags/moz.build b/python/mozbuild/mozbuild/test/frontend/data/wasm-compile-flags/moz.build
+new file mode 100644
+index 000000000000..8a99e972a2d4
+--- /dev/null
++++ b/python/mozbuild/mozbuild/test/frontend/data/wasm-compile-flags/moz.build
+@@ -0,0 +1,20 @@
++# Any copyright is dedicated to the Public Domain.
++# http://creativecommons.org/publicdomain/zero/1.0/
++
++SANDBOXED_WASM_LIBRARY_NAME = 'dummy'
++
++WASM_SOURCES += ['test1.c']
++
++value = 'xyz'
++WASM_DEFINES = {
++    'FOO': True,
++}
++
++WASM_DEFINES['BAZ'] = '"abcd"'
++WASM_DEFINES.update({
++    'BAR': 7,
++    'VALUE': value,
++    'QUX': False,
++})
++
++WASM_CFLAGS += ['-funroll-loops', '-wasm-arg']
+diff --git a/python/mozbuild/mozbuild/test/frontend/data/wasm-compile-flags/test1.c b/python/mozbuild/mozbuild/test/frontend/data/wasm-compile-flags/test1.c
+new file mode 100644
+index 000000000000..e69de29bb2d1
+diff --git a/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/a.cpp b/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/a.cpp
+new file mode 100644
+index 000000000000..e69de29bb2d1
+diff --git a/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/b.cc b/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/b.cc
+new file mode 100644
+index 000000000000..e69de29bb2d1
+diff --git a/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/c.cxx b/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/c.cxx
+new file mode 100644
+index 000000000000..e69de29bb2d1
+diff --git a/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/d.c b/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/d.c
+new file mode 100644
+index 000000000000..e69de29bb2d1
+diff --git a/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/moz.build b/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/moz.build
+new file mode 100644
+index 000000000000..8fbc3eb0c9ab
+--- /dev/null
++++ b/python/mozbuild/mozbuild/test/frontend/data/wasm-sources/moz.build
+@@ -0,0 +1,15 @@
++# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
++# Any copyright is dedicated to the Public Domain.
++# http://creativecommons.org/publicdomain/zero/1.0/
++
++SANDBOXED_WASM_LIBRARY_NAME = 'wasmSources'
++
++WASM_SOURCES += [
++    'a.cpp',
++    'b.cc',
++    'c.cxx',
++]
++
++WASM_SOURCES += [
++    'd.c',
++]
+diff --git a/python/mozbuild/mozbuild/test/frontend/test_emitter.py b/python/mozbuild/mozbuild/test/frontend/test_emitter.py
+index 5e5ab7ff28b7..c396808dd027 100644
+--- a/python/mozbuild/mozbuild/test/frontend/test_emitter.py
++++ b/python/mozbuild/mozbuild/test/frontend/test_emitter.py
+@@ -45,6 +45,7 @@ from mozbuild.frontend.data import (
+     TestManifest,
+     UnifiedSources,
+     VariablePassthru,
++    WasmSources,
+ )
+ from mozbuild.frontend.emitter import TreeMetadataEmitter
+ from mozbuild.frontend.reader import (
+@@ -83,6 +84,8 @@ class TestEmitterBasic(unittest.TestCase):
+             VISIBILITY_FLAGS=['-include',
+                               '$(topsrcdir)/config/gcc_hidden.h'],
+             OBJ_SUFFIX='obj',
++            WASM_OBJ_SUFFIX='wasm',
++            WASM_CFLAGS=['-foo'],
+         )
+         if extra_substs:
+             substs.update(extra_substs)
+@@ -1334,6 +1337,40 @@ class TestEmitterBasic(unittest.TestCase):
+                                                            reader.config.substs['OBJ_SUFFIX'])),
+                               linkable.objs)
+ 
++    def test_wasm_sources(self):
++        """Test that HOST_SOURCES works properly."""
++        reader = self.reader('wasm-sources')
++        objs = list(self.read_topsrcdir(reader))
++
++        # The second to last object is a linkable.
++        linkable = objs[-2]
++        # Other than that, we only care about the WasmSources objects.
++        objs = objs[:2]
++        for o in objs:
++            self.assertIsInstance(o, WasmSources)
++
++        suffix_map = {obj.canonical_suffix: obj for obj in objs}
++        self.assertEqual(len(suffix_map), 2)
++
++        expected = {
++            '.cpp': ['a.cpp', 'b.cc', 'c.cxx'],
++            '.c': ['d.c'],
++        }
++        for suffix, files in expected.items():
++            sources = suffix_map[suffix]
++            self.assertEqual(
++                sources.files,
++                [mozpath.join(reader.config.topsrcdir, f) for f in files] +
++                ([mozpath.join(
++                    reader.config.topsrcdir,
++                    'third_party/rust/rlbox_lucet_sandbox/c_src/lucet_sandbox_wrapper.c')]
++                 if suffix == '.c' else []))
++            for f in files:
++                self.assertIn(mozpath.join(
++                    reader.config.topobjdir,
++                    '%s.%s' % (mozpath.splitext(f)[0],
++                               reader.config.substs['WASM_OBJ_SUFFIX'])),
++                              linkable.objs)
+ 
+     def test_unified_sources(self):
+         """Test that UNIFIED_SOURCES works properly."""
+@@ -1674,6 +1711,17 @@ class TestEmitterBasic(unittest.TestCase):
+              'Objdir file specified in SYMBOLS_FILE not in GENERATED_FILES:'):
+             self.read_topsrcdir(reader)
+ 
++    def test_wasm_compile_flags(self):
++        reader = self.reader('wasm-compile-flags')
++        flags = list(self.read_topsrcdir(reader))[2]
++        self.assertIsInstance(flags, ComputedFlags)
++        self.assertEqual(flags.flags['WASM_CFLAGS'],
++                         reader.config.substs['WASM_CFLAGS'])
++        self.assertEqual(flags.flags['MOZBUILD_WASM_CFLAGS'],
++                         ['-funroll-loops', '-wasm-arg'])
++        self.assertEqual(set(flags.flags['WASM_DEFINES']),
++                         set(['-DFOO', '-DBAZ="abcd"', '-UQUX', '-DBAR=7', '-DVALUE=xyz']))
++
+ 
+ if __name__ == '__main__':
+     main()
+diff --git a/toolkit/moz.configure b/toolkit/moz.configure
+index ee617d903a42..54e3f2123cfc 100644
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -1831,20 +1831,25 @@ def wasm_cxx_with_flags(wasm_cxx, provided_wasm_cxx, wasi_sysroot):
+ set_config('WASM_CXX', wasm_cxx_with_flags, when=requires_wasm_sandboxing)
+ 
+ 
++wasm_compile_flags = dependable(['-fno-exceptions', '-fno-strict-aliasing', '-Qunused-arguments'])
+ option(env='WASM_CFLAGS', nargs=1, help='Options to pass to WASM_CC',
+        when=requires_wasm_sandboxing)
+-@depends('WASM_CFLAGS', when=requires_wasm_sandboxing)
+-def wasm_cflags(value):
++@depends('WASM_CFLAGS', wasm_compile_flags, when=requires_wasm_sandboxing)
++def wasm_cflags(value, wasm_compile_flags):
+     if value:
+-        return value
++        return wasm_compile_flags + value
++    else:
++        return wasm_compile_flags
+ set_config('WASM_CFLAGS', wasm_cflags, when=requires_wasm_sandboxing)
+ 
+ option(env='WASM_CXXFLAGS', nargs=1, help='Options to pass to WASM_CXX',
+        when=requires_wasm_sandboxing)
+-@depends('WASM_CXXFLAGS', when=requires_wasm_sandboxing)
+-def wasm_cxxflags(value):
++@depends('WASM_CXXFLAGS', wasm_compile_flags, when=requires_wasm_sandboxing)
++def wasm_cxxflags(value, wasm_compile_flags):
+     if value:
+-        return value
++        return wasm_compile_flags + value
++    else:
++        return wasm_compile_flags
+ set_config('WASM_CXXFLAGS', wasm_cxxflags, when=requires_wasm_sandboxing)
+ 
+ option(env='WASM_LDFLAGS', nargs=1,
+-- 
+2.25.1
+

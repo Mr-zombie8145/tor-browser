@@ -1,0 +1,38 @@
+From 9f680f7d75b6700397516ee1c6ed44045f8ba961 Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Mon, 23 Dec 2019 16:49:32 +0000
+Subject: [PATCH] Bug 1605537 - override optimization settings for wasm
+ compilation; r=firefox-build-system-reviewers,rstewart
+
+The optimization flags that may have been chosen for our target compiler
+are not necessarily appropriate for our wasm compiler.
+
+Differential Revision: https://phabricator.services.mozilla.com/D58070
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/python/mozbuild/mozbuild/frontend/context.py b/python/mozbuild/mozbuild/frontend/context.py
+index 1e05f1793c56..3ed5cf5dd3a5 100644
+--- a/python/mozbuild/mozbuild/frontend/context.py
++++ b/python/mozbuild/mozbuild/frontend/context.py
+@@ -582,6 +582,16 @@ class WasmFlags(TargetCompileFlags):
+ 
+         TargetCompileFlags.__init__(self, context)
+ 
++    def _optimize_flags(self):
++        if not self._context.config.substs.get('MOZ_OPTIMIZE'):
++            return []
++
++        # We don't want `MOZ_{PGO_,}OPTIMIZE_FLAGS here because they may contain
++        # optimization flags that aren't suitable for wasm (e.g. -freorder-blocks).
++        # Just optimize for size in all cases; we may want to make this
++        # configurable.
++        return ['-Os']
++
+ 
+ class FinalTargetValue(ContextDerivedValue, unicode):
+     def __new__(cls, context, value=""):
+-- 
+2.25.1
+

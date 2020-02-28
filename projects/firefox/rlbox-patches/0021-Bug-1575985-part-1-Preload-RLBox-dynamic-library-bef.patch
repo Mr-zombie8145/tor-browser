@@ -1,0 +1,173 @@
+From 8ef39fe4e47a24ff91e4775c756340b52cb14884 Mon Sep 17 00:00:00 2001
+From: "shravanrn@gmail.com" <shravanrn@gmail.com>
+Date: Fri, 20 Dec 2019 18:31:27 +0000
+Subject: [PATCH] Bug 1575985 part 1 - Preload RLBox dynamic library before
+ content sandbox to allow subsequent loads r=froydnj
+
+Differential Revision: https://phabricator.services.mozilla.com/D45941
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/dom/ipc/ContentChild.cpp b/dom/ipc/ContentChild.cpp
+index c1c2e0e13ea6..9363390b7d7a 100644
+--- a/dom/ipc/ContentChild.cpp
++++ b/dom/ipc/ContentChild.cpp
+@@ -64,6 +64,7 @@
+ #include "mozilla/ipc/FileDescriptorSetChild.h"
+ #include "mozilla/ipc/FileDescriptorUtils.h"
+ #include "mozilla/ipc/GeckoChildProcessHost.h"
++#include "mozilla/ipc/LibrarySandboxPreload.h"
+ #include "mozilla/ipc/ProcessChild.h"
+ #include "mozilla/ipc/PChildToParentStreamChild.h"
+ #include "mozilla/ipc/PParentToChildStreamChild.h"
+@@ -1702,6 +1703,11 @@ mozilla::ipc::IPCResult ContentChild::RecvSetProcessSandbox(
+   // We may want to move the sandbox initialization somewhere else
+   // at some point; see bug 880808.
+ #if defined(MOZ_SANDBOX)
++
++#  ifdef MOZ_USING_WASM_SANDBOXING
++  mozilla::ipc::PreloadSandboxedDynamicLibraries();
++#  endif
++
+   bool sandboxEnabled = true;
+ #  if defined(XP_LINUX)
+   // On Linux, we have to support systems that can't use any sandboxing.
+diff --git a/gfx/thebes/gfxFontEntry.cpp b/gfx/thebes/gfxFontEntry.cpp
+index acd1377b4fa9..1f191ef8e9c1 100644
+--- a/gfx/thebes/gfxFontEntry.cpp
++++ b/gfx/thebes/gfxFontEntry.cpp
+@@ -27,6 +27,9 @@
+ #include "nsStyleConsts.h"
+ #include "mozilla/AppUnits.h"
+ #include "mozilla/FloatingPoint.h"
++#ifdef MOZ_WASM_SANDBOXING_GRAPHITE
++#  include "mozilla/ipc/LibrarySandboxPreload.h"
++#endif
+ #include "mozilla/Likely.h"
+ #include "mozilla/MemoryReporting.h"
+ #include "mozilla/Preferences.h"
+@@ -605,7 +608,11 @@ struct gfxFontEntry::GrSandboxData {
+ 
+   GrSandboxData() {
+ #ifdef MOZ_WASM_SANDBOXING_GRAPHITE
+-#  error "Sandboxed graphite not yet implemented"
++    // Firefox preloads the library externally to ensure we won't be stopped by
++    // the content sandbox
++    const bool external_loads_exist = true;
++    sandbox.create_sandbox(mozilla::ipc::GetSandboxedGraphitePath().get(),
++                           external_loads_exist);
+ #else
+     sandbox.create_sandbox();
+ #endif
+diff --git a/ipc/glue/LibrarySandboxPreload.cpp b/ipc/glue/LibrarySandboxPreload.cpp
+new file mode 100644
+index 000000000000..a50f044d3aa5
+--- /dev/null
++++ b/ipc/glue/LibrarySandboxPreload.cpp
+@@ -0,0 +1,57 @@
++/* -*- Mode: C++; tab-width: 8; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* vim: set ts=8 sts=2 et sw=2 tw=80: */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#include "LibrarySandboxPreload.h"
++
++#include "BinaryPath.h"
++#include "prlink.h"
++
++namespace mozilla {
++namespace ipc {
++
++nsAutoCString GetSandboxedGraphitePath() {
++  nsCOMPtr<nsIFile> binaryPath;
++  nsresult rv = mozilla::BinaryPath::GetFile(getter_AddRefs(binaryPath));
++  if (NS_FAILED(rv)) {
++    MOZ_CRASH("Library preload failure: Failed to get binary file\n");
++  }
++
++  nsCOMPtr<nsIFile> graphiteFile;
++  rv = binaryPath->GetParent(getter_AddRefs(graphiteFile));
++  if (NS_FAILED(rv)) {
++    MOZ_CRASH("Library preload failure: Failed to get binary folder\n");
++  }
++
++  rv = graphiteFile->AppendNative(NS_LITERAL_CSTRING("libgraphitewasm.so"));
++  if (NS_FAILED(rv)) {
++    MOZ_CRASH("Library preload failure: Failed to get libgraphite file");
++  }
++
++  nsAutoString path;
++  rv = graphiteFile->GetPath(path);
++  if (NS_FAILED(rv)) {
++    MOZ_CRASH("Library preload failure: Failed to get libgraphite path\n");
++  }
++
++  nsAutoCString converted_path = NS_ConvertUTF16toUTF8(path);
++  return converted_path;
++}
++
++void PreloadSandboxedDynamicLibraries() {
++#ifdef MOZ_WASM_SANDBOXING_GRAPHITE
++  nsAutoCString path = GetSandboxedGraphitePath();
++  PRLibSpec libSpec;
++  libSpec.type = PR_LibSpec_Pathname;
++  libSpec.value.pathname = path.get();
++  PRLibrary* ret = PR_LoadLibraryWithFlags(libSpec, PR_LD_LAZY);
++  if (!ret) {
++    MOZ_CRASH("Library preload failure: Failed to load libgraphite\n");
++  }
++#endif
++}
++
++}  // namespace ipc
++}  // namespace mozilla
+\ No newline at end of file
+diff --git a/ipc/glue/LibrarySandboxPreload.h b/ipc/glue/LibrarySandboxPreload.h
+new file mode 100644
+index 000000000000..36ac7baab93a
+--- /dev/null
++++ b/ipc/glue/LibrarySandboxPreload.h
+@@ -0,0 +1,17 @@
++/* -*- Mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 2 -*-
++ * vim: sw=2 ts=4 et :
++ */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef ipc_glue_LibrarySandboxPreload_h
++#define ipc_glue_LibrarySandboxPreload_h
++
++namespace mozilla {
++namespace ipc {
++nsAutoCString GetSandboxedGraphitePath();
++void PreloadSandboxedDynamicLibraries();
++}  // namespace ipc
++}  // namespace mozilla
++#endif
+\ No newline at end of file
+diff --git a/ipc/glue/moz.build b/ipc/glue/moz.build
+index cb0bedb36162..70e173da6e6c 100644
+--- a/ipc/glue/moz.build
++++ b/ipc/glue/moz.build
+@@ -35,6 +35,7 @@ EXPORTS.mozilla.ipc += [
+     'IPCStreamSource.h',
+     'IPCStreamUtils.h',
+     'IPDLParamTraits.h',
++    'LibrarySandboxPreload.h',
+     'MessageChannel.h',
+     'MessageLink.h',
+     'Neutering.h',
+@@ -158,6 +159,7 @@ UNIFIED_SOURCES += [
+     'IPCStreamParent.cpp',
+     'IPCStreamSource.cpp',
+     'IPCStreamUtils.cpp',
++    'LibrarySandboxPreload.cpp',
+     'MessageChannel.cpp',
+     'MessageLink.cpp',
+     'MessagePump.cpp',
+-- 
+2.25.1
+

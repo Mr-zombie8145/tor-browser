@@ -1,0 +1,30 @@
+From 7c36e1fec178856a76630b167e2d5950c5e9d440 Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Fri, 20 Dec 2019 22:26:50 +0000
+Subject: [PATCH] Bug 1605416 - package the wasm sandboxed graphite library
+ where appropriate; r=firefox-build-system-reviewers,rstewart
+
+Otherwise things will fall over at runtime.
+
+Differential Revision: https://phabricator.services.mozilla.com/D58007
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/browser/installer/package-manifest.in b/browser/installer/package-manifest.in
+index 1825397678d1..e0e1e520f344 100644
+--- a/browser/installer/package-manifest.in
++++ b/browser/installer/package-manifest.in
+@@ -107,6 +107,9 @@
+ @BINPATH@/@DLL_PREFIX@mozwayland@DLL_SUFFIX@
+ #endif
+ #endif
++#ifdef MOZ_WASM_SANDBOXING_GRAPHITE
++@BINPATH@/@DLL_PREFIX@graphitewasm@DLL_SUFFIX@
++#endif
+ 
+ ; We don't have a complete view of which dlls to expect when doing an artifact
+ ; build because we haven't run the relevant parts of configure, so we guess
+-- 
+2.25.1
+

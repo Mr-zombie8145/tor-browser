@@ -1,0 +1,985 @@
+From 2635462eb9e99c49bf0342a6178732e24d93bbc4 Mon Sep 17 00:00:00 2001
+From: "shravanrn@gmail.com" <shravanrn@gmail.com>
+Date: Thu, 19 Dec 2019 16:05:35 +0000
+Subject: [PATCH] Bug 1566288 - Port libGraphite usage in libThebes to use the
+ RLBox API. r=froydnj,jfkthame
+
+Differential Revision: https://phabricator.services.mozilla.com/D39593
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/build/clang-plugin/Utils.h b/build/clang-plugin/Utils.h
+index c1a96ca4cf89..40bbc83a1d83 100644
+--- a/build/clang-plugin/Utils.h
++++ b/build/clang-plugin/Utils.h
+@@ -162,7 +162,8 @@ inline bool isInIgnoredNamespaceForImplicitCtor(const Decl *Declaration) {
+          Name == "dwarf2reader" ||      // dwarf2reader
+          Name == "arm_ex_to_module" ||  // arm_ex_to_module
+          Name == "testing" ||           // gtest
+-         Name == "Json";                // jsoncpp
++         Name == "Json" ||              // jsoncpp
++         Name == "rlbox";               // rlbox
+ }
+ 
+ inline bool isInIgnoredNamespaceForImplicitConversion(const Decl *Declaration) {
+@@ -174,7 +175,8 @@ inline bool isInIgnoredNamespaceForImplicitConversion(const Decl *Declaration) {
+   return Name == "std" ||             // standard C++ lib
+          Name == "__gnu_cxx" ||       // gnu C++ lib
+          Name == "google_breakpad" || // breakpad
+-         Name == "testing";           // gtest
++         Name == "testing" ||         // gtest
++         Name == "rlbox";             // rlbox
+ }
+ 
+ inline bool isIgnoredPathForImplicitConversion(const Decl *Declaration) {
+diff --git a/config/external/moz.build b/config/external/moz.build
+index 03e4fa143bd1..b83d4f24b643 100644
+--- a/config/external/moz.build
++++ b/config/external/moz.build
+@@ -8,6 +8,7 @@ external_dirs = []
+ 
+ DIRS += [
+     'lgpllibs',
++    'rlbox',
+     'sqlite',
+ ]
+ if not CONFIG['MOZ_SYSTEM_JPEG']:
+diff --git a/config/external/rlbox/moz.build b/config/external/rlbox/moz.build
+new file mode 100644
+index 000000000000..a4522b896878
+--- /dev/null
++++ b/config/external/rlbox/moz.build
+@@ -0,0 +1,34 @@
++# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
++# vim: set filetype=python:
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++EXPORTS.mozilla.rlbox += [
++    '/third_party/rlbox/include/rlbox.hpp',
++    '/third_party/rlbox/include/rlbox_conversion.hpp',
++    '/third_party/rlbox/include/rlbox_helpers.hpp',
++    '/third_party/rlbox/include/rlbox_noop_sandbox.hpp',
++    '/third_party/rlbox/include/rlbox_policy_types.hpp',
++    '/third_party/rlbox/include/rlbox_range.hpp',
++    '/third_party/rlbox/include/rlbox_sandbox.hpp',
++    '/third_party/rlbox/include/rlbox_stdlib.hpp',
++    '/third_party/rlbox/include/rlbox_stdlib_polyfill.hpp',
++    '/third_party/rlbox/include/rlbox_struct_support.hpp',
++    '/third_party/rlbox/include/rlbox_type_traits.hpp',
++    '/third_party/rlbox/include/rlbox_types.hpp',
++    '/third_party/rlbox/include/rlbox_unwrap.hpp',
++    '/third_party/rlbox/include/rlbox_wrapper_traits.hpp',
++    'rlbox_config.h',
++]
++
++SOURCES += [
++    'rlbox_thread_locals.cpp'
++]
++
++if CONFIG['CC_TYPE'] == 'clang-cl':
++    CXXFLAGS += ['/std:c++17']
++else:
++    CXXFLAGS += ['-std=gnu++17']
++
++FINAL_LIBRARY = 'xul'
+diff --git a/config/external/rlbox/rlbox_config.h b/config/external/rlbox/rlbox_config.h
+new file mode 100644
+index 000000000000..75cd6d801e94
+--- /dev/null
++++ b/config/external/rlbox/rlbox_config.h
+@@ -0,0 +1,41 @@
++/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef RLBOX_CONFIG
++#define RLBOX_CONFIG
++
++#ifdef XP_MACOSX
++
++// RLBox uses c++17's shared_locks by default, even for the noop_sandbox
++// However c++17 shared_lock is not supported on macOS 10.9 to 10.11
++// Thus we use Firefox's shared lock implementation
++// This can be removed if macOS 10.9 to 10.11 support is dropped
++#  include "mozilla/RWLock.h"
++namespace rlbox {
++struct rlbox_shared_lock {
++  mozilla::RWLock rwlock;
++  rlbox_shared_lock() : rwlock("rlbox") {}
++};
++}  // namespace rlbox
++#  define RLBOX_USE_CUSTOM_SHARED_LOCK
++#  define RLBOX_SHARED_LOCK(name) rlbox::rlbox_shared_lock name
++#  define RLBOX_ACQUIRE_SHARED_GUARD(name, ...) \
++    mozilla::AutoReadLock name((__VA_ARGS__).rwlock)
++#  define RLBOX_ACQUIRE_UNIQUE_GUARD(name, ...) \
++    mozilla::AutoWriteLock name((__VA_ARGS__).rwlock)
++
++#endif
++
++// All uses are on the main thread right now, disable rlbox thread checks for
++// performance
++#define RLBOX_SINGLE_THREADED_INVOCATIONS
++
++// The MingW compiler does not correctly handle static thread_local inline
++// members. This toggles a workaround that allows the host application (firefox)
++// to provide TLS storage via functions. This can be removed if the MingW bug is
++// fixed.
++#define RLBOX_EMBEDDER_PROVIDES_TLS_STATIC_VARIABLES
++
++#endif
+diff --git a/config/external/rlbox/rlbox_thread_locals.cpp b/config/external/rlbox/rlbox_thread_locals.cpp
+new file mode 100644
+index 000000000000..157177c0e0f3
+--- /dev/null
++++ b/config/external/rlbox/rlbox_thread_locals.cpp
+@@ -0,0 +1,17 @@
++/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++// Load general firefox configuration of RLBox
++#include "mozilla/rlbox/rlbox_config.h"
++
++#define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol
++#include "mozilla/rlbox/rlbox_noop_sandbox.hpp"
++
++#include "mozilla/rlbox/rlbox.hpp"
++
++// The MingW compiler does not correctly handle static thread_local inline
++// members. We instead TLS storage via functions. This can be removed if the
++// MingW bug is fixed.
++RLBOX_NOOP_SANDBOX_STATIC_VARIABLES();
+diff --git a/gfx/graphite2/geckoextra/include/GraphiteStructsForRLBox.h b/gfx/graphite2/geckoextra/include/GraphiteStructsForRLBox.h
+new file mode 100644
+index 000000000000..ea8a1b39d30e
+--- /dev/null
++++ b/gfx/graphite2/geckoextra/include/GraphiteStructsForRLBox.h
+@@ -0,0 +1,58 @@
++// -*- Mode: C++; tab-width: 2; indent-tabs-mode: nil; c-basic-offset: 2 -*-
++// vim: set ts=2 et sw=2 tw=80:
++// This Source Code is subject to the terms of the Mozilla Public License
++// version 2.0 (the "License"). You can obtain a copy of the License at
++// http://mozilla.org/MPL/2.0/.
++
++#ifndef GraphiteStructsForRLBox_h__
++#define GraphiteStructsForRLBox_h__
++
++#if defined(__clang__)
++#  pragma clang diagnostic push
++#  pragma clang diagnostic ignored "-Wgnu-zero-variadic-macro-arguments"
++#elif defined(__GNUC__) || defined(__GNUG__)
++// Can't turn off the variadic macro warning emitted from -pedantic
++#  pragma GCC system_header
++#elif defined(_MSC_VER)
++// Doesn't seem to emit the warning
++#else
++// Don't know the compiler... just let it go through
++#endif
++
++#define sandbox_fields_reflection_graphite_class_gr_font_ops(f, g, ...)                       \
++  f(size_t, size, FIELD_NORMAL, ##__VA_ARGS__) g()                                            \
++  f(float (*)(const void*, unsigned short), glyph_advance_x, FIELD_NORMAL, ##__VA_ARGS__) g() \
++  f(float (*)(const void*, unsigned short), glyph_advance_y, FIELD_NORMAL, ##__VA_ARGS__) g()
++
++#define sandbox_fields_reflection_graphite_class_gr_face_ops(f, g, ...)                              \
++  f(size_t, size, FIELD_NORMAL, ##__VA_ARGS__) g()                                                   \
++  f(const void* (*)(const void*, unsigned int, size_t*), get_table, FIELD_NORMAL, ##__VA_ARGS__) g() \
++  f(void (*)(const void*, const void*), release_table, FIELD_NORMAL, ##__VA_ARGS__) g()
++
++#define sandbox_fields_reflection_graphite_class_gr_glyph_to_char_cluster(f, g, ...) \
++  f(unsigned int, baseChar, FIELD_NORMAL, ##__VA_ARGS__) g()                               \
++  f(unsigned int, baseGlyph, FIELD_NORMAL, ##__VA_ARGS__) g()                              \
++  f(unsigned int, nChars, FIELD_NORMAL, ##__VA_ARGS__) g()                                 \
++  f(unsigned int, nGlyphs, FIELD_NORMAL, ##__VA_ARGS__) g()
++
++#define sandbox_fields_reflection_graphite_class_gr_glyph_to_char_association(f, g, ...) \
++  f(gr_glyph_to_char_cluster*, clusters, FIELD_NORMAL, ##__VA_ARGS__) g()           \
++  f(unsigned short*, gids, FIELD_NORMAL, ##__VA_ARGS__) g()                               \
++  f(float*, xLocs, FIELD_NORMAL, ##__VA_ARGS__) g()                                       \
++  f(float*, yLocs, FIELD_NORMAL, ##__VA_ARGS__) g()                                       \
++  f(unsigned int, cIndex, FIELD_NORMAL, ##__VA_ARGS__) g()
++
++#define sandbox_fields_reflection_graphite_allClasses(f, ...)                  \
++  f(gr_font_ops, graphite, ##__VA_ARGS__)                                      \
++  f(gr_face_ops, graphite, ##__VA_ARGS__)                                      \
++  f(gr_glyph_to_char_cluster, graphite, ##__VA_ARGS__)                         \
++  f(gr_glyph_to_char_association, graphite, ##__VA_ARGS__)
++
++#if defined(__clang__)
++#  pragma clang diagnostic pop
++#elif defined(__GNUC__) || defined(__GNUG__)
++#elif defined(_MSC_VER)
++#else
++#endif
++
++#endif
+\ No newline at end of file
+diff --git a/gfx/graphite2/src/moz.build b/gfx/graphite2/src/moz.build
+index a6167943e43c..447cd861126a 100755
+--- a/gfx/graphite2/src/moz.build
++++ b/gfx/graphite2/src/moz.build
+@@ -7,6 +7,7 @@
+ # This should contain all of the _PUBLIC_HEADERS from files.mk
+ EXPORTS.graphite2 += [
+     '../geckoextra/include/GraphiteExtra.h',
++    '../geckoextra/include/GraphiteStructsForRLBox.h',
+     '../include/graphite2/Font.h',
+     '../include/graphite2/Log.h',
+     '../include/graphite2/Segment.h',
+diff --git a/gfx/thebes/ThebesRLBox.h b/gfx/thebes/ThebesRLBox.h
+new file mode 100644
+index 000000000000..cae6a2fee422
+--- /dev/null
++++ b/gfx/thebes/ThebesRLBox.h
+@@ -0,0 +1,28 @@
++/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef THEBES_RLBOX
++#define THEBES_RLBOX
++
++#include "ThebesRLBoxTypes.h"
++
++// Load general firefox configuration of RLBox
++#include "mozilla/rlbox/rlbox_config.h"
++
++// Extra configuration for no-op sandbox
++#define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol
++#include "mozilla/rlbox/rlbox_noop_sandbox.hpp"
++
++#include "mozilla/rlbox/rlbox.hpp"
++
++// Struct info needed for rlbox_load_structs_from_library
++#include "graphite2/Font.h"
++#include "graphite2/GraphiteExtra.h"
++#include "graphite2/Segment.h"
++
++#include "graphite2/GraphiteStructsForRLBox.h"
++rlbox_load_structs_from_library(graphite);
++
++#endif
+diff --git a/gfx/thebes/ThebesRLBoxTypes.h b/gfx/thebes/ThebesRLBoxTypes.h
+new file mode 100644
+index 000000000000..6b8ad9523a32
+--- /dev/null
++++ b/gfx/thebes/ThebesRLBoxTypes.h
+@@ -0,0 +1,22 @@
++/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifndef THEBES_RLBOX_TYPES
++#define THEBES_RLBOX_TYPES
++
++#include "mozilla/rlbox/rlbox_types.hpp"
++
++using rlbox_gr_sandbox_type = rlbox::rlbox_noop_sandbox;
++using rlbox_sandbox_gr = rlbox::rlbox_sandbox<rlbox_gr_sandbox_type>;
++template <typename T>
++using sandbox_callback_gr = rlbox::sandbox_callback<T, rlbox_gr_sandbox_type>;
++template <typename T>
++using tainted_gr = rlbox::tainted<T, rlbox_gr_sandbox_type>;
++template <typename T>
++using tainted_opaque_gr = rlbox::tainted_opaque<T, rlbox_gr_sandbox_type>;
++template <typename T>
++using tainted_volatile_gr = rlbox::tainted_volatile<T, rlbox_gr_sandbox_type>;
++
++#endif
+diff --git a/gfx/thebes/gfxFcPlatformFontList.cpp b/gfx/thebes/gfxFcPlatformFontList.cpp
+index 6c96781ca0ff..29c63e95ddfb 100644
+--- a/gfx/thebes/gfxFcPlatformFontList.cpp
++++ b/gfx/thebes/gfxFcPlatformFontList.cpp
+@@ -28,6 +28,8 @@
+ 
+ #include "mozilla/gfx/HelpersCairo.h"
+ 
++#include "ThebesRLBox.h"
++
+ #include <fontconfig/fcfreetype.h>
+ #include <dlfcn.h>
+ #include <unistd.h>
+@@ -490,7 +492,7 @@ hb_blob_t* gfxFontconfigFontEntry::GetFontTable(uint32_t aTableTag) {
+ 
+ void gfxFontconfigFontEntry::MaybeReleaseFTFace() {
+   // don't release if either HB or Gr face still exists
+-  if (mHBFace || mGrFace) {
++  if (mHBFace || rlbox::from_opaque(mGrFace) != nullptr) {
+     return;
+   }
+   // only close out FT_Face for system fonts, not for data fonts
+@@ -516,7 +518,7 @@ void gfxFontconfigFontEntry::ForgetHBFace() {
+   MaybeReleaseFTFace();
+ }
+ 
+-void gfxFontconfigFontEntry::ReleaseGrFace(gr_face* aFace) {
++void gfxFontconfigFontEntry::ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace) {
+   gfxFontEntry::ReleaseGrFace(aFace);
+   MaybeReleaseFTFace();
+ }
+diff --git a/gfx/thebes/gfxFcPlatformFontList.h b/gfx/thebes/gfxFcPlatformFontList.h
+index 0b33a9c5874b..dca7d952fa63 100644
+--- a/gfx/thebes/gfxFcPlatformFontList.h
++++ b/gfx/thebes/gfxFcPlatformFontList.h
+@@ -118,7 +118,7 @@ class gfxFontconfigFontEntry : public gfxFontEntry {
+   hb_blob_t* GetFontTable(uint32_t aTableTag) override;
+ 
+   void ForgetHBFace() override;
+-  void ReleaseGrFace(gr_face* aFace) override;
++  void ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace) override;
+ 
+   double GetAspect();
+ 
+diff --git a/gfx/thebes/gfxFontEntry.cpp b/gfx/thebes/gfxFontEntry.cpp
+index d57847fe84b7..cb034cb192f6 100644
+--- a/gfx/thebes/gfxFontEntry.cpp
++++ b/gfx/thebes/gfxFontEntry.cpp
+@@ -30,6 +30,7 @@
+ #include "mozilla/Likely.h"
+ #include "mozilla/MemoryReporting.h"
+ #include "mozilla/Preferences.h"
++#include "mozilla/ScopeExit.h"
+ #include "mozilla/Services.h"
+ #include "mozilla/StaticPrefs.h"
+ #include "mozilla/Telemetry.h"
+@@ -40,6 +41,8 @@
+ #include "harfbuzz/hb-ot.h"
+ #include "graphite2/Font.h"
+ 
++#include "ThebesRLBox.h"
++
+ #include <algorithm>
+ 
+ using namespace mozilla;
+@@ -590,54 +593,141 @@ hb_face_t* gfxFontEntry::GetHBFace() {
+   return hb_face_reference(mHBFace);
+ }
+ 
+-/*static*/ const void* gfxFontEntry::GrGetTable(const void* aAppFaceHandle,
+-                                                unsigned int aName,
+-                                                size_t* aLen) {
+-  gfxFontEntry* fontEntry =
+-      static_cast<gfxFontEntry*>(const_cast<void*>(aAppFaceHandle));
+-  hb_blob_t* blob = fontEntry->GetFontTable(aName);
+-  if (blob) {
+-    unsigned int blobLength;
+-    const void* tableData = hb_blob_get_data(blob, &blobLength);
+-    fontEntry->mGrTableMap->Put(tableData, blob);
+-    *aLen = blobLength;
+-    return tableData;
+-  }
+-  *aLen = 0;
+-  return nullptr;
+-}
++struct gfxFontEntry::GrSandboxData {
++  rlbox_sandbox_gr sandbox;
++  sandbox_callback_gr<const void* (*)(const void*, unsigned int, size_t*)>
++      grGetTableCallback;
++  sandbox_callback_gr<void (*)(const void*, const void*)>
++      grReleaseTableCallback;
++  // Text Shapers register a callback to get glyph advances
++  sandbox_callback_gr<float (*)(const void*, uint16_t)>
++      grGetGlyphAdvanceCallback;
++
++  GrSandboxData() {
++    sandbox.create_sandbox();
++    grGetTableCallback = sandbox.register_callback(GrGetTable);
++    grReleaseTableCallback = sandbox.register_callback(GrReleaseTable);
++    grGetGlyphAdvanceCallback =
++        sandbox.register_callback(gfxGraphiteShaper::GrGetAdvance);
++  }
++
++  ~GrSandboxData() {
++    grGetTableCallback.unregister();
++    grReleaseTableCallback.unregister();
++    grGetGlyphAdvanceCallback.unregister();
++    sandbox.destroy_sandbox();
++  }
++};
++
++static thread_local gfxFontEntry* tl_grGetFontTableCallbackData = nullptr;
+ 
+ /*static*/
+-void gfxFontEntry::GrReleaseTable(const void* aAppFaceHandle,
+-                                  const void* aTableBuffer) {
+-  gfxFontEntry* fontEntry =
+-      static_cast<gfxFontEntry*>(const_cast<void*>(aAppFaceHandle));
+-  void* value;
+-  if (fontEntry->mGrTableMap->Remove(aTableBuffer, &value)) {
+-    hb_blob_destroy(static_cast<hb_blob_t*>(value));
++tainted_opaque_gr<const void*> gfxFontEntry::GrGetTable(
++    rlbox_sandbox_gr& sandbox,
++    tainted_opaque_gr<const void*> /* aAppFaceHandle */,
++    tainted_opaque_gr<unsigned int> aName, tainted_opaque_gr<size_t*> aLen) {
++  gfxFontEntry* fontEntry = tl_grGetFontTableCallbackData;
++  tainted_gr<size_t*> t_aLen = rlbox::from_opaque(aLen);
++  *t_aLen = 0;
++  tainted_gr<const void*> ret = nullptr;
++
++  if (fontEntry) {
++    hb_blob_t* blob =
++        fontEntry->GetFontTable(rlbox::from_opaque(aName).UNSAFE_unverified());
++
++    if (blob) {
++      unsigned int blobLength;
++      const void* tableData = hb_blob_get_data(blob, &blobLength);
++      // tableData is read-only data shared with the sandbox.
++      // Making a copy in sandbox memory
++      tainted_gr<void*> t_tableData = rlbox::sandbox_reinterpret_cast<void*>(
++          sandbox.malloc_in_sandbox<char>(blobLength));
++      if (t_tableData) {
++        rlbox::memcpy(sandbox, t_tableData, tableData, blobLength);
++        *t_aLen = blobLength;
++        ret = rlbox::sandbox_const_cast<const void*>(t_tableData);
++      }
++      hb_blob_destroy(blob);
++    }
+   }
++
++  return ret.to_opaque();
++}
++
++/*static*/
++void gfxFontEntry::GrReleaseTable(
++    rlbox_sandbox_gr& sandbox,
++    tainted_opaque_gr<const void*> /* aAppFaceHandle */,
++    tainted_opaque_gr<const void*> aTableBuffer) {
++  sandbox.free_in_sandbox(rlbox::from_opaque(aTableBuffer));
++}
++
++rlbox_sandbox_gr* gfxFontEntry::GetGrSandbox() {
++  MOZ_ASSERT(mSandboxData != nullptr);
++  return &mSandboxData->sandbox;
+ }
+ 
+-gr_face* gfxFontEntry::GetGrFace() {
++sandbox_callback_gr<float (*)(const void*, uint16_t)>*
++gfxFontEntry::GetGrSandboxAdvanceCallbackHandle() {
++  MOZ_ASSERT(mSandboxData != nullptr);
++  return &mSandboxData->grGetGlyphAdvanceCallback;
++}
++
++tainted_opaque_gr<gr_face*> gfxFontEntry::GetGrFace() {
+   if (!mGrFaceInitialized) {
+-    gr_face_ops faceOps = {sizeof(gr_face_ops), GrGetTable, GrReleaseTable};
+-    mGrTableMap = new nsDataHashtable<nsPtrHashKey<const void>, void*>;
+-    mGrFace = gr_make_face_with_ops(this, &faceOps, gr_face_default);
++    // When possible, the below code will use WASM as a sandboxing mechanism.
++    // At this time the wasm sandbox does not support threads.
++    // If Thebes is updated to make callst to the sandbox on multiple threaads,
++    // we need to make sure the underlying sandbox supports threading.
++    MOZ_ASSERT(NS_IsMainThread());
++
++    mSandboxData = new GrSandboxData();
++
++    auto p_faceOps = mSandboxData->sandbox.malloc_in_sandbox<gr_face_ops>();
++    if (!p_faceOps) {
++      MOZ_CRASH("Graphite sandbox memory allocation failed");
++    }
++    auto cleanup = MakeScopeExit(
++        [&] { mSandboxData->sandbox.free_in_sandbox(p_faceOps); });
++    p_faceOps->size = sizeof(*p_faceOps);
++    p_faceOps->get_table = mSandboxData->grGetTableCallback;
++    p_faceOps->release_table = mSandboxData->grReleaseTableCallback;
++
++    tl_grGetFontTableCallbackData = this;
++    auto face = sandbox_invoke(
++        mSandboxData->sandbox, gr_make_face_with_ops,
++        // For security, we do not pass the callback data to this arg, and use
++        // a TLS var instead. However, gr_make_face_with_ops expects this to
++        // be a non null ptr. Therefore,  we should pass some dummy non null
++        // pointer which will be passed to callbacks, but never used. Let's just
++        // pass p_faceOps again, as this is a non-null tainted pointer.
++        p_faceOps /* appFaceHandle */, p_faceOps, gr_face_default);
++    tl_grGetFontTableCallbackData = nullptr;
++    mGrFace = face.to_opaque();
+     mGrFaceInitialized = true;
+   }
+   ++mGrFaceRefCnt;
+   return mGrFace;
+ }
+ 
+-void gfxFontEntry::ReleaseGrFace(gr_face* aFace) {
+-  MOZ_ASSERT(aFace == mGrFace);  // sanity-check
++void gfxFontEntry::ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace) {
++  MOZ_ASSERT(rlbox::from_opaque(aFace).UNSAFE_unverified() ==
++             rlbox::from_opaque(mGrFace).UNSAFE_unverified());  // sanity-check
+   MOZ_ASSERT(mGrFaceRefCnt > 0);
+   if (--mGrFaceRefCnt == 0) {
+-    gr_face_destroy(mGrFace);
+-    mGrFace = nullptr;
++    auto t_mGrFace = rlbox::from_opaque(mGrFace);
++
++    tl_grGetFontTableCallbackData = this;
++    sandbox_invoke(mSandboxData->sandbox, gr_face_destroy, t_mGrFace);
++    tl_grGetFontTableCallbackData = nullptr;
++
++    t_mGrFace = nullptr;
++    mGrFace = t_mGrFace.to_opaque();
++
++    delete mSandboxData;
++    mSandboxData = nullptr;
++
+     mGrFaceInitialized = false;
+-    delete mGrTableMap;
+-    mGrTableMap = nullptr;
+   }
+ }
+ 
+@@ -659,9 +749,12 @@ void gfxFontEntry::CheckForGraphiteTables() {
+ 
+ bool gfxFontEntry::HasGraphiteSpaceContextuals() {
+   if (!mGraphiteSpaceContextualsInitialized) {
+-    gr_face* face = GetGrFace();
+-    if (face) {
+-      const gr_faceinfo* faceInfo = gr_face_info(face, 0);
++    auto face = GetGrFace();
++    auto t_face = rlbox::from_opaque(face);
++    if (t_face) {
++      const gr_faceinfo* faceInfo =
++          sandbox_invoke(mSandboxData->sandbox, gr_face_info, t_face, 0)
++              .UNSAFE_unverified();
+       mHasGraphiteSpaceContextuals =
+           faceInfo->space_contextuals != gr_faceinfo::gr_space_none;
+     }
+@@ -830,8 +923,11 @@ bool gfxFontEntry::SupportsGraphiteFeature(uint32_t aFeatureTag) {
+     return result;
+   }
+ 
+-  gr_face* face = GetGrFace();
+-  result = face ? gr_face_find_fref(face, aFeatureTag) != nullptr : false;
++  auto face = GetGrFace();
++  auto t_face = rlbox::from_opaque(face);
++  result = t_face ? sandbox_invoke(mSandboxData->sandbox, gr_face_find_fref,
++                                   t_face, aFeatureTag) != nullptr
++                  : false;
+   ReleaseGrFace(face);
+ 
+   mSupportedFeatures->Put(scriptFeature, result);
+diff --git a/gfx/thebes/gfxFontEntry.h b/gfx/thebes/gfxFontEntry.h
+index 26893709b4f0..f31611512deb 100644
+--- a/gfx/thebes/gfxFontEntry.h
++++ b/gfx/thebes/gfxFontEntry.h
+@@ -24,6 +24,7 @@
+ #include "mozilla/gfx/2D.h"
+ #include "mozilla/UniquePtr.h"
+ #include "mozilla/WeakPtr.h"
++#include "ThebesRLBoxTypes.h"
+ #include <math.h>
+ 
+ typedef struct gr_face gr_face;
+@@ -337,10 +338,21 @@ class gfxFontEntry {
+   hb_face_t* GetHBFace();
+   virtual void ForgetHBFace();
+ 
++  // Get the sandbox instance that graphite is running in.
++  rlbox_sandbox_gr* GetGrSandbox();
++
++  // Register and get the callback handle for the glyph advance firefox callback
++  // Since the sandbox instance is shared with multiple test shapers, callback
++  // registration must be handled centrally to ensure multiple instances don't
++  // register the same callback.
++  sandbox_callback_gr<float (*)(const void*, uint16_t)>*
++  GetGrSandboxAdvanceCallbackHandle();
++
+   // Get Graphite face corresponding to this font file.
+   // Caller must call gfxFontEntry::ReleaseGrFace when finished with it.
+-  gr_face* GetGrFace();
+-  virtual void ReleaseGrFace(gr_face* aFace);
++  // Graphite is run in a sandbox
++  tainted_opaque_gr<gr_face*> GetGrFace();
++  virtual void ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace);
+ 
+   // Does the font have graphite contextuals that involve the space glyph
+   // (and therefore we should bypass the word cache)?
+@@ -556,23 +568,26 @@ class gfxFontEntry {
+   // Callback that the hb_face will use to tell us when it is being deleted.
+   static void HBFaceDeletedCallback(void* aUserData);
+ 
++  // All libGraphite functionality is sandboxed in an rlbox sandbox. This
++  // contains data for the sandbox instance.
++  struct GrSandboxData;
++  GrSandboxData* mSandboxData = nullptr;
++
+   // gr_face is -not- refcounted, so it will be owned directly by the font
+   // entry, and we'll keep a count of how many references we've handed out;
+   // each shaper is responsible to call ReleaseGrFace on its entry when
+   // finished with it, so that we know when it can be deleted.
+-  gr_face* mGrFace = nullptr;
+-
+-  // hashtable to map raw table data ptr back to its owning blob, for use by
+-  // graphite table-release callback
+-  nsDataHashtable<nsPtrHashKey<const void>, void*>* mGrTableMap = nullptr;
++  tainted_opaque_gr<gr_face*> mGrFace;
+ 
+   // number of current users of this entry's mGrFace
+   nsrefcnt mGrFaceRefCnt = 0;
+ 
+-  static const void* GrGetTable(const void* aAppFaceHandle, unsigned int aName,
+-                                size_t* aLen);
+-  static void GrReleaseTable(const void* aAppFaceHandle,
+-                             const void* aTableBuffer);
++  static tainted_opaque_gr<const void*> GrGetTable(
++      rlbox_sandbox_gr& sandbox, tainted_opaque_gr<const void*> aAppFaceHandle,
++      tainted_opaque_gr<unsigned int> aName, tainted_opaque_gr<size_t*> aLen);
++  static void GrReleaseTable(rlbox_sandbox_gr& sandbox,
++                             tainted_opaque_gr<const void*> aAppFaceHandle,
++                             tainted_opaque_gr<const void*> aTableBuffer);
+ 
+   // For memory reporting: size of user-font data belonging to this entry.
+   // We record this in the font entry because the actual data block may be
+diff --git a/gfx/thebes/gfxGraphiteShaper.cpp b/gfx/thebes/gfxGraphiteShaper.cpp
+index bff9725d130b..37a58195db61 100644
+--- a/gfx/thebes/gfxGraphiteShaper.cpp
++++ b/gfx/thebes/gfxGraphiteShaper.cpp
+@@ -15,6 +15,10 @@
+ 
+ #include "harfbuzz/hb.h"
+ 
++#include "mozilla/ScopeExit.h"
++
++#include "ThebesRLBox.h"
++
+ #define FloatToFixed(f) (65536 * (f))
+ #define FixedToFloat(f) ((f) * (1.0 / 65536.0))
+ // Right shifts of negative (signed) integers are undefined, as are overflows
+@@ -32,23 +36,38 @@ using namespace mozilla;  // for AutoSwap_* types
+ gfxGraphiteShaper::gfxGraphiteShaper(gfxFont* aFont)
+     : gfxFontShaper(aFont),
+       mGrFace(mFont->GetFontEntry()->GetGrFace()),
+-      mGrFont(nullptr),
++      mSandbox(mFont->GetFontEntry()->GetGrSandbox()),
++      mCallback(mFont->GetFontEntry()->GetGrSandboxAdvanceCallbackHandle()),
+       mFallbackToSmallCaps(false) {
+   mCallbackData.mFont = aFont;
+ }
+ 
+ gfxGraphiteShaper::~gfxGraphiteShaper() {
+-  if (mGrFont) {
+-    gr_font_destroy(mGrFont);
++  auto t_mGrFont = rlbox::from_opaque(mGrFont);
++  if (t_mGrFont) {
++    sandbox_invoke(*mSandbox, gr_font_destroy, t_mGrFont);
+   }
+   mFont->GetFontEntry()->ReleaseGrFace(mGrFace);
+ }
+ 
+ /*static*/
+-float gfxGraphiteShaper::GrGetAdvance(const void* appFontHandle,
+-                                      uint16_t glyphid) {
+-  const CallbackData* cb = static_cast<const CallbackData*>(appFontHandle);
+-  return FixedToFloat(cb->mFont->GetGlyphWidth(glyphid));
++thread_local gfxGraphiteShaper::CallbackData*
++    gfxGraphiteShaper::tl_GrGetAdvanceData = nullptr;
++
++/*static*/
++tainted_opaque_gr<float> gfxGraphiteShaper::GrGetAdvance(
++    rlbox_sandbox_gr& sandbox,
++    tainted_opaque_gr<const void*> /* appFontHandle */,
++    tainted_opaque_gr<uint16_t> t_glyphid) {
++  CallbackData* cb = tl_GrGetAdvanceData;
++  if (!cb) {
++    // GrGetAdvance callback called unexpectedly. Just return safe value.
++    tainted_gr<float> ret = 0;
++    return ret.to_opaque();
++  }
++  auto glyphid = rlbox::from_opaque(t_glyphid).UNSAFE_unverified();
++  tainted_gr<float> ret = FixedToFloat(cb->mFont->GetGlyphWidth(glyphid));
++  return ret.to_opaque();
+ }
+ 
+ static inline uint32_t MakeGraphiteLangTag(uint32_t aTag) {
+@@ -63,16 +82,19 @@ static inline uint32_t MakeGraphiteLangTag(uint32_t aTag) {
+ }
+ 
+ struct GrFontFeatures {
+-  gr_face* mFace;
+-  gr_feature_val* mFeatures;
++  tainted_gr<gr_face*> mFace;
++  tainted_gr<gr_feature_val*> mFeatures;
++  rlbox_sandbox_gr* mSandbox;
+ };
+ 
+ static void AddFeature(const uint32_t& aTag, uint32_t& aValue, void* aUserArg) {
+   GrFontFeatures* f = static_cast<GrFontFeatures*>(aUserArg);
+ 
+-  const gr_feature_ref* fref = gr_face_find_fref(f->mFace, aTag);
++  tainted_gr<const gr_feature_ref*> fref =
++      sandbox_invoke(*(f->mSandbox), gr_face_find_fref, f->mFace, aTag);
+   if (fref) {
+-    gr_fref_set_feature_value(fref, aValue, f->mFeatures);
++    sandbox_invoke(*(f->mSandbox), gr_fref_set_feature_value, fref, aValue,
++                   f->mFeatures);
+   }
+ }
+ 
+@@ -87,24 +109,39 @@ bool gfxGraphiteShaper::ShapeText(DrawTarget* aDrawTarget,
+   }
+ 
+   const gfxFontStyle* style = mFont->GetStyle();
++  auto t_mGrFace = rlbox::from_opaque(mGrFace);
++  auto t_mGrFont = rlbox::from_opaque(mGrFont);
+ 
+-  if (!mGrFont) {
+-    if (!mGrFace) {
++  if (!t_mGrFont) {
++    if (!t_mGrFace) {
+       return false;
+     }
+ 
+     if (mFont->ProvidesGlyphWidths()) {
+-      gr_font_ops ops = {
+-          sizeof(gr_font_ops), &GrGetAdvance,
+-          nullptr  // vertical text not yet implemented
+-      };
+-      mGrFont = gr_make_font_with_ops(mFont->GetAdjustedSize(), &mCallbackData,
+-                                      &ops, mGrFace);
++      auto p_ops = mSandbox->malloc_in_sandbox<gr_font_ops>();
++      if (!p_ops) {
++        return false;
++      }
++      auto clean_ops = MakeScopeExit([&] { mSandbox->free_in_sandbox(p_ops); });
++      p_ops->size = sizeof(*p_ops);
++      p_ops->glyph_advance_x = *mCallback;
++      p_ops->glyph_advance_y = nullptr;  // vertical text not yet implemented
++      t_mGrFont = sandbox_invoke(
++          *mSandbox, gr_make_font_with_ops, mFont->GetAdjustedSize(),
++          // For security, we do not pass the callback data to this arg, and use
++          // a TLS var instead. However, gr_make_font_with_ops expects this to
++          // be a non null ptr, and changes its behavior if it isn't. Therefore,
++          // we should pass some dummy non null pointer which will be passed to
++          // the GrGetAdvance callback, but never used. Let's just pass p_ops
++          // again, as this is a non-null tainted pointer.
++          p_ops /* mCallbackData */, p_ops, t_mGrFace);
+     } else {
+-      mGrFont = gr_make_font(mFont->GetAdjustedSize(), mGrFace);
++      t_mGrFont = sandbox_invoke(*mSandbox, gr_make_font,
++                                 mFont->GetAdjustedSize(), t_mGrFace);
+     }
++    mGrFont = t_mGrFont.to_opaque();
+ 
+-    if (!mGrFont) {
++    if (!t_mGrFont) {
+       return false;
+     }
+ 
+@@ -134,10 +171,11 @@ bool gfxGraphiteShaper::ShapeText(DrawTarget* aDrawTarget,
+     style->language->ToUTF8String(langString);
+     grLang = GetGraphiteTagForLang(langString);
+   }
+-  gr_feature_val* grFeatures = gr_face_featureval_for_lang(mGrFace, grLang);
++  tainted_gr<gr_feature_val*> grFeatures =
++      sandbox_invoke(*mSandbox, gr_face_featureval_for_lang, t_mGrFace, grLang);
+ 
+   // insert any merged features into Graphite feature list
+-  GrFontFeatures f = {mGrFace, grFeatures};
++  GrFontFeatures f = {t_mGrFace, grFeatures, mSandbox};
+   MergeFontFeatures(style, mFont->GetFontEntry()->mFeatureSettings,
+                     aShapedText->DisableLigatures(),
+                     mFont->GetFontEntry()->FamilyName(), mFallbackToSmallCaps,
+@@ -162,44 +200,61 @@ bool gfxGraphiteShaper::ShapeText(DrawTarget* aDrawTarget,
+       gr_count_unicode_characters(gr_utf16, aText, aText + aLength, nullptr);
+   gr_bidirtl grBidi = gr_bidirtl(
+       aShapedText->IsRightToLeft() ? (gr_rtl | gr_nobidi) : gr_nobidi);
+-  gr_segment* seg = gr_make_seg(mGrFont, mGrFace, 0, grFeatures, gr_utf16,
+-                                aText, numChars, grBidi);
+ 
+-  gr_featureval_destroy(grFeatures);
++  tainted_gr<char16_t*> t_aText =
++      mSandbox->malloc_in_sandbox<char16_t>(aLength);
++  if (!t_aText) {
++    return false;
++  }
++  auto clean_txt = MakeScopeExit([&] { mSandbox->free_in_sandbox(t_aText); });
++
++  rlbox::memcpy(*mSandbox, t_aText, aText, aLength * sizeof(char16_t));
++
++  tl_GrGetAdvanceData = &mCallbackData;
++  auto clean_adv_data = MakeScopeExit([&] { tl_GrGetAdvanceData = nullptr; });
++
++  tainted_gr<gr_segment*> seg =
++      sandbox_invoke(*mSandbox, gr_make_seg, mGrFont, t_mGrFace, 0, grFeatures,
++                     gr_utf16, t_aText, numChars, grBidi);
++
++  sandbox_invoke(*mSandbox, gr_featureval_destroy, grFeatures);
+ 
+   if (!seg) {
+     return false;
+   }
+ 
+-  nsresult rv = SetGlyphsFromSegment(aShapedText, aOffset, aLength, aText, seg,
+-                                     aRounding);
++  nsresult rv =
++      SetGlyphsFromSegment(aShapedText, aOffset, aLength, aText,
++                           t_aText.to_opaque(), seg.to_opaque(), aRounding);
+ 
+-  gr_seg_destroy(seg);
++  sandbox_invoke(*mSandbox, gr_seg_destroy, seg);
+ 
+   return NS_SUCCEEDED(rv);
+ }
+ 
+ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
+     gfxShapedText* aShapedText, uint32_t aOffset, uint32_t aLength,
+-    const char16_t* aText, gr_segment* aSegment, RoundingFlags aRounding) {
++    const char16_t* aText, tainted_opaque_gr<char16_t*> t_aText,
++    tainted_opaque_gr<gr_segment*> aSegment, RoundingFlags aRounding) {
+   typedef gfxShapedText::CompressedGlyph CompressedGlyph;
+ 
+   int32_t dev2appUnits = aShapedText->GetAppUnitsPerDevUnit();
+   bool rtl = aShapedText->IsRightToLeft();
+ 
+   // identify clusters; graphite may have reordered/expanded/ligated glyphs.
+-  gr_glyph_to_char_association* data =
+-      gr_get_glyph_to_char_association(aSegment, aLength, aText);
++  tainted_gr<gr_glyph_to_char_association*> data =
++      sandbox_invoke(*mSandbox, gr_get_glyph_to_char_association, aSegment,
++                     aLength, rlbox::from_opaque(t_aText));
+ 
+   if (!data) {
+     return NS_ERROR_FAILURE;
+   }
+ 
+-  uint32_t cIndex = data->cIndex;
+-  gr_glyph_to_char_cluster* clusters = data->clusters;
+-  uint16_t* gids = data->gids;
+-  float* xLocs = data->xLocs;
+-  float* yLocs = data->yLocs;
++  uint32_t cIndex = data->cIndex.UNSAFE_unverified();
++  gr_glyph_to_char_cluster* clusters = data->clusters.UNSAFE_unverified();
++  uint16_t* gids = data->gids.UNSAFE_unverified();
++  float* xLocs = data->xLocs.UNSAFE_unverified();
++  float* yLocs = data->yLocs.UNSAFE_unverified();
+ 
+   CompressedGlyph* charGlyphs = aShapedText->GetCharacterGlyphs() + aOffset;
+ 
+@@ -213,13 +268,17 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
+     float adv;  // total advance of the cluster
+     if (rtl) {
+       if (i == 0) {
+-        adv = gr_seg_advance_X(aSegment) - xLocs[c.baseGlyph];
++        adv = sandbox_invoke(*mSandbox, gr_seg_advance_X, aSegment)
++                  .UNSAFE_unverified() -
++              xLocs[c.baseGlyph];
+       } else {
+         adv = xLocs[clusters[i - 1].baseGlyph] - xLocs[c.baseGlyph];
+       }
+     } else {
+       if (i == cIndex) {
+-        adv = gr_seg_advance_X(aSegment) - xLocs[c.baseGlyph];
++        adv = sandbox_invoke(*mSandbox, gr_seg_advance_X, aSegment)
++                  .UNSAFE_unverified() -
++              xLocs[c.baseGlyph];
+       } else {
+         adv = xLocs[clusters[i + 1].baseGlyph] - xLocs[c.baseGlyph];
+       }
+@@ -275,7 +334,7 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
+     }
+   }
+ 
+-  gr_free_char_association(data);
++  sandbox_invoke(*mSandbox, gr_free_char_association, data);
+   return NS_OK;
+ }
+ 
+diff --git a/gfx/thebes/gfxGraphiteShaper.h b/gfx/thebes/gfxGraphiteShaper.h
+index d360bba6a875..e2951119dcc7 100644
+--- a/gfx/thebes/gfxGraphiteShaper.h
++++ b/gfx/thebes/gfxGraphiteShaper.h
+@@ -10,6 +10,8 @@
+ 
+ #include "mozilla/gfx/2D.h"
+ 
++#include "ThebesRLBoxTypes.h"
++
+ struct gr_face;
+ struct gr_font;
+ struct gr_segment;
+@@ -29,13 +31,29 @@ class gfxGraphiteShaper : public gfxFontShaper {
+  protected:
+   nsresult SetGlyphsFromSegment(gfxShapedText* aShapedText, uint32_t aOffset,
+                                 uint32_t aLength, const char16_t* aText,
+-                                gr_segment* aSegment, RoundingFlags aRounding);
++                                tainted_opaque_gr<char16_t*> t_aText,
++                                tainted_opaque_gr<gr_segment*> aSegment,
++                                RoundingFlags aRounding);
++
++  // Graphite is run in a rlbox sandbox. Callback GrGetAdvance must be
++  // explicitly permitted. Since the sandbox is owned in gfxFontEntry class,
++  // gfxFontEntry needs access to the protected callback.
++  friend class gfxFontEntry;
++  static tainted_opaque_gr<float> GrGetAdvance(
++      rlbox_sandbox_gr& sandbox, tainted_opaque_gr<const void*> appFontHandle,
++      tainted_opaque_gr<uint16_t> glyphid);
+ 
+-  static float GrGetAdvance(const void* appFontHandle, uint16_t glyphid);
++  tainted_opaque_gr<gr_face*>
++      mGrFace;  // owned by the font entry; shaper must call
++                // gfxFontEntry::ReleaseGrFace when finished with it
++  tainted_opaque_gr<gr_font*> mGrFont;  // owned by the shaper itself
+ 
+-  gr_face* mGrFace;  // owned by the font entry; shaper must call
+-                     // gfxFontEntry::ReleaseGrFace when finished with it
+-  gr_font* mGrFont;  // owned by the shaper itself
++  // All libGraphite functionality is sandboxed. This is the sandbox instance.
++  rlbox_sandbox_gr* mSandbox;
++
++  // Holds the handle to the permitted callback into Firefox for the sandboxed
++  // libGraphite
++  sandbox_callback_gr<float (*)(const void*, uint16_t)>* mCallback;
+ 
+   struct CallbackData {
+     // mFont is a pointer to the font that owns this shaper, so it will
+@@ -44,6 +62,8 @@ class gfxGraphiteShaper : public gfxFontShaper {
+   };
+ 
+   CallbackData mCallbackData;
++  static thread_local CallbackData* tl_GrGetAdvanceData;
++
+   bool mFallbackToSmallCaps;  // special fallback for the petite-caps case
+ 
+   // Convert HTML 'lang' (BCP47) to Graphite language code
+diff --git a/gfx/thebes/moz.build b/gfx/thebes/moz.build
+index ea589f041553..45083b73e9ec 100644
+--- a/gfx/thebes/moz.build
++++ b/gfx/thebes/moz.build
+@@ -55,6 +55,7 @@ EXPORTS += [
+     'gfxUtils.h',
+     'SharedFontList.h',
+     'SoftwareVsyncSource.h',
++    'ThebesRLBoxTypes.h',
+     'VsyncSource.h',
+ ]
+ 
+@@ -63,6 +64,7 @@ EXPORTS.mozilla.gfx += [
+     'DeviceManagerDx.h',
+     'PrintTarget.h',
+     'PrintTargetThebes.h',
++    'ThebesRLBox.h',
+ ]
+ 
+ if CONFIG['MOZ_ENABLE_SKIA']:
+@@ -256,6 +258,12 @@ LOCAL_INCLUDES += [
+     '/dom/xml',
+ ]
+ 
++# Due to dependency on rlbox
++if CONFIG['CC_TYPE'] == 'clang-cl':
++    CXXFLAGS += ['/std:c++17']
++else:
++    CXXFLAGS += ['-std=gnu++17']
++
+ if CONFIG['MOZ_WIDGET_TOOLKIT'] in ('android', 'gtk3'):
+     DEFINES['MOZ_ENABLE_FREETYPE'] = True
+ 
+-- 
+2.25.1
+

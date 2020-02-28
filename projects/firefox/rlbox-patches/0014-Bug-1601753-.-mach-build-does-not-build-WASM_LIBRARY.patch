@@ -1,0 +1,44 @@
+From 2ac64c1fd1ff2155959ee69237cb4215b40d2693 Mon Sep 17 00:00:00 2001
+From: Ricky Stewart <rstewart@mozilla.com>
+Date: Tue, 10 Dec 2019 15:48:38 +0000
+Subject: [PATCH] Bug 1601753 - `./mach build` does not build WASM_LIBRARY by
+ default r=froydnj
+
+Differential Revision: https://phabricator.services.mozilla.com/D56092
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/python/mozbuild/mozbuild/backend/recursivemake.py b/python/mozbuild/mozbuild/backend/recursivemake.py
+index df7ee2da342b..bf51ff0b97dc 100644
+--- a/python/mozbuild/mozbuild/backend/recursivemake.py
++++ b/python/mozbuild/mozbuild/backend/recursivemake.py
+@@ -1390,6 +1390,8 @@ class RecursiveMakeBackend(CommonBackend):
+             target_name = obj.output_category
+         else:
+             target_name = obj.KIND
++        if target_name == 'wasm':
++            target_name = 'target'
+         return '%s/%s' % (mozpath.relpath(obj.objdir,
+             self.environment.topobjdir), target_name)
+ 
+@@ -1477,6 +1479,7 @@ class RecursiveMakeBackend(CommonBackend):
+             write_obj_deps(obj_target, objs_ref, pgo_objs_ref)
+ 
+         for lib in shared_libs:
++            assert obj.KIND != 'wasm'
+             backend_file.write_once('SHARED_LIBS += %s\n' %
+                                     pretty_relpath(lib, lib.import_name))
+         for lib in static_libs:
+@@ -1485,7 +1488,7 @@ class RecursiveMakeBackend(CommonBackend):
+         for lib in os_libs:
+             if obj.KIND == 'target':
+                 backend_file.write_once('OS_LIBS += %s\n' % lib)
+-            else:
++            elif obj.KIND == 'host':
+                 backend_file.write_once('HOST_EXTRA_LIBS += %s\n' % lib)
+ 
+         for lib in obj.linked_libraries:
+-- 
+2.25.1
+
