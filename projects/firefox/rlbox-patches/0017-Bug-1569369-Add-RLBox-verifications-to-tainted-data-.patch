@@ -1,0 +1,439 @@
+From c2acb332715447f8bc98c6643c11b9875d16dae9 Mon Sep 17 00:00:00 2001
+From: "shravanrn@gmail.com" <shravanrn@gmail.com>
+Date: Thu, 19 Dec 2019 16:05:47 +0000
+Subject: [PATCH 17/29] Bug 1569369 - Add RLBox verifications to tainted data
+ from sandboxed libGraphite r=jfkthame
+
+Differential Revision: https://phabricator.services.mozilla.com/D42725
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/gfx/graphite2/geckoextra/include/GraphiteStructsForRLBox.h b/gfx/graphite2/geckoextra/include/GraphiteStructsForRLBox.h
+index ea8a1b39d30e..dc4cd040f484 100644
+--- a/gfx/graphite2/geckoextra/include/GraphiteStructsForRLBox.h
++++ b/gfx/graphite2/geckoextra/include/GraphiteStructsForRLBox.h
+@@ -42,11 +42,20 @@
+   f(float*, yLocs, FIELD_NORMAL, ##__VA_ARGS__) g()                                       \
+   f(unsigned int, cIndex, FIELD_NORMAL, ##__VA_ARGS__) g()
+ 
++#define sandbox_fields_reflection_graphite_class_gr_faceinfo(f, g, ...)                    \
++  f(short, extra_ascent, FIELD_NORMAL, ##__VA_ARGS__) g()                                  \
++  f(short, extra_descent, FIELD_NORMAL, ##__VA_ARGS__) g()                                 \
++  f(short, upem, FIELD_NORMAL, ##__VA_ARGS__) g()                                          \
++  f(gr_faceinfo::gr_space_contextuals, space_contextuals, FIELD_NORMAL, ##__VA_ARGS__) g() \
++  f(unsigned int, has_bidi_pass, FIELD_NORMAL, ##__VA_ARGS__) g()
++  // Remaining bitfields skipped, as bitfields are not fully supported
++
+ #define sandbox_fields_reflection_graphite_allClasses(f, ...)                  \
+   f(gr_font_ops, graphite, ##__VA_ARGS__)                                      \
+   f(gr_face_ops, graphite, ##__VA_ARGS__)                                      \
+   f(gr_glyph_to_char_cluster, graphite, ##__VA_ARGS__)                         \
+-  f(gr_glyph_to_char_association, graphite, ##__VA_ARGS__)
++  f(gr_glyph_to_char_association, graphite, ##__VA_ARGS__)                     \
++  f(gr_faceinfo, graphite, ##__VA_ARGS__)
+ 
+ #if defined(__clang__)
+ #  pragma clang diagnostic pop
+diff --git a/gfx/thebes/ThebesRLBoxTypes.h b/gfx/thebes/ThebesRLBoxTypes.h
+index 6b8ad9523a32..e302a0d5d7e2 100644
+--- a/gfx/thebes/ThebesRLBoxTypes.h
++++ b/gfx/thebes/ThebesRLBoxTypes.h
+@@ -18,5 +18,6 @@ template <typename T>
+ using tainted_opaque_gr = rlbox::tainted_opaque<T, rlbox_gr_sandbox_type>;
+ template <typename T>
+ using tainted_volatile_gr = rlbox::tainted_volatile<T, rlbox_gr_sandbox_type>;
++using rlbox::tainted_boolean_hint;
+ 
+ #endif
+diff --git a/gfx/thebes/gfxFont.cpp b/gfx/thebes/gfxFont.cpp
+index f6d75295ce48..8973128c0e9e 100644
+--- a/gfx/thebes/gfxFont.cpp
++++ b/gfx/thebes/gfxFont.cpp
+@@ -45,6 +45,8 @@
+ #include "gfx2DGlue.h"
+ #include "TextDrawTarget.h"
+ 
++#include "ThebesRLBox.h"
++
+ #include "GreekCasing.h"
+ 
+ #include "cairo.h"
+@@ -1267,7 +1269,7 @@ bool gfxFont::HasSubstitutionRulesWithSpaceLookups(Script aRunScript) {
+   return false;
+ }
+ 
+-bool gfxFont::SpaceMayParticipateInShaping(Script aRunScript) {
++tainted_boolean_hint gfxFont::SpaceMayParticipateInShaping(Script aRunScript) {
+   // avoid checking fonts known not to include default space-dependent features
+   if (MOZ_UNLIKELY(mFontEntry->mSkipDefaultFeatureSpaceCheck)) {
+     if (!mKerningSet && mStyle.featureSettings.IsEmpty() &&
+@@ -2978,7 +2980,16 @@ bool gfxFont::SplitAndInitTextRun(
+   // fractions), need to shape without using the word cache which segments
+   // textruns on space boundaries. Word cache can be used if the textrun
+   // is short enough to fit in the word cache and it lacks spaces.
+-  if (SpaceMayParticipateInShaping(aRunScript)) {
++  tainted_boolean_hint t_canParticipate =
++      SpaceMayParticipateInShaping(aRunScript);
++  bool canParticipate = t_canParticipate.unverified_safe_because(
++      "We need to ensure that this function operates safely independent of "
++      "t_canParticipate. The worst that can happen here is that the decision "
++      "to use the cache is incorrectly made, resulting in a bad "
++      "rendering/slowness. However, this  would not compromise the memory "
++      "safety of Firefox in any way, and can thus be permitted");
++
++  if (canParticipate) {
+     if (aRunLength > wordCacheCharLimit || HasSpaces(aString, aRunLength)) {
+       TEXT_PERF_INCR(tp, wordCacheSpaceRules);
+       return ShapeTextWithoutWordCache(aDrawTarget, aString, aRunStart,
+diff --git a/gfx/thebes/gfxFont.h b/gfx/thebes/gfxFont.h
+index c4fcf9c2d552..663af21c5923 100644
+--- a/gfx/thebes/gfxFont.h
++++ b/gfx/thebes/gfxFont.h
+@@ -36,6 +36,7 @@
+ #include "nsColor.h"
+ #include "nsFontMetrics.h"
+ #include "mozilla/ServoUtils.h"
++#include "ThebesRLBoxTypes.h"
+ 
+ typedef struct _cairo cairo_t;
+ typedef struct _cairo_scaled_font cairo_scaled_font_t;
+@@ -1930,7 +1931,10 @@ class gfxFont {
+   bool HasSubstitutionRulesWithSpaceLookups(Script aRunScript);
+ 
+   // do spaces participate in shaping rules? if so, can't used word cache
+-  bool SpaceMayParticipateInShaping(Script aRunScript);
++  // Note that this function uses HasGraphiteSpaceContextuals, so it can only
++  // return a "hint" to the correct answer. The  calling code must ensure it
++  // performs safe actions independent of the value returned.
++  tainted_boolean_hint SpaceMayParticipateInShaping(Script aRunScript);
+ 
+   // For 8-bit text, expand to 16-bit and then call the following method.
+   bool ShapeText(DrawTarget* aContext, const uint8_t* aText,
+diff --git a/gfx/thebes/gfxFontEntry.cpp b/gfx/thebes/gfxFontEntry.cpp
+index cb034cb192f6..0f9d7c856985 100644
+--- a/gfx/thebes/gfxFontEntry.cpp
++++ b/gfx/thebes/gfxFontEntry.cpp
+@@ -632,8 +632,11 @@ tainted_opaque_gr<const void*> gfxFontEntry::GrGetTable(
+   tainted_gr<const void*> ret = nullptr;
+ 
+   if (fontEntry) {
+-    hb_blob_t* blob =
+-        fontEntry->GetFontTable(rlbox::from_opaque(aName).UNSAFE_unverified());
++    unsigned int fontTableKey =
++        rlbox::from_opaque(aName).unverified_safe_because(
++            "This is only being used to index into a hashmap, which is robust "
++            "for any value. No checks needed.");
++    hb_blob_t* blob = fontEntry->GetFontTable(fontTableKey);
+ 
+     if (blob) {
+       unsigned int blobLength;
+@@ -711,8 +714,14 @@ tainted_opaque_gr<gr_face*> gfxFontEntry::GetGrFace() {
+ }
+ 
+ void gfxFontEntry::ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace) {
+-  MOZ_ASSERT(rlbox::from_opaque(aFace).UNSAFE_unverified() ==
+-             rlbox::from_opaque(mGrFace).UNSAFE_unverified());  // sanity-check
++  MOZ_ASSERT(
++      (rlbox::from_opaque(aFace) == rlbox::from_opaque(mGrFace))
++          .unverified_safe_because(
++              "This is safe as the only thing we are doing is comparing "
++              "addresses of two tainted pointers. Furthermore this is used "
++              "merely as a debugging aid in the debug builds. This function is "
++              "called only from the trusted Firefox code rather than the "
++              "untrusted libGraphite."));  // sanity-check
+   MOZ_ASSERT(mGrFaceRefCnt > 0);
+   if (--mGrFaceRefCnt == 0) {
+     auto t_mGrFace = rlbox::from_opaque(mGrFace);
+@@ -747,21 +756,32 @@ void gfxFontEntry::CheckForGraphiteTables() {
+   mHasGraphiteTables = HasFontTable(TRUETYPE_TAG('S', 'i', 'l', 'f'));
+ }
+ 
+-bool gfxFontEntry::HasGraphiteSpaceContextuals() {
++tainted_boolean_hint gfxFontEntry::HasGraphiteSpaceContextuals() {
+   if (!mGraphiteSpaceContextualsInitialized) {
+     auto face = GetGrFace();
+     auto t_face = rlbox::from_opaque(face);
+     if (t_face) {
+-      const gr_faceinfo* faceInfo =
+-          sandbox_invoke(mSandboxData->sandbox, gr_face_info, t_face, 0)
+-              .UNSAFE_unverified();
+-      mHasGraphiteSpaceContextuals =
++      tainted_gr<const gr_faceinfo*> faceInfo =
++          sandbox_invoke(mSandboxData->sandbox, gr_face_info, t_face, 0);
++      // Comparison with a value in sandboxed memory returns a
++      // tainted_boolean_hint, i.e. a "hint", since the value could be changed
++      // maliciously at any moment.
++      tainted_boolean_hint is_not_none =
+           faceInfo->space_contextuals != gr_faceinfo::gr_space_none;
++      mHasGraphiteSpaceContextuals = is_not_none.unverified_safe_because(
++          "Note ideally mHasGraphiteSpaceContextuals would be "
++          "tainted_boolean_hint, but RLBox does not yet support bitfields, so "
++          "it is not wrapped. However, its value is only ever accessed through "
++          "this function which returns a tainted_boolean_hint, so unwrapping "
++          "temporarily is safe. We remove the wrapper now and re-add it "
++          "below.");
+     }
+     ReleaseGrFace(face);  // always balance GetGrFace, even if face is null
+     mGraphiteSpaceContextualsInitialized = true;
+   }
+-  return mHasGraphiteSpaceContextuals;
++
++  bool ret = mHasGraphiteSpaceContextuals;
++  return tainted_boolean_hint(ret);
+ }
+ 
+ #define FEATURE_SCRIPT_MASK 0x000000ff  // script index replaces low byte of tag
+diff --git a/gfx/thebes/gfxFontEntry.h b/gfx/thebes/gfxFontEntry.h
+index f31611512deb..a08af53b46c6 100644
+--- a/gfx/thebes/gfxFontEntry.h
++++ b/gfx/thebes/gfxFontEntry.h
+@@ -356,7 +356,12 @@ class gfxFontEntry {
+ 
+   // Does the font have graphite contextuals that involve the space glyph
+   // (and therefore we should bypass the word cache)?
+-  bool HasGraphiteSpaceContextuals();
++  // Since this function inspects data from libGraphite stored in sandbox memory
++  // it can only return a "hint" to the correct return value. This is because
++  // a compromised libGraphite could change the sandbox memory maliciously at
++  // any moment. The caller must ensure the calling code performs safe actions
++  // independent of the value returned, to unwrap this return.
++  tainted_boolean_hint HasGraphiteSpaceContextuals();
+ 
+   // Release any SVG-glyphs document this font may have loaded.
+   void DisconnectSVG();
+diff --git a/gfx/thebes/gfxGraphiteShaper.cpp b/gfx/thebes/gfxGraphiteShaper.cpp
+index 37a58195db61..c2aef743d322 100644
+--- a/gfx/thebes/gfxGraphiteShaper.cpp
++++ b/gfx/thebes/gfxGraphiteShaper.cpp
+@@ -27,6 +27,14 @@
+ #define FixedToIntRound(f) \
+   ((f) > 0 ? ((32768 + (f)) >> 16) : -((32767 - (f)) >> 16))
+ 
++#define CopyAndVerifyOrFail(t, cond, failed) \
++  (t).copy_and_verify([&](auto val) {        \
++    if (!(cond)) {                           \
++      *(failed) = true;                      \
++    }                                        \
++    return val;                              \
++  })
++
+ using namespace mozilla;  // for AutoSwap_* types
+ 
+ /*
+@@ -65,7 +73,10 @@ tainted_opaque_gr<float> gfxGraphiteShaper::GrGetAdvance(
+     tainted_gr<float> ret = 0;
+     return ret.to_opaque();
+   }
+-  auto glyphid = rlbox::from_opaque(t_glyphid).UNSAFE_unverified();
++  auto glyphid = rlbox::from_opaque(t_glyphid).unverified_safe_because(
++      "Here the only use of a glyphid is for lookup to get a width. "
++      "Implementations of GetGlyphWidth in this code base use a hashtable "
++      "which is robust to unknown keys. So no validation is required.");
+   tainted_gr<float> ret = FixedToFloat(cb->mFont->GetGlyphWidth(glyphid));
+   return ret.to_opaque();
+ }
+@@ -250,70 +261,149 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
+     return NS_ERROR_FAILURE;
+   }
+ 
+-  uint32_t cIndex = data->cIndex.UNSAFE_unverified();
+-  gr_glyph_to_char_cluster* clusters = data->clusters.UNSAFE_unverified();
+-  uint16_t* gids = data->gids.UNSAFE_unverified();
+-  float* xLocs = data->xLocs.UNSAFE_unverified();
+-  float* yLocs = data->yLocs.UNSAFE_unverified();
++  tainted_gr<gr_glyph_to_char_cluster*> clusters = data->clusters;
++  tainted_gr<uint16_t*> gids = data->gids;
++  tainted_gr<float*> xLocs = data->xLocs;
++  tainted_gr<float*> yLocs = data->yLocs;
+ 
+   CompressedGlyph* charGlyphs = aShapedText->GetCharacterGlyphs() + aOffset;
+ 
+   bool roundX = bool(aRounding & RoundingFlags::kRoundX);
+   bool roundY = bool(aRounding & RoundingFlags::kRoundY);
+ 
++  bool failedVerify = false;
++
++  // cIndex is primarily used to index into the clusters array which has size
++  // aLength below. As cIndex is not changing anymore, let's just verify it
++  // and remove the tainted wrapper.
++  uint32_t cIndex =
++      CopyAndVerifyOrFail(data->cIndex, val < aLength, &failedVerify);
++  if (failedVerify) {
++    return NS_ERROR_ILLEGAL_VALUE;
++  }
+   // now put glyphs into the textrun, one cluster at a time
+   for (uint32_t i = 0; i <= cIndex; ++i) {
+-    const gr_glyph_to_char_cluster& c = clusters[i];
+-
+-    float adv;  // total advance of the cluster
++    // We makes a local copy of "clusters[i]" which is of type
++    // tainted_gr<gr_glyph_to_char_cluster> below. We do this intentionally
++    // rather than taking a reference. Taking a reference with the code
++    //
++    // tainted_volatile_gr<gr_glyph_to_char_cluster>& c = clusters[i];
++    //
++    // produces a tainted_volatile which means the value can change at any
++    // moment allowing for possible time-of-check-time-of-use vuln. We thus
++    // make a local copy to simplify the verification.
++    tainted_gr<gr_glyph_to_char_cluster> c = clusters[i];
++
++    tainted_gr<float> t_adv;  // total advance of the cluster
+     if (rtl) {
+       if (i == 0) {
+-        adv = sandbox_invoke(*mSandbox, gr_seg_advance_X, aSegment)
+-                  .UNSAFE_unverified() -
+-              xLocs[c.baseGlyph];
++        t_adv = sandbox_invoke(*mSandbox, gr_seg_advance_X, aSegment) -
++                xLocs[c.baseGlyph];
+       } else {
+-        adv = xLocs[clusters[i - 1].baseGlyph] - xLocs[c.baseGlyph];
++        t_adv = xLocs[clusters[i - 1].baseGlyph] - xLocs[c.baseGlyph];
+       }
+     } else {
+       if (i == cIndex) {
+-        adv = sandbox_invoke(*mSandbox, gr_seg_advance_X, aSegment)
+-                  .UNSAFE_unverified() -
+-              xLocs[c.baseGlyph];
++        t_adv = sandbox_invoke(*mSandbox, gr_seg_advance_X, aSegment) -
++                xLocs[c.baseGlyph];
+       } else {
+-        adv = xLocs[clusters[i + 1].baseGlyph] - xLocs[c.baseGlyph];
++        t_adv = xLocs[clusters[i + 1].baseGlyph] - xLocs[c.baseGlyph];
+       }
+     }
+ 
++    float adv = t_adv.unverified_safe_because(
++        "Per Bug 1569464 - this is the advance width of a glyph or cluster of "
++        "glyphs. There are no a-priori limits on what that might be. Incorrect "
++        "values will tend to result in bad layout or missing text, or bad "
++        "nscoord values. But, these will not result in safety issues.");
++
++    // check unexpected offset - offs used to index into aText
++    uint32_t offs =
++        CopyAndVerifyOrFail(c.baseChar, val < aLength, &failedVerify);
++    if (failedVerify) {
++      return NS_ERROR_ILLEGAL_VALUE;
++    }
++
+     // Check for default-ignorable char that didn't get filtered, combined,
+     // etc by the shaping process, and skip it.
+-    uint32_t offs = c.baseChar;
+-    NS_ASSERTION(offs < aLength, "unexpected offset");
+-    if (c.nGlyphs == 1 && c.nChars == 1 &&
+-        aShapedText->FilterIfIgnorable(aOffset + offs, aText[offs])) {
+-      continue;
++    auto one_glyph = c.nGlyphs == static_cast<uint32_t>(1);
++    auto one_char = c.nChars == static_cast<uint32_t>(1);
++
++    if ((one_glyph && one_char)
++            .unverified_safe_because(
++                "using this boolean check to decide whether to ignore a "
++                "character or not. The worst that can happen is a bad "
++                "rendering.")) {
++      if (aShapedText->FilterIfIgnorable(aOffset + offs, aText[offs])) {
++        continue;
++      }
+     }
+ 
+     uint32_t appAdvance = roundX ? NSToIntRound(adv) * dev2appUnits
+                                  : NSToIntRound(adv * dev2appUnits);
+-    if (c.nGlyphs == 1 && CompressedGlyph::IsSimpleGlyphID(gids[c.baseGlyph]) &&
++
++    const char gid_simple_value[] =
++        "Per Bug 1569464 - these are glyph IDs that can range from 0 to the "
++        "maximum glyph ID supported by the font. However, out-of-range values "
++        "here should not lead to safety issues; they would simply result in "
++        "blank rendering, although this depends on the platform back-end.";
++
++    // gids[c.baseGlyph] is checked and used below. Since this is a
++    // tainted_volatile, which can change at any moment, we make a local copy
++    // first to prevent a time-of-check-time-of-use vuln.
++    uint16_t gid_of_base_glyph =
++        gids[c.baseGlyph].unverified_safe_because(gid_simple_value);
++
++    const char fast_path[] =
++        "Even if the number of glyphs set is an incorrect value, the else "
++        "branch is a more general purpose algorithm which can handle other "
++        "values of nGlyphs";
++
++    if (one_glyph.unverified_safe_because(fast_path) &&
++        CompressedGlyph::IsSimpleGlyphID(gid_of_base_glyph) &&
+         CompressedGlyph::IsSimpleAdvance(appAdvance) &&
+-        charGlyphs[offs].IsClusterStart() && yLocs[c.baseGlyph] == 0) {
+-      charGlyphs[offs].SetSimpleGlyph(appAdvance, gids[c.baseGlyph]);
++        charGlyphs[offs].IsClusterStart() &&
++        (yLocs[c.baseGlyph] == 0).unverified_safe_because(fast_path)) {
++      charGlyphs[offs].SetSimpleGlyph(appAdvance, gid_of_base_glyph);
++
+     } else {
+       // not a one-to-one mapping with simple metrics: use DetailedGlyph
+       AutoTArray<gfxShapedText::DetailedGlyph, 8> details;
+       float clusterLoc;
+-      for (uint32_t j = c.baseGlyph; j < c.baseGlyph + c.nGlyphs; ++j) {
++
++      uint32_t glyph_end =
++          (c.baseGlyph + c.nGlyphs)
++              .unverified_safe_because(
++                  "This only controls the total number of glyphs set for this "
++                  "particular text. Worst that can happen is a bad rendering");
++
++      // check overflow - ensure loop start is before the end
++      uint32_t glyph_start =
++          CopyAndVerifyOrFail(c.baseGlyph, val <= glyph_end, &failedVerify);
++      if (failedVerify) {
++        return NS_ERROR_ILLEGAL_VALUE;
++      }
++
++      for (uint32_t j = glyph_start; j < glyph_end; ++j) {
+         gfxShapedText::DetailedGlyph* d = details.AppendElement();
+-        d->mGlyphID = gids[j];
+-        d->mOffset.y = roundY ? NSToIntRound(-yLocs[j]) * dev2appUnits
+-                              : -yLocs[j] * dev2appUnits;
+-        if (j == c.baseGlyph) {
++        d->mGlyphID = gids[j].unverified_safe_because(gid_simple_value);
++
++        const char safe_coordinates[] =
++            "There are no limits on coordinates. Worst case, bad values would "
++            "force rendering off-screen, but there are no memory safety "
++            "issues.";
++
++        float yLocs_j = yLocs[j].unverified_safe_because(safe_coordinates);
++        float xLocs_j = xLocs[j].unverified_safe_because(safe_coordinates);
++
++        d->mOffset.y = roundY ? NSToIntRound(-yLocs_j) * dev2appUnits
++                              : -yLocs_j * dev2appUnits;
++        if (j == glyph_start) {
+           d->mAdvance = appAdvance;
+-          clusterLoc = xLocs[j];
++          clusterLoc = xLocs_j;
+         } else {
+           float dx =
+-              rtl ? (xLocs[j] - clusterLoc) : (xLocs[j] - clusterLoc - adv);
++              rtl ? (xLocs_j - clusterLoc) : (xLocs_j - clusterLoc - adv);
+           d->mOffset.x =
+               roundX ? NSToIntRound(dx) * dev2appUnits : dx * dev2appUnits;
+           d->mAdvance = 0;
+@@ -326,8 +416,17 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
+           details.Elements());
+     }
+ 
+-    for (uint32_t j = c.baseChar + 1; j < c.baseChar + c.nChars; ++j) {
+-      NS_ASSERTION(j < aLength, "unexpected offset");
++    // check unexpected offset
++    uint32_t char_end = CopyAndVerifyOrFail(c.baseChar + c.nChars,
++                                            val <= aLength, &failedVerify);
++    // check overflow - ensure loop start is before the end
++    uint32_t char_start =
++        CopyAndVerifyOrFail(c.baseChar + 1, val <= char_end, &failedVerify);
++    if (failedVerify) {
++      return NS_ERROR_ILLEGAL_VALUE;
++    }
++
++    for (uint32_t j = char_start; j < char_end; ++j) {
+       CompressedGlyph& g = charGlyphs[j];
+       NS_ASSERTION(!g.IsSimpleGlyph(), "overwriting a simple glyph");
+       g.SetComplex(g.IsClusterStart(), false, 0);
+-- 
+2.25.1
+

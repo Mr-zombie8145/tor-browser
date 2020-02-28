@@ -76,6 +76,8 @@ targets:
         - libpulse-dev
         # To pass configure since ESR 52
         - libx11-xcb-dev
+        # Needed for RLBox, see: #32389
+        - git
 
   linux-i686:
     var:
@@ -138,6 +140,21 @@ input_files:
     enable: '[% c("var/windows") %]'
   - project: rust
     name: rust
+    input_file_var:
+      # lucetc needs Rust >= 1.36.0, let's see if all the remaining crates work
+      # with that new version as well
+      rust_version: 1.36.0
+      prev_version: 1.35.0
+    enable: '[% c("var/rlbox") %]'
+  - project: wasi-sysroot
+    name: wasi-sysroot
+    enable: '[% c("var/rlbox") %]'
+  - project: lucetc
+    name: lucetc
+    enable: '[% c("var/rlbox") %]'
+  - project: rust
+    name: rust
+    enable: '[% !c("var/rlbox") %]'
   - project: cbindgen
     name: cbindgen
   - project: node
@@ -182,3 +199,5 @@ input_files:
     # TorButton patch authored by Arthur Edelstein, from https://github.com/arthuredelstein/torbutton/ branch 2.1.10-namecoin
   - filename: namecoin-etld.patch
     enable: '[% c("var/namecoin") %]'
+  - filename: rlbox-patches
+    enable: '[% c("var/rlbox") %]'

@@ -1,0 +1,169 @@
+From b255ba83a2c47876992e199761c8348db4a52262 Mon Sep 17 00:00:00 2001
+From: "shravanrn@gmail.com" <shravanrn@gmail.com>
+Date: Thu, 19 Dec 2019 22:17:13 +0000
+Subject: [PATCH 18/29] Bug 1576052 - Use configuration/macro definition to
+ selectively enable wasm sandbox for graphite r=froydnj
+
+Differential Revision: https://phabricator.services.mozilla.com/D43710
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/config/external/moz.build b/config/external/moz.build
+index b83d4f24b643..704b35cb1b84 100644
+--- a/config/external/moz.build
++++ b/config/external/moz.build
+@@ -9,6 +9,7 @@ external_dirs = []
+ DIRS += [
+     'lgpllibs',
+     'rlbox',
++    'rlbox_lucet_sandbox',
+     'sqlite',
+ ]
+ if not CONFIG['MOZ_SYSTEM_JPEG']:
+diff --git a/config/external/rlbox_lucet_sandbox/moz.build b/config/external/rlbox_lucet_sandbox/moz.build
+new file mode 100644
+index 000000000000..b7347d691020
+--- /dev/null
++++ b/config/external/rlbox_lucet_sandbox/moz.build
+@@ -0,0 +1,21 @@
++# -*- Mode: python; indent-tabs-mode: nil; tab-width: 40 -*-
++# vim: set filetype=python:
++# This Source Code Form is subject to the terms of the Mozilla Public
++# License, v. 2.0. If a copy of the MPL was not distributed with this
++# file, You can obtain one at http://mozilla.org/MPL/2.0/.
++
++EXPORTS.mozilla.rlbox += [
++    '/third_party/rust/rlbox_lucet_sandbox/include/lucet_sandbox.h',
++    '/third_party/rust/rlbox_lucet_sandbox/include/rlbox_lucet_sandbox.hpp',
++]
++
++SOURCES += [
++    'rlbox_lucet_thread_locals.cpp'
++]
++
++if CONFIG['CC_TYPE'] == 'clang-cl':
++    CXXFLAGS += ['/std:c++17']
++else:
++    CXXFLAGS += ['-std=gnu++17']
++
++FINAL_LIBRARY = 'xul'
+diff --git a/config/external/rlbox_lucet_sandbox/rlbox_lucet_thread_locals.cpp b/config/external/rlbox_lucet_sandbox/rlbox_lucet_thread_locals.cpp
+new file mode 100644
+index 000000000000..0104055c6315
+--- /dev/null
++++ b/config/external/rlbox_lucet_sandbox/rlbox_lucet_thread_locals.cpp
+@@ -0,0 +1,20 @@
++/* -*- Mode: C++; tab-width: 20; indent-tabs-mode: nil; c-basic-offset: 2 -*- */
++/* This Source Code Form is subject to the terms of the Mozilla Public
++ * License, v. 2.0. If a copy of the MPL was not distributed with this
++ * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
++
++#ifdef MOZ_USING_WASM_SANDBOXING
++
++// Load general firefox configuration of RLBox
++#  include "mozilla/rlbox/rlbox_config.h"
++
++#  include "mozilla/rlbox/rlbox_lucet_sandbox.hpp"
++
++#  include "mozilla/rlbox/rlbox.hpp"
++
++// The MingW compiler does not correctly handle static thread_local inline
++// members. We instead TLS storage via functions. This can be removed if the
++// MingW bug is fixed.
++RLBOX_LUCET_SANDBOX_STATIC_VARIABLES();
++
++#endif
+\ No newline at end of file
+diff --git a/gfx/thebes/ThebesRLBox.h b/gfx/thebes/ThebesRLBox.h
+index cae6a2fee422..9fb0b829a0fb 100644
+--- a/gfx/thebes/ThebesRLBox.h
++++ b/gfx/thebes/ThebesRLBox.h
+@@ -11,9 +11,13 @@
+ // Load general firefox configuration of RLBox
+ #include "mozilla/rlbox/rlbox_config.h"
+ 
++#ifdef MOZ_WASM_SANDBOXING_GRAPHITE
++#  include "mozilla/rlbox/rlbox_lucet_sandbox.hpp"
++#else
+ // Extra configuration for no-op sandbox
+-#define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol
+-#include "mozilla/rlbox/rlbox_noop_sandbox.hpp"
++#  define RLBOX_USE_STATIC_CALLS() rlbox_noop_sandbox_lookup_symbol
++#  include "mozilla/rlbox/rlbox_noop_sandbox.hpp"
++#endif
+ 
+ #include "mozilla/rlbox/rlbox.hpp"
+ 
+diff --git a/gfx/thebes/ThebesRLBoxTypes.h b/gfx/thebes/ThebesRLBoxTypes.h
+index e302a0d5d7e2..9ef287b3fa68 100644
+--- a/gfx/thebes/ThebesRLBoxTypes.h
++++ b/gfx/thebes/ThebesRLBoxTypes.h
+@@ -8,7 +8,15 @@
+ 
+ #include "mozilla/rlbox/rlbox_types.hpp"
+ 
++#ifdef MOZ_WASM_SANDBOXING_GRAPHITE
++namespace rlbox {
++class rlbox_lucet_sandbox;
++}
++using rlbox_gr_sandbox_type = rlbox::rlbox_lucet_sandbox;
++#else
+ using rlbox_gr_sandbox_type = rlbox::rlbox_noop_sandbox;
++#endif
++
+ using rlbox_sandbox_gr = rlbox::rlbox_sandbox<rlbox_gr_sandbox_type>;
+ template <typename T>
+ using sandbox_callback_gr = rlbox::sandbox_callback<T, rlbox_gr_sandbox_type>;
+diff --git a/gfx/thebes/gfxFontEntry.cpp b/gfx/thebes/gfxFontEntry.cpp
+index 0f9d7c856985..acd1377b4fa9 100644
+--- a/gfx/thebes/gfxFontEntry.cpp
++++ b/gfx/thebes/gfxFontEntry.cpp
+@@ -604,7 +604,11 @@ struct gfxFontEntry::GrSandboxData {
+       grGetGlyphAdvanceCallback;
+ 
+   GrSandboxData() {
++#ifdef MOZ_WASM_SANDBOXING_GRAPHITE
++#  error "Sandboxed graphite not yet implemented"
++#else
+     sandbox.create_sandbox();
++#endif
+     grGetTableCallback = sandbox.register_callback(GrGetTable);
+     grReleaseTableCallback = sandbox.register_callback(GrReleaseTable);
+     grGetGlyphAdvanceCallback =
+diff --git a/toolkit/library/rust/gkrust-features.mozbuild b/toolkit/library/rust/gkrust-features.mozbuild
+index 98a3477d6398..cd8d7e46144e 100644
+--- a/toolkit/library/rust/gkrust-features.mozbuild
++++ b/toolkit/library/rust/gkrust-features.mozbuild
+@@ -56,3 +56,6 @@ if CONFIG['MOZ_NEW_XULSTORE']:
+ 
+ if CONFIG['MOZ_NEW_CERT_STORAGE']:
+     gkrust_features += ['new_cert_storage']
++
++if CONFIG['MOZ_USING_WASM_SANDBOXING']:
++    gkrust_features += ['wasm_library_sandboxing']
+diff --git a/toolkit/moz.configure b/toolkit/moz.configure
+index 54e3f2123cfc..ef7e21331759 100644
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -1752,8 +1752,7 @@ def has_remote(toolkit):
+ set_config('MOZ_HAS_REMOTE', has_remote)
+ set_define('MOZ_HAS_REMOTE', has_remote)
+ 
+-
+-# wasm sandboxing support
++# RLBox Library Sandboxing wasm support
+ # ==============================================================
+ 
+ def wasm_sandboxing_libraries():
+@@ -1770,6 +1769,7 @@ def requires_wasm_sandboxing(libraries):
+         return True
+ 
+ set_config('MOZ_USING_WASM_SANDBOXING', requires_wasm_sandboxing)
++set_define('MOZ_USING_WASM_SANDBOXING', requires_wasm_sandboxing)
+ 
+ lucetc = check_prog('LUCETC', ['lucetc'],
+                     paths=toolchain_search_path, when=requires_wasm_sandboxing)
+-- 
+2.25.1
+

@@ -1,0 +1,40 @@
+From 5cae41a0081ffe76934399b85c6bcddb58d90d3a Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Tue, 7 Jan 2020 19:29:24 +0000
+Subject: [PATCH 26/29] Bug 1607278 - specify memory and guard page sizes for
+ lucetc; r=firefox-build-system-reviewers,chmanchester
+
+...and pull lucetc options out into a separate variable for readability.
+
+Differential Revision: https://phabricator.services.mozilla.com/D58830
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/config/rules.mk b/config/rules.mk
+index 60cf7e7d1305..f363f76de2e7 100644
+--- a/config/rules.mk
++++ b/config/rules.mk
+@@ -660,10 +660,18 @@ $(WASM_ARCHIVE): $(CWASMOBJS) $(CPPWASMOBJS) $(STATIC_LIBS) $(EXTRA_DEPS) $(GLOB
+ 	$(REPORT_BUILD_VERBOSE)
+ 	$(RM) $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX)
+ 	$(WASM_CXX) $(OUTOPTION)$@ -Wl,--export-all $(WASM_LDFLAGS) $(CWASMOBJS) $(CPPWASMOBJS)
++
++lucet_options := \
++    --bindings $(topsrcdir)/third_party/rust/lucet-wasi/bindings.json \
++    --guard-size 4GiB \
++    --min-reserved-size 4GiB \
++    --max-reserved-size 4GiB \
++    --opt-level 2
++
+ $(WASM_LIBRARY): $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX)
+ 	$(REPORT_BUILD)
+ 	$(RM) $(WASM_LIBRARY)
+-	$(LUCETC) --bindings $(topsrcdir)/third_party/rust/lucet-wasi/bindings.json $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX) --opt-level 2 -o $(WASM_LIBRARY)
++	$(LUCETC) $(lucet_options) $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX) -o $(WASM_LIBRARY)
+ 
+ ifeq ($(OS_ARCH),WINNT)
+ # Import libraries are created by the rules creating shared libraries.
+-- 
+2.25.1
+
