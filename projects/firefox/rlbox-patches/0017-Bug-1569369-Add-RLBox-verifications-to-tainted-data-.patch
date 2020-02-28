@@ -1,7 +1,7 @@
 From c2acb332715447f8bc98c6643c11b9875d16dae9 Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Thu, 19 Dec 2019 16:05:47 +0000
-Subject: [PATCH 17/28] Bug 1569369 - Add RLBox verifications to tainted data
+Subject: [PATCH 17/29] Bug 1569369 - Add RLBox verifications to tainted data
  from sandboxed libGraphite r=jfkthame
 
 Differential Revision: https://phabricator.services.mozilla.com/D42725

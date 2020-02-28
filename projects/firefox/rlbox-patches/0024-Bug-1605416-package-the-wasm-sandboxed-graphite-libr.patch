@@ -1,7 +1,7 @@
 From 7c36e1fec178856a76630b167e2d5950c5e9d440 Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Fri, 20 Dec 2019 22:26:50 +0000
-Subject: [PATCH 24/28] Bug 1605416 - package the wasm sandboxed graphite
+Subject: [PATCH 24/29] Bug 1605416 - package the wasm sandboxed graphite
  library where appropriate; r=firefox-build-system-reviewers,rstewart
 
 Otherwise things will fall over at runtime.

@@ -1,7 +1,7 @@
 From 3f08bd7009863e31c1d280f7e574d2c5540e7009 Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Thu, 19 Dec 2019 22:20:44 +0000
-Subject: [PATCH 20/28] Bug 1605215 - apply shared library naming conventions
+Subject: [PATCH 20/29] Bug 1605215 - apply shared library naming conventions
  to wasm sandboxed libraries; r=firefox-build-system-reviewers,rstewart
 
 Because that's what they really are under the hood.

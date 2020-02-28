@@ -1,7 +1,7 @@
 From 40df2667d8de0e95c16f55cb89c47ff0295532e6 Mon Sep 17 00:00:00 2001
 From: Ricky Stewart <rstewart@mozilla.com>
 Date: Thu, 7 Nov 2019 16:11:09 +0000
-Subject: [PATCH 06/28] Bug 1593844 - Add moz.configure bits to specify a
+Subject: [PATCH 06/29] Bug 1593844 - Add moz.configure bits to specify a
  LUCETC binary r=froydnj
 
 Differential Revision: https://phabricator.services.mozilla.com/D51927

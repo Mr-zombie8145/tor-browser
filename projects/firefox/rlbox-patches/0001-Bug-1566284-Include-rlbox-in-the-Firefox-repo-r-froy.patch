@@ -1,7 +1,7 @@
 From 5be62d8ad8b3d2e6adaf18e50582ae85f091dfa2 Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Fri, 26 Jul 2019 16:35:20 +0000
-Subject: [PATCH 01/28] Bug 1566284 - Include rlbox in the Firefox repo
+Subject: [PATCH 01/29] Bug 1566284 - Include rlbox in the Firefox repo
  r=froydnj
 
 Differential Revision: https://phabricator.services.mozilla.com/D38946

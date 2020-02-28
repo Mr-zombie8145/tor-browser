@@ -1,7 +1,7 @@
 From 21a43523914d15e8cac3b8b6458c0a3ad5f9a192 Mon Sep 17 00:00:00 2001
 From: Ricky Stewart <rstewart@mozilla.com>
 Date: Thu, 5 Dec 2019 18:56:39 +0000
-Subject: [PATCH 13/28] Bug 1601407 - Update gfx/graphite2/src/moz.build to
+Subject: [PATCH 13/29] Bug 1601407 - Update gfx/graphite2/src/moz.build to
  additionally build a wasm sandboxed library
  r=firefox-build-system-reviewers,mshal
 

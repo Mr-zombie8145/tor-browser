@@ -1,7 +1,7 @@
 From 07945333547d5a28dce3e37b8752c807a99a526f Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Mon, 30 Sep 2019 21:57:34 +0000
-Subject: [PATCH 04/28] Bug 1575985 part 2 - Allow RW access to /dev/null in
+Subject: [PATCH 04/29] Bug 1575985 part 2 - Allow RW access to /dev/null in
  content sandbox r=gcp
 
 This is needed by lucet to run WASM sandboxed libraries.

@@ -1,7 +1,7 @@
 From 8ef39fe4e47a24ff91e4775c756340b52cb14884 Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Fri, 20 Dec 2019 18:31:27 +0000
-Subject: [PATCH 21/28] Bug 1575985 part 1 - Preload RLBox dynamic library
+Subject: [PATCH 21/29] Bug 1575985 part 1 - Preload RLBox dynamic library
  before content sandbox to allow subsequent loads r=froydnj
 
 Differential Revision: https://phabricator.services.mozilla.com/D45941

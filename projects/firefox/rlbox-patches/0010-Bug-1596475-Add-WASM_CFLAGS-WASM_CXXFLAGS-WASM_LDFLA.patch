@@ -1,7 +1,7 @@
 From 45397f54bb5ae22bba095a1111bd787de74edd78 Mon Sep 17 00:00:00 2001
 From: Ricky Stewart <rstewart@mozilla.com>
 Date: Tue, 19 Nov 2019 16:25:49 +0000
-Subject: [PATCH 10/28] Bug 1596475 - Add WASM_CFLAGS, WASM_CXXFLAGS,
+Subject: [PATCH 10/29] Bug 1596475 - Add WASM_CFLAGS, WASM_CXXFLAGS,
  WASM_LDFLAGS r=froydnj
 
 Differential Revision: https://phabricator.services.mozilla.com/D53070

@@ -1,7 +1,7 @@
 From 01291778789ed8b0279834fd89cbc67db2f6820c Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Thu, 19 Sep 2019 17:33:26 +0000
-Subject: [PATCH 03/28] Bug 1571559 - add configuration support for
+Subject: [PATCH 03/29] Bug 1571559 - add configuration support for
  --with-wasi-sysroot; r=nalexander
 
 As part of compiling C/C++ to wasm, we're going to need a wasm-specific

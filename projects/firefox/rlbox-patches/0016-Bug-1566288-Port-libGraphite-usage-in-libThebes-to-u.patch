@@ -1,7 +1,7 @@
 From 2635462eb9e99c49bf0342a6178732e24d93bbc4 Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Thu, 19 Dec 2019 16:05:35 +0000
-Subject: [PATCH 16/28] Bug 1566288 - Port libGraphite usage in libThebes to
+Subject: [PATCH 16/29] Bug 1566288 - Port libGraphite usage in libThebes to
  use the RLBox API. r=froydnj,jfkthame
 
 Differential Revision: https://phabricator.services.mozilla.com/D39593
