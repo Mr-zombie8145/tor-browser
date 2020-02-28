@@ -76,6 +76,8 @@ targets:
         - libpulse-dev
         # To pass configure since ESR 52
         - libx11-xcb-dev
+        # Needed for RLBox, see: #32389
+        - git
 
   linux-i686:
     var:
