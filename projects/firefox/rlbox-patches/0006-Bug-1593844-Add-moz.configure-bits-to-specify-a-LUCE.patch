@@ -1,0 +1,28 @@
+From 40df2667d8de0e95c16f55cb89c47ff0295532e6 Mon Sep 17 00:00:00 2001
+From: Ricky Stewart <rstewart@mozilla.com>
+Date: Thu, 7 Nov 2019 16:11:09 +0000
+Subject: [PATCH 06/28] Bug 1593844 - Add moz.configure bits to specify a
+ LUCETC binary r=froydnj
+
+Differential Revision: https://phabricator.services.mozilla.com/D51927
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/toolkit/moz.configure b/toolkit/moz.configure
+index e2ba6640e8af..1557f3e2dfaf 100644
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -1771,6 +1771,9 @@ def requires_wasm_sandboxing(libraries):
+ 
+ set_config('MOZ_USING_WASM_SANDBOXING', requires_wasm_sandboxing)
+ 
++lucetc = check_prog('LUCETC', ['lucetc'],
++                    paths=toolchain_search_path, when=requires_wasm_sandboxing)
++
+ @depends('--with-wasm-sandboxed-libraries', target)
+ def wasm_sandboxing(libraries, target):
+     if not libraries:
+-- 
+2.25.1
+

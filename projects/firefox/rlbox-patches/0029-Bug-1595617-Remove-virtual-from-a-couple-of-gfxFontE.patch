@@ -1,0 +1,94 @@
+From 53d7cd020e03b9857093afc0889f58f4829ed802 Mon Sep 17 00:00:00 2001
+From: Jonathan Kew <jkew@mozilla.com>
+Date: Mon, 11 Nov 2019 21:39:45 +0000
+Subject: [PATCH 29/29] Bug 1595617 - Remove 'virtual' from a couple of
+ gfxFontEntry methods that don't need to be overridden. r=lsalzman
+
+Differential Revision: https://phabricator.services.mozilla.com/D52587
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/gfx/thebes/gfxFcPlatformFontList.cpp b/gfx/thebes/gfxFcPlatformFontList.cpp
+index 6c96781ca0ff..9ec0c7394f6d 100644
+--- a/gfx/thebes/gfxFcPlatformFontList.cpp
++++ b/gfx/thebes/gfxFcPlatformFontList.cpp
+@@ -488,39 +488,6 @@ hb_blob_t* gfxFontconfigFontEntry::GetFontTable(uint32_t aTableTag) {
+   return gfxFontEntry::GetFontTable(aTableTag);
+ }
+ 
+-void gfxFontconfigFontEntry::MaybeReleaseFTFace() {
+-  // don't release if either HB or Gr face still exists
+-  if (mHBFace || mGrFace) {
+-    return;
+-  }
+-  // only close out FT_Face for system fonts, not for data fonts
+-  if (!mIsDataUserFont) {
+-    if (mFTFace) {
+-      if (mMMVar) {
+-        if (sDoneVar) {
+-          (*sDoneVar)(mFTFace->glyph->library, mMMVar);
+-        } else {
+-          free(mMMVar);
+-        }
+-        mMMVar = nullptr;
+-      }
+-      Factory::ReleaseFTFace(mFTFace);
+-      mFTFace = nullptr;
+-    }
+-    mFTFaceInitialized = false;
+-  }
+-}
+-
+-void gfxFontconfigFontEntry::ForgetHBFace() {
+-  gfxFontEntry::ForgetHBFace();
+-  MaybeReleaseFTFace();
+-}
+-
+-void gfxFontconfigFontEntry::ReleaseGrFace(gr_face* aFace) {
+-  gfxFontEntry::ReleaseGrFace(aFace);
+-  MaybeReleaseFTFace();
+-}
+-
+ double gfxFontconfigFontEntry::GetAspect() {
+   if (mAspect != 0.0) {
+     return mAspect;
+diff --git a/gfx/thebes/gfxFcPlatformFontList.h b/gfx/thebes/gfxFcPlatformFontList.h
+index 0b33a9c5874b..9c6fef1c26f4 100644
+--- a/gfx/thebes/gfxFcPlatformFontList.h
++++ b/gfx/thebes/gfxFcPlatformFontList.h
+@@ -117,9 +117,6 @@ class gfxFontconfigFontEntry : public gfxFontEntry {
+ 
+   hb_blob_t* GetFontTable(uint32_t aTableTag) override;
+ 
+-  void ForgetHBFace() override;
+-  void ReleaseGrFace(gr_face* aFace) override;
+-
+   double GetAspect();
+ 
+  protected:
+diff --git a/gfx/thebes/gfxFontEntry.h b/gfx/thebes/gfxFontEntry.h
+index a08af53b46c6..796dc714ff74 100644
+--- a/gfx/thebes/gfxFontEntry.h
++++ b/gfx/thebes/gfxFontEntry.h
+@@ -336,7 +336,7 @@ class gfxFontEntry {
+   // Caller must release with hb_face_destroy() when finished with it,
+   // and the font entry will be notified via ForgetHBFace.
+   hb_face_t* GetHBFace();
+-  virtual void ForgetHBFace();
++  void ForgetHBFace();
+ 
+   // Get the sandbox instance that graphite is running in.
+   rlbox_sandbox_gr* GetGrSandbox();
+@@ -352,7 +352,7 @@ class gfxFontEntry {
+   // Caller must call gfxFontEntry::ReleaseGrFace when finished with it.
+   // Graphite is run in a sandbox
+   tainted_opaque_gr<gr_face*> GetGrFace();
+-  virtual void ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace);
++  void ReleaseGrFace(tainted_opaque_gr<gr_face*> aFace);
+ 
+   // Does the font have graphite contextuals that involve the space glyph
+   // (and therefore we should bypass the word cache)?
+-- 
+2.25.1
+

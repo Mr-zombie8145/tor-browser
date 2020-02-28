@@ -1,0 +1,37 @@
+From 6978fc554c37158ca35976690d548fee808cddcf Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Mon, 23 Dec 2019 16:49:14 +0000
+Subject: [PATCH 23/28] Bug 1605537 - remove coverage and warning flags from
+ wasm flags; r=firefox-build-system-reviewers,rstewart
+
+Warning flags might have been generated for a different compiler, so we
+can't use them here.  The same argument applies to coverage flags.
+
+Depends on D58070
+
+Differential Revision: https://phabricator.services.mozilla.com/D58071
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/python/mozbuild/mozbuild/frontend/context.py b/python/mozbuild/mozbuild/frontend/context.py
+index 3ed5cf5dd3a5..97c561b5ef5d 100644
+--- a/python/mozbuild/mozbuild/frontend/context.py
++++ b/python/mozbuild/mozbuild/frontend/context.py
+@@ -562,13 +562,8 @@ class WasmFlags(TargetCompileFlags):
+              ('WASM_CFLAGS', 'WASM_CXXFLAGS', 'WASM_LDFLAGS')),
+             ('WARNINGS_AS_ERRORS', self._warnings_as_errors(),
+              ('WASM_CXXFLAGS', 'WASM_CFLAGS', 'WASM_LDFLAGS')),
+-            ('WARNINGS_CFLAGS',
+-             context.config.substs.get('WARNINGS_CFLAGS'),
+-             ('WASM_CFLAGS', 'WASM_LDFLAGS')),
+             ('MOZBUILD_CFLAGS', None, ('WASM_CFLAGS',)),
+             ('MOZBUILD_CXXFLAGS', None, ('WASM_CXXFLAGS',)),
+-            ('COVERAGE', context.config.substs.get('COVERAGE_CFLAGS'),
+-             ('WASM_CXXFLAGS', 'WASM_CFLAGS')),
+             ('WASM_CFLAGS', context.config.substs.get('WASM_CFLAGS'),
+              ('WASM_CFLAGS',)),
+             ('WASM_CXXFLAGS', context.config.substs.get('WASM_CXXFLAGS'),
+-- 
+2.25.1
+

@@ -119,8 +119,7 @@ fi
 [% END %]
 
 [% IF c("var/rlbox") %]
-  tar -C rlbox_patches -xjf $rootdir/rlbox_linux_patches.tar.bz2
-  for p in $(ls -1 rlbox_patches/*.patch | sort)
+  for p in `ls -1 $rootdir/rlbox-patches | sort`
   do
     patch -p1 < $p
   done

@@ -197,6 +197,5 @@ input_files:
     # TorButton patch authored by Arthur Edelstein, from https://github.com/arthuredelstein/torbutton/ branch 2.1.10-namecoin
   - filename: namecoin-etld.patch
     enable: '[% c("var/namecoin") %]'
-  - URL: https://people.torproject.org/~gk/mirrors/sources/rlbox_linux_patches.tar.bz2
-    sha256sum: e494e018e14060f5c3fb665d86dc52e37c72c070891e10f4fe8dd19ba4666780
+  - filename: rlbox-patches
     enable: '[% c("var/rlbox") %]'

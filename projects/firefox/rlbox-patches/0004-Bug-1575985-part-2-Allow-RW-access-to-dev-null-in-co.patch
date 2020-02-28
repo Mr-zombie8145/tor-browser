@@ -1,0 +1,30 @@
+From 07945333547d5a28dce3e37b8752c807a99a526f Mon Sep 17 00:00:00 2001
+From: "shravanrn@gmail.com" <shravanrn@gmail.com>
+Date: Mon, 30 Sep 2019 21:57:34 +0000
+Subject: [PATCH 04/28] Bug 1575985 part 2 - Allow RW access to /dev/null in
+ content sandbox r=gcp
+
+This is needed by lucet to run WASM sandboxed libraries.
+
+Differential Revision: https://phabricator.services.mozilla.com/D46108
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp b/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp
+index f4785f3e4da0..1142b456f060 100644
+--- a/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp
++++ b/security/sandbox/linux/broker/SandboxBrokerPolicyFactory.cpp
+@@ -210,6 +210,9 @@ SandboxBrokerPolicyFactory::SandboxBrokerPolicyFactory() {
+   // Bug 1312678: radeonsi/Intel with DRI when using WebGL
+   policy->AddDir(rdwr, "/dev/dri");
+ 
++  // Bug 1575985: WASM library sandbox needs RW access to /dev/null
++  policy->AddPath(rdwr, "/dev/null");
++
+   // Read permissions
+   policy->AddPath(rdonly, "/dev/urandom");
+   policy->AddPath(rdonly, "/proc/cpuinfo");
+-- 
+2.25.1
+

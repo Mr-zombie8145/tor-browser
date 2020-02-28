@@ -1,0 +1,63 @@
+From 3f08bd7009863e31c1d280f7e574d2c5540e7009 Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Thu, 19 Dec 2019 22:20:44 +0000
+Subject: [PATCH 20/28] Bug 1605215 - apply shared library naming conventions
+ to wasm sandboxed libraries; r=firefox-build-system-reviewers,rstewart
+
+Because that's what they really are under the hood.
+
+Differential Revision: https://phabricator.services.mozilla.com/D57872
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/python/mozbuild/mozbuild/frontend/data.py b/python/mozbuild/mozbuild/frontend/data.py
+index e436fcfb6713..f438d0a146be 100644
+--- a/python/mozbuild/mozbuild/frontend/data.py
++++ b/python/mozbuild/mozbuild/frontend/data.py
+@@ -743,6 +743,18 @@ class SandboxedWasmLibrary(Library):
+     def __init__(self, context, basename, real_name=None):
+         Library.__init__(self, context, basename, real_name)
+ 
++        # TODO: WASM sandboxed libraries are in a weird place: they are
++        # built in a different way, but they should share some code with
++        # SharedLibrary.  This is the minimal configuration needed to work
++        # with Linux, but it would need to be extended for other platforms.
++        assert context.config.substs['OS_TARGET'] == 'Linux'
++
++        self.lib_name = '%s%s%s' % (
++            context.config.dll_prefix,
++            real_name or basename,
++            context.config.dll_suffix,
++        )
++
+     def _obj_suffix(self):
+         """Can be overridden by a base class for custom behavior."""
+         return self.config.substs.get('WASM_OBJ_SUFFIX', '')
+diff --git a/python/mozbuild/mozbuild/test/frontend/test_emitter.py b/python/mozbuild/mozbuild/test/frontend/test_emitter.py
+index c396808dd027..6df5b5276219 100644
+--- a/python/mozbuild/mozbuild/test/frontend/test_emitter.py
++++ b/python/mozbuild/mozbuild/test/frontend/test_emitter.py
+@@ -1338,8 +1338,8 @@ class TestEmitterBasic(unittest.TestCase):
+                               linkable.objs)
+ 
+     def test_wasm_sources(self):
+-        """Test that HOST_SOURCES works properly."""
+-        reader = self.reader('wasm-sources')
++        """Test that WASM_SOURCES works properly."""
++        reader = self.reader('wasm-sources', extra_substs={'OS_TARGET': 'Linux'})
+         objs = list(self.read_topsrcdir(reader))
+ 
+         # The second to last object is a linkable.
+@@ -1712,7 +1712,7 @@ class TestEmitterBasic(unittest.TestCase):
+             self.read_topsrcdir(reader)
+ 
+     def test_wasm_compile_flags(self):
+-        reader = self.reader('wasm-compile-flags')
++        reader = self.reader('wasm-compile-flags', extra_substs={'OS_TARGET': 'Linux'})
+         flags = list(self.read_topsrcdir(reader))[2]
+         self.assertIsInstance(flags, ComputedFlags)
+         self.assertEqual(flags.flags['WASM_CFLAGS'],
+-- 
+2.25.1
+
