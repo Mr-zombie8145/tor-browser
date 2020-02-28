@@ -1,0 +1,42 @@
+From bb75cf8f3903046ee13f317b05cb109def94a395 Mon Sep 17 00:00:00 2001
+From: "shravanrn@gmail.com" <shravanrn@gmail.com>
+Date: Sat, 1 Feb 2020 10:38:29 +0000
+Subject: [PATCH] Bug 1610994 - Update rlbox wasm library preload and paths to
+ work on Mac r=froydnj
+
+Differential Revision: https://phabricator.services.mozilla.com/D61079
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/ipc/glue/LibrarySandboxPreload.cpp b/ipc/glue/LibrarySandboxPreload.cpp
+index a50f044d3aa5..23cce04d881d 100644
+--- a/ipc/glue/LibrarySandboxPreload.cpp
++++ b/ipc/glue/LibrarySandboxPreload.cpp
+@@ -25,7 +25,9 @@ nsAutoCString GetSandboxedGraphitePath() {
+     MOZ_CRASH("Library preload failure: Failed to get binary folder\n");
+   }
+ 
+-  rv = graphiteFile->AppendNative(NS_LITERAL_CSTRING("libgraphitewasm.so"));
++  rv = graphiteFile->AppendNative(
++      NS_LITERAL_CSTRING(MOZ_DLL_PREFIX "graphitewasm" MOZ_DLL_SUFFIX));
++
+   if (NS_FAILED(rv)) {
+     MOZ_CRASH("Library preload failure: Failed to get libgraphite file");
+   }
+@@ -41,7 +43,11 @@ nsAutoCString GetSandboxedGraphitePath() {
+ }
+ 
+ void PreloadSandboxedDynamicLibraries() {
+-#ifdef MOZ_WASM_SANDBOXING_GRAPHITE
++  // The process level sandbox does not allow loading of dynamic libraries.
++  // This preloads wasm sandboxed libraries before the process level sandbox is
++  // enabled. Currently, this is only needed for Linux as Mac allows loading
++  // libraries from the package file.
++#if defined(XP_LINUX) && defined(MOZ_WASM_SANDBOXING_GRAPHITE)
+   nsAutoCString path = GetSandboxedGraphitePath();
+   PRLibSpec libSpec;
+   libSpec.type = PR_LibSpec_Pathname;
+-- 
+2.25.1
+
