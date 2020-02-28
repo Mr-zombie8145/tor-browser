@@ -1,7 +1,7 @@
 From 2ac64c1fd1ff2155959ee69237cb4215b40d2693 Mon Sep 17 00:00:00 2001
 From: Ricky Stewart <rstewart@mozilla.com>
 Date: Tue, 10 Dec 2019 15:48:38 +0000
-Subject: [PATCH 14/29] Bug 1601753 - `./mach build` does not build
+Subject: [PATCH 14/35] Bug 1601753 - `./mach build` does not build
  WASM_LIBRARY by default r=froydnj
 
 Differential Revision: https://phabricator.services.mozilla.com/D56092

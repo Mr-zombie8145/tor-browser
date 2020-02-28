@@ -1,7 +1,7 @@
 From 5a001c5ba3fd98b4a061dbcd05e127763a7ff071 Mon Sep 17 00:00:00 2001
 From: Ricky Stewart <rstewart@mozilla.com>
 Date: Tue, 3 Dec 2019 18:14:39 +0000
-Subject: [PATCH 12/29] Bug 1600520 - Build flags order regression: OS include
+Subject: [PATCH 12/35] Bug 1600520 - Build flags order regression: OS include
  paths used before local paths r=froydnj
 
 Remove the "clever" logic from patch D53070, which was meant to reduce code duplication, and replace with easier-to-understand logic. Copy-and-paste the previous version of the CompileFlags class before patch D53070 to ensure that we stamp out the regression.

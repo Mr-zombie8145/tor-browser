@@ -1,0 +1,49 @@
+From bbcfac5211c98994ee1ac53850ccbcd40ba0e69d Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Thu, 13 Feb 2020 21:20:34 +0000
+Subject: [PATCH 30/35] Bug 1610986 - add a specific target for lucet
+ compilation; r=firefox-build-system-reviewers,rstewart
+
+We're going to need this for handling Mac cross compiles correctly.
+
+Depends on D62795
+
+Differential Revision: https://phabricator.services.mozilla.com/D62796
+
+--HG--
+extra : moz-landing-system : lando
+
+To save a patch we include the `--target-cpu baseline \` part from bug
+1610991 here.
+
+diff --git a/config/rules.mk b/config/rules.mk
+index f363f76de2e7..8997e4e616f2 100644
+--- a/config/rules.mk
++++ b/config/rules.mk
+@@ -662,6 +662,8 @@ $(WASM_ARCHIVE): $(CWASMOBJS) $(CPPWASMOBJS) $(STATIC_LIBS) $(EXTRA_DEPS) $(GLOB
+ 	$(WASM_CXX) $(OUTOPTION)$@ -Wl,--export-all $(WASM_LDFLAGS) $(CWASMOBJS) $(CPPWASMOBJS)
+ 
+ lucet_options := \
++    --target $(LUCETC_TARGET) \
++    --target-cpu baseline \
+     --bindings $(topsrcdir)/third_party/rust/lucet-wasi/bindings.json \
+     --guard-size 4GiB \
+     --min-reserved-size 4GiB \
+diff --git a/toolkit/moz.configure b/toolkit/moz.configure
+index ef7e21331759..1a48030417cb 100644
+--- a/toolkit/moz.configure
++++ b/toolkit/moz.configure
+@@ -1861,6 +1861,10 @@ def wasm_ldflags(value):
+         return value
+ set_config('WASM_LDFLAGS', wasm_ldflags, when=requires_wasm_sandboxing)
+ 
++    # Re-using the Rust target triple here is not exactly correct, but it is an
++    # excellent approximation for the platforms we currently support
++    set_config('LUCETC_TARGET', rust_target_triple)
++
+ 
+ @depends('--with-wasm-sandboxed-libraries', target)
+ def wasm_sandboxing(libraries, target):
+-- 
+2.25.1
+

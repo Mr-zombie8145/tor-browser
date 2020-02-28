@@ -1,7 +1,7 @@
 From cd8e9bee30549bcdfaab526bb7a3f4c3f3a23378 Mon Sep 17 00:00:00 2001
 From: Ricky Stewart <rstewart@mozilla.com>
 Date: Wed, 27 Nov 2019 20:11:59 +0000
-Subject: [PATCH 11/29] Bug 1594867 - Add moz.build/backend bits to specify
+Subject: [PATCH 11/35] Bug 1594867 - Add moz.build/backend bits to specify
  files that should be built as a sandboxed wasm library
  r=firefox-build-system-reviewers,mshal
 

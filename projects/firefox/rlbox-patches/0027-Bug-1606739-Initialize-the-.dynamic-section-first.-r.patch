@@ -1,7 +1,7 @@
 From 4277b435fae6e73bb6e6ecf9f94a03a5480fd42e Mon Sep 17 00:00:00 2001
 From: Mike Hommey <mh+mozilla@glandium.org>
 Date: Wed, 8 Jan 2020 14:30:21 +0000
-Subject: [PATCH 27/29] Bug 1606739 - Initialize the .dynamic section first.
+Subject: [PATCH 27/35] Bug 1606739 - Initialize the .dynamic section first.
  r=froydnj
 
 Differential Revision: https://phabricator.services.mozilla.com/D59078
