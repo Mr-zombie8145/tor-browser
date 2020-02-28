@@ -1,7 +1,7 @@
 # vim: filetype=yaml sw=2
 filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
 version: '[% c("abbrev") %]'
-git_hash: 5c22392b5b1aaa60e915c75e92b57391e1e61e6d
+git_hash: 5e870faf6f95d79d11efc813e56370ad124bbed5
 git_url: https://github.com/PLSysSec/lucet_sandbox_compiler/
 git_submodule: 1
 
@@ -31,5 +31,5 @@ input_files:
     project: wasi-sysroot
   # `cargo vendor vendor` in the `lucetc-sandbox-compiler` directory has vendored
   # the sources.
-  - URL: https://people.torproject.org/~gk/mirrors/sources/lucetc-vendor.tar.bz2
-    sha256sum: 5a7802834d0d4b9210f323cf69cc305946f22dba4ddaf2c4c0eb6d3621da2c2a
+  - URL: https://people.torproject.org/~gk/mirrors/sources/lucetc-vendor2.tar.bz2
+    sha256sum: 22dd68681b9f142b1b2babe0c655422d5ee87cc3a36dddfff7c1972daa15e638
