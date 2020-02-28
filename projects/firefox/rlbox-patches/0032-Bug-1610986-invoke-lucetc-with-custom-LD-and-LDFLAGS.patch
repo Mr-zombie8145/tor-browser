@@ -1,0 +1,35 @@
+From f5501467d945769738135f2623275570d5a75c73 Mon Sep 17 00:00:00 2001
+From: Nathan Froyd <froydnj@mozilla.com>
+Date: Thu, 13 Feb 2020 21:19:56 +0000
+Subject: [PATCH 32/35] Bug 1610986 - invoke lucetc with custom LD and LDFLAGS;
+ r=firefox-build-system-reviewers,rstewart
+
+`lucetc` by default will invoke `ld` directly, which is usually not what
+we want, particularly when cross-compiling.  Instead, let's invoke the
+compiler, which will do the hard work of determining the correct linker
+to use, and we'll also explicitly specify `LDFLAGS`, since the default
+`LDFLAGS` from `lucetc` assume you're invoking the linker directly.
+
+Depends on D62797
+
+Differential Revision: https://phabricator.services.mozilla.com/D62798
+
+--HG--
+extra : moz-landing-system : lando
+
+diff --git a/config/rules.mk b/config/rules.mk
+index 8997e4e616f2..09342ae890eb 100644
+--- a/config/rules.mk
++++ b/config/rules.mk
+@@ -673,7 +673,7 @@ lucet_options := \
+ $(WASM_LIBRARY): $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX)
+ 	$(REPORT_BUILD)
+ 	$(RM) $(WASM_LIBRARY)
+-	$(LUCETC) $(lucet_options) $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX) -o $(WASM_LIBRARY)
++	env LD="$(CC)" LDFLAGS="$(LUCETC_LDFLAGS)" $(LUCETC) $(lucet_options) $(WASM_LIBRARY).$(WASM_OBJ_SUFFIX) -o $(WASM_LIBRARY)
+ 
+ ifeq ($(OS_ARCH),WINNT)
+ # Import libraries are created by the rules creating shared libraries.
+-- 
+2.25.1
+

@@ -1,7 +1,7 @@
 From b255ba83a2c47876992e199761c8348db4a52262 Mon Sep 17 00:00:00 2001
 From: "shravanrn@gmail.com" <shravanrn@gmail.com>
 Date: Thu, 19 Dec 2019 22:17:13 +0000
-Subject: [PATCH 18/29] Bug 1576052 - Use configuration/macro definition to
+Subject: [PATCH 18/35] Bug 1576052 - Use configuration/macro definition to
  selectively enable wasm sandbox for graphite r=froydnj
 
 Differential Revision: https://phabricator.services.mozilla.com/D43710

@@ -1,7 +1,7 @@
 From b5245a96bc282209a5b0a376d0b8248f664a6cd5 Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Thu, 19 Dec 2019 21:41:23 +0000
-Subject: [PATCH 19/29] Bug 1605215 - add install rules for `WASM_LIBRARY`;
+Subject: [PATCH 19/35] Bug 1605215 - add install rules for `WASM_LIBRARY`;
  r=firefox-build-system-reviewers,rstewart
 
 Differential Revision: https://phabricator.services.mozilla.com/D57871
