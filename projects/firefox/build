@@ -121,7 +121,7 @@ fi
 [% IF c("var/rlbox") %]
   for p in `ls -1 $rootdir/rlbox-patches | sort`
   do
-    patch -p1 < $p
+    patch -p1 < $rootdir/rlbox-patches/$p
   done
 [% END %]
 
