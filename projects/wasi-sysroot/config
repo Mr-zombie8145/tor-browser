@@ -1,6 +1,9 @@
 # vim: filetype=yaml sw=2
 filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
 version: '[% c("abbrev") %]'
+# We use this commit as it is the last one working out-of-the-box with our clang
+# 8. Once we use a newer clang version we should bump it to what Mozilla is
+# using.
 git_hash: 87b7a019472770f08d49cf3b558867dc76ea74eb
 git_url: https://github.com/CraneStation/wasi-sdk
 git_submodule: 1
