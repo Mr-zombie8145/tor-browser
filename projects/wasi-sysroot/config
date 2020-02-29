@@ -20,8 +20,8 @@ targets:
 
 input_files:
   - project: container-image
-  - project: '[% c("var/compiler") %]'
-    name: '[% c("var/compiler") %]'
+  - project: gcc
+    name: gcc
     enable: '[% c("var/linux") %]'
   - name: binutils
     project: binutils
