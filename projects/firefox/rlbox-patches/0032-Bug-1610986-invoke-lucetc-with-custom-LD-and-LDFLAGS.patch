@@ -1,4 +1,4 @@
-From f5501467d945769738135f2623275570d5a75c73 Mon Sep 17 00:00:00 2001
+From 7435e0f71da3cd8fc4dbf69e7da23c8b1623e019 Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Thu, 13 Feb 2020 21:19:56 +0000
 Subject: [PATCH 32/35] Bug 1610986 - invoke lucetc with custom LD and LDFLAGS;

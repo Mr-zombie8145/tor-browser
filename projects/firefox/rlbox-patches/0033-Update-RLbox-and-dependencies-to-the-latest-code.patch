@@ -1,4 +1,4 @@
-From 233c64b0601b43a2aef09913bf205321121584fb Mon Sep 17 00:00:00 2001
+From 2047b7a2315de9458bd0db0478d117d3e7912196 Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
 Date: Fri, 28 Feb 2020 13:46:29 +0000
 Subject: [PATCH 33/35] Update RLbox and dependencies to the latest code

@@ -1,4 +1,4 @@
-From b446f456269c661cf26ce95507bd376c325ad62f Mon Sep 17 00:00:00 2001
+From 5446506b9bb7c15a52ed62f4d1a2651f8f3871ff Mon Sep 17 00:00:00 2001
 From: Nathan Froyd <froydnj@mozilla.com>
 Date: Thu, 13 Feb 2020 23:40:13 +0000
 Subject: [PATCH 34/35] Bug 1610149 - relax SandboxedWasmLibrary assertions in
