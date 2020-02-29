@@ -17,10 +17,12 @@ targets:
 
 input_files:
   - project: container-image
-  - name: gcc
-    project: gcc
+  - project: '[% c("var/compiler") %]'
+    name: '[% c("var/compiler") %]'
+    enable: '[% c("var/linux") %]'
   - name: binutils
     project: binutils
+    enable: '[% c("var/linux") %]'
   - name: cmake
     project: cmake
   - name: ninja
