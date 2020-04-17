@@ -1,0 +1,28 @@
+#!/bin/bash
+[% c("var/set_default_env") -%]
+[% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
+distdir=/var/tmp/dist
+builddir=/var/tmp/build/[% project %]
+mkdir -p $distdir/[% project %]
+mkdir -p /var/tmp/build
+
+gradle_repo=$rootdir/[% c('input_files_by_name/gradle-dependencies') %]
+cp -r $gradle_repo/dl/android/maven2/* $gradle_repo
+cp -r $gradle_repo/m2/* $gradle_repo
+cp -r $gradle_repo/maven2/* $gradle_repo
+tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
+
+cd $builddir-[% c("version") %]
+patch -p1 < $rootdir/gradle.patch
+patch -p1 < $rootdir/pm_app.patch
+cd buildSrc
+patch -p2 < $rootdir/kts.patch
+patch -p2 < $rootdir/pm.patch
+cd ..
+$GRADLE_HOME/gradle-5.6.4/bin/gradle --offline --no-daemon -Dmaven.repo.local=$gradle_repo clean app:assembleGeckoBetaDebug
+
+cd $distdir
+[% c('tar', {
+        tar_src => [ project ],
+        tar_args => '-czf ' _ dest_dir _ '/' _ c('filename'),
+    }) %]

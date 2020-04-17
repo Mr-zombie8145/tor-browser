@@ -1,0 +1,36 @@
+# vim: filetype=yaml sw=2
+version: '[% c("abbrev") %]'
+filename: 'firefox-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
+git_hash: '943d3837b243db7ba6d5d34e9e57774bcb6ebf8a'
+git_url: https://github.com/mozilla-mobile/fenix
+
+var:
+  container:
+    use_container: 1
+  # this should be updated when the list of gradle dependencies is changed
+  gradle_dependencies_version: 1
+
+
+steps:
+  src-tarballs:
+    filename: 'src-[% project %]-[% c("version") %].tar.xz'
+    version: '[% c("git_hash") %]'
+    input_files: []
+    var:
+      container:
+        use_container: 0
+    targets:
+      nightly:
+        version: '[% c("abbrev") %]'
+
+input_files:
+  - project: container-image
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
+  - filename: gradle.patch
+  - filename: kts.patch
+  - filename: pm.patch
+  - filename: pm_app.patch
+  - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
+    name: gradle-dependencies
+    exec: '[% INCLUDE "fetch-gradle-dependencies" %]'

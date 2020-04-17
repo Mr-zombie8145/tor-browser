@@ -5,7 +5,7 @@ export SDK_HOME=$PROJECT_PATH/android-sdk-linux
 export NDK_HOME=$PROJECT_PATH/android-ndk
 export GRADLE_HOME=$PROJECT_PATH/gradle
 android_release_dir=android-9
-android_api_release_dir=android-10
+android_api_release_dir=android-9
 
 # Make directories
 mkdir -p $NDK_HOME $SDK_HOME $GRADLE_HOME
