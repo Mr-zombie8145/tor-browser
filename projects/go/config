@@ -50,6 +50,9 @@ var:
     do
       patch -p1 < $p
     done
+    # Run in GOPATH mode: https://golang.org/cmd/go/#hdr-Module_support. This
+    # option might go away in go1.14 or a later version.
+    export GO111MODULE=off
     [% IF c("var/build_go_lib_pre"); GET c("var/build_go_lib_pre"); END; -%]
     [% IF c("var/go_lib_install") -%]
       [% FOREACH inst IN c("var/go_lib_install") %]
