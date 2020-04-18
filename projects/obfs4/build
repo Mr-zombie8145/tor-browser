@@ -7,6 +7,7 @@ mkdir -p $PTDIR
 
 [% IF c("var/android") -%]
   [% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
+  export CGO_ENABLED=1
 [% END -%]
 
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/goptlib') %]
