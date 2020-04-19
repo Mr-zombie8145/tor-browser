@@ -1,7 +1,7 @@
 # vim: filetype=yaml sw=2
 version: '[% c("abbrev") %]'
 filename: 'firefox-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
-git_hash: '943d3837b243db7ba6d5d34e9e57774bcb6ebf8a'
+git_hash: '854aa7997ac6a090facd47b03ee01ab763a37f86' # v4.3.0-beta.2
 git_url: https://github.com/mozilla-mobile/fenix
 
 var:
