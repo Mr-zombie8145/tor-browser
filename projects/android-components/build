@@ -1,12 +1,12 @@
 #!/bin/bash
 [% c("var/set_default_env") -%]
-gradle_repo=$rootdir/[% c('input_files_by_name/gradle-dependencies') %]
+#gradle_repo=$rootdir/[% c('input_files_by_name/gradle-dependencies') %]
 
 # The download script assumes artifact package name is the complete URL path.
 # In some cases this is incorrect, so copy those artifacts to correct location
-cp -r $gradle_repo/dl/android/maven2/* $gradle_repo
-cp -r $gradle_repo/maven2/* $gradle_repo
-cp -r $gradle_repo/m2/* $gradle_repo
+#cp -r $gradle_repo/dl/android/maven2/* $gradle_repo
+#cp -r $gradle_repo/maven2/* $gradle_repo
+#cp -r $gradle_repo/m2/* $gradle_repo
 
 mkdir -p /var/tmp/build
 
@@ -14,20 +14,20 @@ mkdir -p /var/tmp/build
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 cd /var/tmp/build/[% project %]-[% c('version') %]
-patch -p1 < $rootdir/buildconfig.patch
-patch -p1 < $rootdir/buildsrc.patch
-patch -p1 < $rootdir/enginegecko.patch
-patch -p1 < $rootdir/geckodependency.patch
-patch -p1 < $rootdir/git.patch
-patch -p1 < $rootdir/gradlebuild.patch
-patch -p1 < $rootdir/publish.patch
-patch -p1 < $rootdir/settings.patch
+#patch -p1 < $rootdir/buildconfig.patch
+#patch -p1 < $rootdir/buildsrc.patch
+#patch -p1 < $rootdir/enginegecko.patch
+#patch -p1 < $rootdir/geckodependency.patch
+#patch -p1 < $rootdir/git.patch
+#patch -p1 < $rootdir/gradlebuild.patch
+#patch -p1 < $rootdir/publish.patch
+#patch -p1 < $rootdir/settings.patch
 
-mkdir -p /home/rbm/.m2/repository
-cp -r $gradle_repo/* /home/rbm/.m2/repository
+#mkdir -p /home/rbm/.m2/repository
+#cp -r $gradle_repo/* /home/rbm/.m2/repository
 # Build Android Libraries and Apps
 gradle --offline --no-daemon assemble -x lint
-gradle publish
+#gradle publish
 
 # Package
 [% c('tar', {
