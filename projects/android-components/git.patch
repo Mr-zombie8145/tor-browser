@@ -1,18 +1,22 @@
+From a5cfec06fb844ce6f29163f8941a42d15739c7d9 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Sun, 19 Apr 2020 17:59:16 +0000
+Subject: [PATCH] git patch
+
+
 diff --git a/components/support/base/build.gradle b/components/support/base/build.gradle
-index 907f29a5e..b661f4463 100644
+index b3db13a50..fe14bff5d 100644
 --- a/components/support/base/build.gradle
 +++ b/components/support/base/build.gradle
-@@ -8,12 +8,7 @@ apply plugin: 'kotlin-android'
- def generatedSrcDir = new File(buildDir, "generated/components/src/main/java")
+@@ -36,7 +36,7 @@ android {
+             minifyEnabled false
+             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
  
- def getGitHash = { ->
--    def stdout = new ByteArrayOutputStream()
--    exec {
--        commandLine 'git', 'rev-parse', '--short', 'HEAD'
--        standardOutput = stdout
--    }
--    return stdout.toString().trim()
-+    return "tor-build"
- }
+-            buildConfigField("String", "GIT_HASH", "\"" + getGitHash() + "\"")
++            buildConfigField("String", "GIT_HASH", "\"release build\"")
+         }
+     }
  
- android {
+-- 
+2.26.1
+
