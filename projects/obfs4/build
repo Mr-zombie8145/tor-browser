@@ -7,6 +7,8 @@ mkdir -p $PTDIR
 
 [% IF c("var/android") -%]
   [% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
+  # We need to explicitly set CGO_ENABLED with Go 1.13.x as the Android build
+  # breaks otherwise.
   export CGO_ENABLED=1
 [% END -%]
 
@@ -23,9 +25,6 @@ mkdir -p /var/tmp/build
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 cd /var/tmp/build/[% project %]-[% c('version') %]
 
-# Run in GOPATH mode: https://golang.org/cmd/go/#hdr-Module_support. (see:
-# #32027)
-export GO111MODULE=off
 mkdir -p "$GOPATH/src/gitlab.com/yawning"
 ln -sf "$PWD" "$GOPATH/src/gitlab.com/yawning/obfs4.git"
 

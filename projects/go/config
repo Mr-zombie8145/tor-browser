@@ -17,6 +17,9 @@ var:
       export GOOS=[% c("var/GOOS") %]
       export GOARCH=[% c("var/GOARCH") %]
     [% END -%]
+    # Run in GOPATH mode: https://golang.org/cmd/go/#hdr-Module_support. (see:
+    # #32027)
+    export GO111MODULE=off
     export GOPATH=/var/tmp/dist/gopath
     export PATH=/var/tmp/dist/go/bin:/var/tmp/dist/gopath/bin:"$PATH"
     [% IF c("var/linux") -%]
