@@ -1,5 +1,5 @@
 # vim: filetype=yaml sw=2
-version: '[% c("abbrev") %]'
+version: v4.3.0-beta.2
 filename: 'firefox-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
 git_hash: '854aa7997ac6a090facd47b03ee01ab763a37f86' # v4.3.0-beta.2
 git_url: https://github.com/mozilla-mobile/fenix
@@ -10,18 +10,11 @@ var:
   # this should be updated when the list of gradle dependencies is changed
   gradle_dependencies_version: 1
 
-
-steps:
-  src-tarballs:
-    filename: 'src-[% project %]-[% c("version") %].tar.xz'
-    version: '[% c("git_hash") %]'
-    input_files: []
-    var:
-      container:
-        use_container: 0
-    targets:
-      nightly:
-        version: '[% c("abbrev") %]'
+targets:
+  nightly:
+    # We track Fenix beta for our nightly
+    git_hash: '854aa7997ac6a090facd47b03ee01ab763a37f86' # v4.3.0-beta.2
+    version: v4.3.0-beta.2
 
 input_files:
   - project: container-image
