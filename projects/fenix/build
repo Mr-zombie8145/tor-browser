@@ -20,6 +20,7 @@ patch -p2 < $rootdir/kts.patch
 patch -p2 < $rootdir/pm.patch
 cd ..
 $GRADLE_HOME/gradle-5.6.4/bin/gradle --offline --no-daemon -Dmaven.repo.local=$gradle_repo clean app:assembleGeckoBetaDebug
+cp app/build/outputs/apk/geckoBeta/debug/*.apk $distdir/[% project %]
 
 cd $distdir
 [% c('tar', {
