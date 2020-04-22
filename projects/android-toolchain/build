@@ -30,6 +30,7 @@ mkdir -p platforms/android-[% c("var/android_api_level") %]
 mv $android_api_release_dir/* platforms/android-[% c("var/android_api_level") %]
 
 unzip -qq $HOME/[% c("input_files_by_name/platform_tools") %] -d $SDK_HOME
+unzip -qq $HOME/[% c("input_files_by_name/android_sdk_tools") %] -d $SDK_HOME
 
 # Cleanup
 rm -fR $android_release_dir $android_api_release_dir
