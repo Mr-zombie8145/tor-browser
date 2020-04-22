@@ -70,7 +70,8 @@ mv -f $rootdir/[% c('input_files_by_name/mozconfig') %] .mozconfig
   cp $rootdir/[% c('input_files_by_name/tor-android-service') %]/* mobile/android/app
   # Move emulator to location that firefox build expects
   mkdir /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
-  cp /var/tmp/dist/android-toolchain/android-sdk-linux/tools/emulator /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
+  touch /var/tmp/dist/android-toolchain/android-sdk-linux/emulator/emulator 
+  #cp /var/tmp/dist/android-toolchain/android-sdk-linux/tools/emulator /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
 
   # Prepare building the multi-locale .apk including our own strings
   mkdir -p /var/tmp/dist/locales
