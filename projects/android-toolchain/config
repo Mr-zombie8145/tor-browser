@@ -19,7 +19,7 @@ var:
   google_repo: https://dl.google.com/android/repository
   android_api_level: 29
   android_platform_revision: 04
-  android_ndk_version: 21
+  android_ndk_version: 20
   gradle_version: 5.6.4
 input_files:
   - project: container-image
@@ -34,7 +34,7 @@ input_files:
     sha256sum: 38fccfe8d2646dd12bdd7cad22fedba0493425b98ebd6d620e4c670b9af4c53f
   - URL: '[% c("var/google_repo") %]/android-ndk-r[% c("var/android_ndk_version") %]-linux-x86_64.zip'
     name: android_ndk_compiler
-    sha256sum: b65ea2d5c5b68fb603626adcbcea6e4d12c68eb8a73e373bbb9d23c252fc647b
+    sha256sum: 57435158f109162f41f2f43d5563d2164e4d5d0364783a9a6fab3ef12cb06ce0
   - URL: https://services.gradle.org/distributions/gradle-[% c("var/gradle_version") %]-bin.zip
     name: gradle_bin
     sha256sum: 1f3067073041bc44554d0efe5d402a33bc3d3c93cc39ab684f308586d732a80d
