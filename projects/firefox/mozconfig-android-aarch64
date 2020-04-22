@@ -13,7 +13,7 @@ ac_add_options --enable-application=mobile/android
 ac_add_options --target=aarch64-linux-android
 ac_add_options --with-android-ndk=/var/tmp/dist/android-toolchain/android-ndk
 ac_add_options --with-android-sdk=/var/tmp/dist/android-toolchain/android-sdk-linux
-ac_add_options --with-gradle=/var/tmp/dist/android-toolchain/gradle/gradle-4.10.2/bin/gradle
+ac_add_options --with-gradle=/var/tmp/dist/android-toolchain/gradle/gradle-5.6.4/bin/gradle
 
 ac_add_options --with-android-distribution-directory=@TOPSRCDIR@/mobile/android/torbrowser
 ac_add_options --with-l10n-base=/var/tmp/dist/locales
