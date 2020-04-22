@@ -16,7 +16,7 @@ cd $builddir-[% c("version") %]
 # Use our local Maven repository for all Gradle dependencies we need
 patch -p1 < $rootdir/mavenLocal.patch
 
-$GRADLE_HOME/gradle-5.6.4/bin/gradle --offline --no-daemon -Dmaven.repo.local=$gradle_repo app:[% c('build_flavor') %]
+$GRADLE_HOME/gradle-5.6.4/bin/gradle --offline --no-daemon -Dmaven.repo.local=$gradle_repo app:assemble[% c('build_flavor') %]
 cp app/build/outputs/apk/geckoBeta/debug/*.apk $distdir/[% project %]
 
 cd $distdir

@@ -3,7 +3,7 @@ version: v4.3.0
 filename: 'firefox-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
 git_hash: '854aa7997ac6a090facd47b03ee01ab763a37f86' # v4.3.0
 git_url: https://github.com/mozilla-mobile/fenix
-build_flavor: 'geckoBetaFenixProduction'
+build_flavor: 'GeckoBetaFenixProduction'
 
 var:
   container:
@@ -15,7 +15,7 @@ targets:
   nightly:
     git_hash: 'b1061d35c871137149bf807a60defcf589fdea19'
     version: '[% c("abbrev") %]'
-    build_flavor: 'gekoBetaFenixNightly'
+    build_flavor: 'GekoBetaFenixNightly'
 
 input_files:
   - project: container-image
