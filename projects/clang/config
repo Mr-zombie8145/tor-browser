@@ -1,5 +1,5 @@
 # vim: filetype=yaml sw=2
-version: 8.0.1
+version: 9.0.1
 filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
 gpg_keyring: clang.gpg
 sig_ext: sig
@@ -45,5 +45,4 @@ input_files:
     enable: '[% c("var/windows") %]'
   - filename: timestamp.patch
     enable: '[% c("var/windows") %]'
-  - filename: 42574.patch
   - filename: 43909.patch
