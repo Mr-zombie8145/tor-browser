@@ -101,7 +101,6 @@ fi
 [% IF ! c("var/android") %]
   # Place a copy of the Tor Launcher sources under browser/extensions
   tar -C browser/extensions -xf $rootdir/[% c('input_files_by_name/tor-launcher') %]
-  patch -p1 < $rootdir/no-beam.patch
 [% END -%]
 
 [% IF c("var/namecoin") %]
