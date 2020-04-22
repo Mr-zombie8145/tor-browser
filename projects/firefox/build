@@ -119,6 +119,8 @@ fi
 rm -f configure
 rm -f js/src/configure
 
+patch -p1 < $rootdir/mobile-configure.patch
+
 # Android does not support --enable-bundled-fonts option
 ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/channel") %] [% IF ! c("var/android") %]--enable-bundled-fonts[% END -%] --with-branding=[% c("var/branding_directory") %]
 
