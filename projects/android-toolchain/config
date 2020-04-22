@@ -32,6 +32,9 @@ input_files:
   - URL: '[% c("var/google_repo") %]/platform-tools_r[% c("version") %]-linux.zip'
     name: platform_tools
     sha256sum: 38fccfe8d2646dd12bdd7cad22fedba0493425b98ebd6d620e4c670b9af4c53f
+  - URL: '[% c("var/google_repo") %]/sdk-tools-linux-4333796.zip'
+    name: android_sdk_tools
+    sha256sum: 92ffee5a1d98d856634e8b71132e8a95d96c83a63fde1099be3d86df3106def9
   - URL: '[% c("var/google_repo") %]/android-ndk-r[% c("var/android_ndk_version") %]-linux-x86_64.zip'
     name: android_ndk_compiler
     sha256sum: 57435158f109162f41f2f43d5563d2164e4d5d0364783a9a6fab3ef12cb06ce0
