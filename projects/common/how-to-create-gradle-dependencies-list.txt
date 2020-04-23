@@ -14,40 +14,16 @@ Also modify the gradle flags to include the debug option so the download logs wi
 
    export GRADLE_FLAGS="--no-daemon --debug"
 
-then allow network access during the build by setting
-var/container/disable_network/build to 0 in rbm.conf, and rerun the build.
+Then allow network access during the build by setting
+`var/container/disable_network/build` to `0` in rbm.conf, and rerun the build.
 
 Dependent artifacts will show up as downloads in the logs. You can pull out
-these dependencies into a list with the following command (replacing
-"firefox-android-armv7.log" with the build log file name of the actual project):
+these dependencies into a list by passing the log file to the gradle dependency
+list script in the tools directory:
 
-`cat logs/firefox-android-armv7.log | grep "Performing HTTP" | grep -o "https://.*" | sort | uniq > download-attempts.txt`
+`./gen_gradle_deps_file.sh /path/to/log/file`
 
-The download-attempts.txt file contains all the attempted downloads, so we need
-to find out which ones failed. To do so we try to download all of them first by
-using our `gen_gradle_deps_file.sh` script in our `tools` directory:
-
-`./gen_gradle_deps_file.sh download-attempts.txt deps`
-
-Next we want to keep only the successfully downloaded artifacts, remove
-duplicates, and sort based on the download URL:
-
-`grep ^[a-f0-9] deps | rev | sort -t/ -u -k1,4 | rev | sort -k 3 > gradle-dependencies-list.txt`
-
-Then add the following three lines at the very top of the dependency list as the
-file header (to point to this file and the need for incrementing the dependency
-version number as well as specifying the pipe delimited format of the content):
-
-# On how to update dependencies see projects/common/how-to-create-gradle-dependencies-list.txt
-# Don't forget to update var/gradle_dependencies_version when modifying this file
-sha256sum | url
-
-Finally, in the project's config file increment the
-var/gradle_dependencies_version and make sure to restore the project's build
+Copy the resulting `gradle-depencies-list.txt` over the one in the respective
+project. Then, in the project's config file, increment the
+`var/gradle_dependencies_version` and make sure to restore the project's build
 file back to original.
-
-It may also be the case that you wish to clean up old versions of the artifacts.
-For this you will need to run the build with a
-gradle-dependencies-list.txt file containing only the headers. Make sure to also
-comment the GRADLE_MAVEN_REPOSITORIES line from the project's build file. You
-can now proceed to reconstruct the list as given above.
