@@ -1,9 +1,9 @@
 #!/bin/bash
 [% c("var/set_default_env") -%]
 [% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
-distdir=/var/tmp/dist/[% project %]
+distdir=/var/tmp/dist
 mkdir -p /var/tmp/build
-mkdir -p [% dest_dir _ '/' _ c('filename') %]
+mkdir -p $distdir/[% project %]
 
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/rust') %]
 tar -C /var/tmp/dist -xf [% c('input_files_by_name/cbindgen') %]
@@ -43,5 +43,10 @@ patch -p1 < $rootdir/mobile-configure.patch
 
 ./mach build --verbose
 
-./mach build stage-package
+find obj-* -type f -name geckoview*.aar -exec cp {} $distdir \;
 
+cd $distdir
+[% c('tar', {
+        tar_src => [ project ],
+        tar_args => '-czf ' _ dest_dir _ '/' _ c('filename'),
+    }) %]
