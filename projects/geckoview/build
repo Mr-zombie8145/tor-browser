@@ -1,0 +1,47 @@
+#!/bin/bash
+[% c("var/set_default_env") -%]
+[% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
+distdir=/var/tmp/dist/[% project %]
+mkdir -p /var/tmp/build
+mkdir -p [% dest_dir _ '/' _ c('filename') %]
+
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/rust') %]
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/cbindgen') %]
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/nasm') %]
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/python') %]
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/node') %]
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/clang') %]
+export LLVM_CONFIG="/var/tmp/dist/clang/bin/llvm-config"
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/binutils') %]
+export PATH="/var/tmp/dist/rust/bin:/var/tmp/dist/cbindgen:/var/tmp/dist/nasm/bin:/var/tmp/dist/python/bin:/var/tmp/dist/node/bin:/var/tmp/dist/clang/bin:/var/tmp/dist/binutils/bin:$PATH"
+
+tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
+
+cd /var/tmp/build/[% project %]-[% c("version") %]
+mv -f $rootdir/[% c('input_files_by_name/mozconfig') %] .mozconfig
+
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-amd64
+gradle_repo=/var/tmp/dist/gradle-dependencies
+export GRADLE_MAVEN_REPOSITORIES="file://$gradle_repo"
+export GRADLE_FLAGS="--no-daemon --offline"
+# Move Gradle Repo to hard-coded location. This location is embedded in the file
+# chrome/toolkit/content/global/buildconfig.html so needs to be standard for reproducibility
+mv $rootdir/[% c('input_files_by_name/gradle-dependencies') %] $gradle_repo
+cp -r $gradle_repo/m2/* $gradle_repo
+# Move emulator to location that firefox build expects
+mkdir /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
+cp /var/tmp/dist/android-toolchain/android-sdk-linux/tools/emulator /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
+
+rm -f configure
+rm -f js/src/configure
+
+patch -p1 < $rootdir/mobile-configure.patch
+
+# Android does not support --enable-bundled-fonts option
+#XXX Do we still need all those options for GeckoView builds
+./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --with-distribution-id=org.torproject --enable-update-channel=[% c("var/channel") %] --enable-bundled-fonts
+
+./mach build --verbose
+
+./mach build stage-package
+
