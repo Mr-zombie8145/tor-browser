@@ -42,7 +42,9 @@ patch -p1 < $rootdir/mobile-configure.patch
 
 ./mach build --verbose
 
-find obj-* -type f -name geckoview*.aar -exec cp {} $distdir \;
+# We don't want to have the debug .aar but the one that has `$channel`, `$arch`,
+# and `$version` in its name.
+find obj-* -type f -name geckoview-*-*-*.aar -exec cp {} $distdir/[% project %] \;
 
 cd $distdir
 [% c('tar', {
