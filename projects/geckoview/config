@@ -39,19 +39,23 @@ steps:
       - name: geckoview_armv7
         project: geckoview
         pkg_type: build
-        target_prepend: torbrowser-android-armv7
+        target_prepend:
+          - torbrowser-android-armv7
       - name: geckoview_aarch64
         project: geckoview
         pkg_type: build
-        target_prepend: torbrowser-android-aarch64
+        target_prepend:
+          - torbrowser-android-aarch64
       - name: geckoview_x86
         project: geckoview
         pkg_type: build
-        target_prepend: torbrowser-android-x86
+        target_prepend:
+          - torbrowser-android-x86
       - name: geckoview_x86_64
         project: geckoview
         pkg_type: build
-        target_prepend: torbrowser-android-x86_64
+        target_prepend:
+          -torbrowser-android-x86_64
 
 targets:
   nightly:
