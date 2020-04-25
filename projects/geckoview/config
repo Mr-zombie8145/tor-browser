@@ -41,7 +41,7 @@ steps:
       export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=armeabi-v7a,arm64-v8a,x86,x86_64
 
     input_files:
-      - name: container-image
+      - project: container-image
       - name: geckoview_armv7
         project: geckoview
         pkg_type: build
