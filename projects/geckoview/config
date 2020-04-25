@@ -54,7 +54,7 @@ steps:
       # Specify our architectures we want to merge
       export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=armeabi-v7a,arm64-v8a,x86,x86_64
       export MOZ_ANDROID_FAR_AAR_ARMEABI_V7A=*armeabi-v7a*.aar
-      export MOZ_ANDROID_FAT_AAR_ARM64_V8A=*aarch64*.aar
+      export MOZ_ANDROID_FAT_AAR_ARM64_V8A=*arm64-v8a*.aar
       export MOZ_ANDROID_FAT_AAR_X86=*x86-*.aar
       export MOZ_ANDROID_AAR_X86_64=*x86_64*.aar
 
