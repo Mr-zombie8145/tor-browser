@@ -33,12 +33,21 @@ steps:
     version: '[% c("abbrev") %]'
     merge_aars: |
       #!/bin/bash
-      # commands to merge .aar files
+      [% c("var/set_default_env") -%]
+      distdir=/var/tmp/dist
+      mkdir -p /var/tmp/build
+      mkdir -p $distdir/[% project %]
+
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_armv7') %]
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_aarch64') %]
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_x86') %]
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_x86_64') %]
+
+      tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
       export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=armeabi-v7a,arm64-v8a,x86,x86_64
+
+      cd /var/tmp/build/[% project %]-[% c("version") %]
+
 
     input_files:
       - project: container-image
