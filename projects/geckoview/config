@@ -35,9 +35,9 @@ steps:
     merge_aars: |
       #!/bin/bash
       [% c("var/set_default_env") -%]
-      distdir=/var/tmp/dist
+      distdir=/var/tmp/dist/[% project %]
       mkdir -p /var/tmp/build
-      mkdir -p $distdir/[% project %]
+      mkdir -p $distdir
 
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_armv7') %]
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_aarch64') %]
@@ -45,10 +45,24 @@ steps:
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_x86_64') %]
 
       tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
+
+      # Specify directory where our arch dependent .aars are.
+      export MOZ_FETCH_DIR=$distdir
+      # Specify our architectures we want to merge
       export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=armeabi-v7a,arm64-v8a,x86,x86_64
+      export MOZ_ANDROID_FAR_AAR_ARMEABI_V7A=*armeabi-v7a*.aar
+      export MOZ_ANDROID_FAT_AAR_ARM64_V8A=*aarch64*.aar
+      export MOZ_ANDROID_FAT_AAR_X86=*x86-*.aar
+      export MOZ_ANDROID_AAR_X86_64=*x86_64*.aar
 
       cd /var/tmp/build/[% project %]-[% c("version") %]
 
+      # We don't want to compile anything, so delete the .mozconfig file
+      rm .mozconfig
+      ./mach configure --disable-compile-environment --with-tor-browser-version=fat_aar --enable-official-branding --disable-tor-launcher
+      ./mach build android-fat-aar-artifact
+
+      exit 1
 
     input_files:
       - project: container-image
