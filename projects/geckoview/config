@@ -11,6 +11,7 @@ var:
   firefox_platform_version: 68.7.0
   firefox_version: '[% c("var/firefox_platform_version") %]esr'
   torbrowser_branch: 9.5
+  copyright_year: '[% exec("git show -s --format=%ci").remove("-.*") %]'
   deps:
     - build-essential
     - unzip
