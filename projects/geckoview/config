@@ -34,8 +34,14 @@ steps:
     merge_aars: |
       #!/bin/bash
       # commands to merge .aar files
+      tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_armv7') %]
+      tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_aarch64') %]
+      tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_x86') %]
+      tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_x86_64') %]
+      export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=armeabi-v7a,arm64-v8a,x86,x86_64
 
     input_files:
+      - name: container-image
       - name: geckoview_armv7
         project: geckoview
         pkg_type: build
