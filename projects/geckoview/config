@@ -39,6 +39,9 @@ steps:
       mkdir -p /var/tmp/build
       mkdir -p $distdir
 
+      tar -C /var/tmp/dist -xf [% c('input_files_by_name/node') %]
+      tar -C /var/tmp/dist -xf [% c('input_files_by_name/python') %]
+      export PATH="/var/tmp/dist/node/bin:/var/tmp/dist/python/bin:$PATH"
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_armv7') %]
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_aarch64') %]
       tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_x86') %]
@@ -66,6 +69,10 @@ steps:
 
     input_files:
       - project: container-image
+      - project: node
+        name: node
+      - project: python
+        name: python
       - name: geckoview_armv7
         project: geckoview
         pkg_type: build
