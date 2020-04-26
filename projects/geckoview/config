@@ -51,7 +51,7 @@ steps:
       tar -C $builddir -xf [% project %]-[% c('version') %].tar.gz
 
       # Specify directory where our arch dependent .aars are.
-      export MOZ_FETCHES_DIR=$builddir/[% project %]-[% c("version") %]/[% project %]
+      export MOZ_FETCHES_DIR=$builddir/[% project %]
       # Specify our architectures we want to merge
       export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=armeabi-v7a,arm64-v8a,x86,x86_64
       export MOZ_ANDROID_FAR_AAR_ARMEABI_V7A=*armeabi-v7a*.aar
@@ -64,6 +64,7 @@ steps:
 
       # We don't want to compile anything, so delete the .mozconfig file
       rm .mozconfig
+      # Right now we need more than --disable-compile-environment, see #34005.
       ./mach configure --disable-compile-environment --with-tor-browser-version=fat_aar --enable-official-branding --disable-tor-launcher
       ./mach build android-fat-aar-artifact
       cp obj*/dist/fat-aar/*.aar $distdir/[% project %]
