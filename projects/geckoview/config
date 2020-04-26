@@ -35,37 +35,45 @@ steps:
     merge_aars: |
       #!/bin/bash
       [% c("var/set_default_env") -%]
-      distdir=/var/tmp/dist/[% project %]
+      distdir=/var/tmp/dist
+      builddir=/var/tmp/build
       mkdir -p /var/tmp/build
-      mkdir -p $distdir
+      mkdir -p $distdir/[% project %]
 
-      tar -C /var/tmp/dist -xf [% c('input_files_by_name/node') %]
-      tar -C /var/tmp/dist -xf [% c('input_files_by_name/python') %]
+      tar -C $distdir -xf [% c('input_files_by_name/node') %]
+      tar -C $distdir -xf [% c('input_files_by_name/python') %]
       export PATH="/var/tmp/dist/node/bin:/var/tmp/dist/python/bin:$PATH"
-      tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_armv7') %]
-      tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_aarch64') %]
-      tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_x86') %]
-      tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview_x86_64') %]
 
-      tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
+      tar -C $builddir -xf [% c('input_files_by_name/geckoview_armv7') %]
+      tar -C $builddir -xf [% c('input_files_by_name/geckoview_aarch64') %]
+      tar -C $builddir -xf [% c('input_files_by_name/geckoview_x86') %]
+      tar -C $builddir -xf [% c('input_files_by_name/geckoview_x86_64') %]
+      tar -C $builddir -xf [% project %]-[% c('version') %].tar.gz
 
       # Specify directory where our arch dependent .aars are.
-      export MOZ_FETCHES_DIR=$distdir
+      export MOZ_FETCHES_DIR=$builddir/[% project %]-[% c("version") %]/[% project %]
       # Specify our architectures we want to merge
       export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=armeabi-v7a,arm64-v8a,x86,x86_64
       export MOZ_ANDROID_FAR_AAR_ARMEABI_V7A=*armeabi-v7a*.aar
       export MOZ_ANDROID_FAT_AAR_ARM64_V8A=*arm64-v8a*.aar
+      # Specifying just "x86" is not differentiating enough
       export MOZ_ANDROID_FAT_AAR_X86=*x86-*.aar
       export MOZ_ANDROID_AAR_X86_64=*x86_64*.aar
 
-      cd /var/tmp/build/[% project %]-[% c("version") %]
+      cd $builddir/[% project %]-[% c("version") %]
 
       # We don't want to compile anything, so delete the .mozconfig file
       rm .mozconfig
       ./mach configure --disable-compile-environment --with-tor-browser-version=fat_aar --enable-official-branding --disable-tor-launcher
       ./mach build android-fat-aar-artifact
+      cp obj*/dist/fat-aar/*.aar $distdir/[% project %]
 
-      exit 1
+      cd $distdir/
+      [% c('tar', {
+              tar_src => [ project ],
+              tar_args => '-czf ' _ dest_dir _ '/' _ c('filename'),
+         }) %]
+
 
     input_files:
       - project: container-image
