@@ -60,8 +60,15 @@ steps:
       export MOZ_ANDROID_AAR_X86_64=$builddir/geckoview/*x86_64*.aar
 
       cd $builddir/[% project %]-[% c("version") %]
-
       mv -f $rootdir/[% c('input_files_by_name/mozconfig') %] .mozconfig
+
+      eval $(perl $rootdir/get-moz-build-date [% c("var/copyright_year") %] [% c("var/torbrowser_version") %])
+      if [ -z $MOZ_BUILD_DATE ]
+      then
+          echo "MOZ_BUILD_DATE is not set"
+          exit 1
+      fi
+
       gradle_repo=/var/tmp/dist/gradle-dependencies
       export GRADLE_MAVEN_REPOSITORIES="file://$gradle_repo"
       export GRADLE_FLAGS="--no-daemon --offline"
@@ -74,7 +81,6 @@ steps:
       # Move emulator to location that firefox build expects
       mkdir /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
       cp /var/tmp/dist/android-toolchain/android-sdk-linux/tools/emulator /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
-
 
       ./mach build -v
       find obj-* -type f -name geckoview-*.aar -exec cp {} $distdir/[% project %] \;
@@ -90,6 +96,7 @@ steps:
       - project: container-image
       - name: '[% c("var/compiler") %]'
         project: '[% c("var/compiler") %]'
+      - filename: get-moz-build-date
       - project: node
         name: node
       - project: python
