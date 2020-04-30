@@ -62,9 +62,22 @@ steps:
       cd $builddir/[% project %]-[% c("version") %]
 
       mv -f $rootdir/[% c('input_files_by_name/mozconfig') %] .mozconfig
-      # Right now we need more than --disable-compile-environment, see #34005.
+      gradle_repo=/var/tmp/dist/gradle-dependencies
+      export GRADLE_MAVEN_REPOSITORIES="file://$gradle_repo"
+      export GRADLE_FLAGS="--no-daemon --offline"
+      # XXX: Fix comment in build script (indentation and .)
+      # Move Gradle Repo to hard-coded location. This location is embedded in
+      # the file chrome/toolkit/content/global/buildconfig.html so needs to be
+      # standard for reproducibility.
+      mv $rootdir/[% c('input_files_by_name/gradle-dependencies') %] $gradle_repo
+      cp -r $gradle_repo/m2/* $gradle_repo
+      # Move emulator to location that firefox build expects
+      mkdir /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
+      cp /var/tmp/dist/android-toolchain/android-sdk-linux/tools/emulator /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
+
+
       ./mach build -v
-      cp obj*/dist/fat-aar/*.aar $distdir/[% project %]
+      find obj-* -type f -name geckoview-*.aar -exec cp {} $distdir/[% project %] \;
 
       cd $distdir/
       [% c('tar', {
@@ -83,6 +96,9 @@ steps:
         name: python
       - filename: mozconfig-android-all
         name: mozconfig
+      - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
+        name: gradle-dependencies
+        exec: '[% INCLUDE "fetch-gradle-dependencies" %]'
       - name: geckoview_armv7
         project: geckoview
         pkg_type: build
