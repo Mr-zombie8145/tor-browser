@@ -53,11 +53,11 @@ steps:
 
       # Specify our architectures we want to merge
       export MOZ_ANDROID_FAT_AAR_ARCHITECTURES=armeabi-v7a,arm64-v8a,x86,x86_64
-      export MOZ_ANDROID_FAR_AAR_ARMEABI_V7A=$builddir/geckoview/*armeabi-v7a*.aar
+      export MOZ_ANDROID_FAT_AAR_ARMEABI_V7A=$builddir/geckoview/*armeabi-v7a*.aar
       export MOZ_ANDROID_FAT_AAR_ARM64_V8A=$builddir/geckoview/*arm64-v8a*.aar
       # Specifying just "x86" is not differentiating enough
       export MOZ_ANDROID_FAT_AAR_X86=$builddir/geckoview/*x86-*.aar
-      export MOZ_ANDROID_AAR_X86_64=$builddir/geckoview/*x86_64*.aar
+      export MOZ_ANDROID_FAT_AAR_X86_64=$builddir/geckoview/*x86_64*.aar
 
       cd $builddir/[% project %]-[% c("version") %]
       mv -f $rootdir/[% c('input_files_by_name/mozconfig') %] .mozconfig
@@ -84,6 +84,7 @@ steps:
 
       patch -p1 < $rootdir/mobile-configure.patch
 
+      # We still need to specify --tor-browser-version due to bug 34005.
       ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %]
       ./mach build -v
       find obj-* -type f -name geckoview-*.aar -exec cp {} $distdir/[% project %] \;
