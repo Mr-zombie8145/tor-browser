@@ -82,6 +82,8 @@ steps:
       mkdir /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
       cp /var/tmp/dist/android-toolchain/android-sdk-linux/tools/emulator /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
 
+      patch -p1 < $rootdir/mobile-configure.patch
+
       ./mach build -v
       find obj-* -type f -name geckoview-*.aar -exec cp {} $distdir/[% project %] \;
 
@@ -96,11 +98,14 @@ steps:
       - project: container-image
       - name: '[% c("var/compiler") %]'
         project: '[% c("var/compiler") %]'
+        pkg_type: build
       - filename: get-moz-build-date
       - project: node
         name: node
+        pkg_type: build
       - project: python
         name: python
+        pkg_type: build
       - filename: mozconfig-android-all
         name: mozconfig
       - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
@@ -126,6 +131,8 @@ steps:
         pkg_type: build
         target_prepend:
           - torbrowser-android-x86_64
+       - filename: mobile-configure.patch
+
 
 targets:
   nightly:
