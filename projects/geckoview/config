@@ -131,7 +131,7 @@ steps:
         pkg_type: build
         target_prepend:
           - torbrowser-android-x86_64
-       - filename: mobile-configure.patch
+      - filename: mobile-configure.patch
 
 
 targets:
