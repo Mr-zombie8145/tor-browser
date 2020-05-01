@@ -87,7 +87,7 @@ steps:
       # We still need to specify --tor-browser-version due to bug 34005.
       ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %]
       ./mach build -v
-      find obj-* -type f -name geckoview-*.aar -exec cp {} $distdir/[% project %] \;
+      find obj-* -type f -name geckoview-*-*.aar -exec cp {} $distdir/[% project %] \;
 
       cd $distdir/
       [% c('tar', {
