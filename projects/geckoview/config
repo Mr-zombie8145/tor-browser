@@ -84,6 +84,7 @@ steps:
 
       patch -p1 < $rootdir/mobile-configure.patch
 
+      ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %]
       ./mach build -v
       find obj-* -type f -name geckoview-*.aar -exec cp {} $distdir/[% project %] \;
 
