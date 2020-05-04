@@ -30,7 +30,7 @@ input_files:
     name: build_tools
     sha256sum: 5652d8cd5eaaade0b853bfe0ae6cbfa0706a6f70a0ebb25ca24a6f484ec3d855
   - URL: '[% c("var/google_repo") %]/build-tools_r[% c("version_old") %]-linux.zip'
-    name: build_tools
+    name: build_tools_old
     sha256sum: 7954956a40633c88f693d638cbc23f68e9e2499dc7a4b7dfdaf6a3e91387749a
   - URL: '[% c("var/google_repo") %]/platform-[% c("var/android_api_level") %]_r[% c("var/android_platform_revision") %].zip'
     name: platform

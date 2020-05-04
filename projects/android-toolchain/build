@@ -30,9 +30,9 @@ mv $android_release_dir/* build-tools/[% c("version") %]
 
 # Fenix has not updated to build-tools 29 yet, bundle therefore build-tools 28,
 # too.
-unzip -qq $HOME/[% c("input_files_by_name/build_tools") %] -d $SDK_HOME
+unzip -qq $HOME/[% c("input_files_by_name/build_tools_old") %] -d $SDK_HOME
 mkdir -p build-tools/[% c("version_old") %]
-mv $android_release_dir/* build-tools/[% c("version_old") %]
+mv $android_release_dir_old/* build-tools/[% c("version_old") %]
 
 unzip -qq $HOME/[% c("input_files_by_name/platform") %] -d $SDK_HOME
 mkdir -p platforms/android-[% c("var/android_api_level") %]
