@@ -1,6 +1,7 @@
 # vim: filetype=yaml sw=2
 filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
 version: 29.0.3
+version_old: 28.0.3
 var:
   container:
     use_container: 1
@@ -28,6 +29,9 @@ input_files:
   - URL: '[% c("var/google_repo") %]/build-tools_r[% c("version") %]-linux.zip'
     name: build_tools
     sha256sum: 5652d8cd5eaaade0b853bfe0ae6cbfa0706a6f70a0ebb25ca24a6f484ec3d855
+  - URL: '[% c("var/google_repo") %]/build-tools_r[% c("version_old") %]-linux.zip'
+    name: build_tools
+    sha256sum: 7954956a40633c88f693d638cbc23f68e9e2499dc7a4b7dfdaf6a3e91387749a
   - URL: '[% c("var/google_repo") %]/platform-[% c("var/android_api_level") %]_r[% c("var/android_platform_revision") %].zip'
     name: platform
     sha256sum: c9eaf2ce4e8fa6f5a8036bd3c95363d003733bf0a1bd349718cadf802db44c69
