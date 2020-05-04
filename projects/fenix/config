@@ -1,0 +1,27 @@
+# vim: filetype=yaml sw=2
+version: v4.3.0
+filename: 'firefox-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %]'
+git_hash: '854aa7997ac6a090facd47b03ee01ab763a37f86' # v4.3.0
+git_url: https://github.com/mozilla-mobile/fenix
+build_flavor: 'GeckoBetaFenixProduction'
+
+var:
+  container:
+    use_container: 1
+  # this should be updated when the list of gradle dependencies is changed
+  gradle_dependencies_version: 1
+
+targets:
+  nightly:
+    git_hash: 'b1061d35c871137149bf807a60defcf589fdea19'
+    version: '[% c("abbrev") %]'
+    build_flavor: 'GekoBetaFenixNightly'
+
+input_files:
+  - project: container-image
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
+  - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
+    name: gradle-dependencies
+    exec: '[% INCLUDE "fetch-gradle-dependencies" %]'
+  - filename: mavenLocal.patch
