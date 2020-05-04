@@ -31,7 +31,7 @@
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 # Usage:
-# 1) Point to a log file with all the dependecy download attempts (for its
+# 1) Point to a log file with all the dependency download attempts (for its
 #    generation see: projects/common/how-to-create-gradle-dependencies-list.txt)
 # 2) Double-check that you get the same SHA-256 sums when downloaded from a
 #    different network location. E.g. by using `torsocks` with this script.
