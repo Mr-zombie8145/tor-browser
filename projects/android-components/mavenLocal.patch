@@ -1,0 +1,72 @@
+From beebd7c29bc0388ad350cf1873a7e6edb5bc133e Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Wed, 20 May 2020 14:18:12 +0000
+Subject: [PATCH] mavenLocal() fixes
+
+
+diff --git a/build.gradle b/build.gradle
+index a538b66ad..f4b058509 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -6,6 +6,7 @@ import static org.gradle.api.tasks.testing.TestResult.ResultType
+ 
+ buildscript {
+     repositories {
++        mavenLocal()
+         if (project.hasProperty("googleRepo")) {
+             maven {
+                 name "Google"
+@@ -39,6 +40,7 @@ plugins {
+ 
+ allprojects {
+     repositories {
++        mavenLocal()
+         if (project.hasProperty("googleRepo")) {
+             maven {
+                 name "Google"
+diff --git a/buildSrc/build.gradle.kts b/buildSrc/build.gradle.kts
+index 69c23c387..b53eed13f 100644
+--- a/buildSrc/build.gradle.kts
++++ b/buildSrc/build.gradle.kts
+@@ -7,6 +7,7 @@ plugins {
+ }
+ 
+ repositories {
++    mavenLocal()
+     jcenter()
+ }
+ 
+diff --git a/buildSrc/settings.gradle.kts b/buildSrc/settings.gradle.kts
+new file mode 100644
+index 000000000..a7066edcb
+--- /dev/null
++++ b/buildSrc/settings.gradle.kts
+@@ -0,0 +1,5 @@
++pluginManagement {
++  repositories {
++    mavenLocal()
++  }
++}
+diff --git a/settings.gradle b/settings.gradle
+index 05da65f2f..4b797cb13 100644
+--- a/settings.gradle
++++ b/settings.gradle
+@@ -4,8 +4,15 @@
+ 
+ import org.yaml.snakeyaml.Yaml
+ 
++pluginManagement {
++  repositories {
++    mavenLocal()
++  }
++}
++
+ buildscript {
+     repositories {
++        mavenLocal()
+         jcenter()
+     }
+ 
+-- 
+2.27.0.rc0
+

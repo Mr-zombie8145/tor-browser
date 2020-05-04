@@ -1,0 +1,26 @@
+# vim: filetype=yaml sw=2
+version: v38.0.0
+filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
+git_hash: 9f4362b6ffed9137ca46bcd13d13f950cc5af325 # v38.0.0
+git_url: https://github.com/mozilla-mobile/android-components
+
+var:
+  container:
+    use_container: 1
+  # this should be updated when the list of gradle dependencies is changed
+  gradle_dependencies_version: 1
+
+targets:
+  nightly:
+    version: '[% c("abbrev") %]'
+    git_hash: '6ab9d585ad2faa00ade780e4f6395ae1b87b51cb'
+
+input_files:
+  - project: container-image
+  - name: '[% c("var/compiler") %]'
+    project: '[% c("var/compiler") %]'
+  - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
+    name: gradle-dependencies
+    exec: '[% INCLUDE "fetch-gradle-dependencies" %]'
+  - filename: git.patch
+  - filename: mavenLocal.patch

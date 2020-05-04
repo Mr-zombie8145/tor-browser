@@ -1,0 +1,33 @@
+#!/bin/bash
+[% c("var/set_default_env") -%]
+[% pc(c('var/compiler'), 'var/setup', { compiler_tarfile => c('input_files_by_name/' _ c('var/compiler')) }) %]
+distdir=/var/tmp/dist
+builddir=/var/tmp/build/[% project %]
+mkdir -p $distdir/[% project %]
+mkdir -p /var/tmp/build
+
+gradle_repo=$rootdir/[% c('input_files_by_name/gradle-dependencies') %]
+cp -r $gradle_repo/dl/android/maven2/* $gradle_repo
+cp -r $gradle_repo/maven2/* $gradle_repo
+cp -r $gradle_repo/m2/* $gradle_repo
+tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
+
+cd $builddir-[% c('version') %]
+patch -p1 < $rootdir/git.patch
+patch -p1 < $rootdir/mavenLocal.patch
+
+gradle_args="--offline --no-daemon -Dmaven.repo.local=$gradle_repo"
+
+gradle $gradle_args assembleGeckoBeta -x lint
+gradle $gradle_args publish
+
+# XXX: That's a good start but I guess we only want to end up with the maven/
+# org/mozilla/components part to use the artifacts easier in fenix
+find components -regex '.*[0-9].\(aar\|pom\)' -exec cp --parents {} $distdir/[% project %] \;
+
+# Package
+cd $distdir
+[% c('tar', {
+        tar_src => [ project ],
+        tar_args => '-czf ' _ dest_dir _ '/' _ c('filename'),
+    }) %]
