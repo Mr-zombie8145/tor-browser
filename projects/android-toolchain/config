@@ -34,6 +34,9 @@ input_files:
   - URL: '[% c("var/google_repo") %]/platform-[% c("var/android_api_level_old") %]_r[% c("var/android_platform_revision") %].zip'
     name: platform_old
     sha256sum: 967f8ca99b71d337aa9c7781f9d65dd8110bf5c4746f44304047bf71b20d0ded
+  # ./mach bootstrap is fetching the latest version, so it does not seem to
+  # matter which particular version we are using. Pin to the one fitting best to
+  # SDK version/build-tools version.
   - URL: '[% c("var/google_repo") %]/platform-tools_r[% c("version") %]-linux.zip'
     name: platform_tools
     sha256sum: 49e676ec90bff1f7d7dfe4fb7d0ab78e14fa8fb06a8dccca2ef57a1bc29497a0
