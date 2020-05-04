@@ -13,9 +13,9 @@ var:
 
 targets:
   nightly:
-    git_hash: 'b1061d35c871137149bf807a60defcf589fdea19'
+    git_hash: '943d3837b243db7ba6d5d34e9e57774bcb6ebf8a'
     version: '[% c("abbrev") %]'
-    build_flavor: 'GekoBetaFenixNightly'
+    build_flavor: 'GeckoBetaFenixNightly'
 
 input_files:
   - project: container-image
