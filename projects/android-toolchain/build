@@ -14,7 +14,7 @@ mkdir -p $NDK_HOME $SDK_HOME $GRADLE_HOME
 unzip -qq [% c("input_files_by_name/android_sdk_tools") %] -d $SDK_HOME
 unzip -qq [% c("input_files_by_name/android_ndk_compiler")%] -d $NDK_HOME
 unzip -qq [% c("input_files_by_name/gradle_bin") %] -d $GRADLE_HOME
-# Firefox is still using an older Gradle, bundle it, too.
+# GeckoView is still using an older Gradle, bundle it, too.
 unzip -qq [% c("input_files_by_name/gradle_bin_old") %] -d $GRADLE_HOME
 
 # NDK Archive
@@ -44,6 +44,11 @@ mkdir -p platforms/android-[% c("var/android_api_level_old") %]
 mv $android_release_dir_old/* platforms/android-[% c("var/android_api_level_old") %]
 
 unzip -qq $HOME/[% c("input_files_by_name/platform_tools") %] -d $SDK_HOME
+
+# That's a quirk required by GeckoView but let's have it here instead of in the
+# project's build script
+mkdir emulator
+cp tools/emulator emulator/
 
 # Cleanup
 rm -fR $android_release_dir $android_release_dir_old
