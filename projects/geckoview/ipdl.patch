@@ -1,0 +1,23 @@
+From 36cdd6310ddccff4c927d1cc9111e96208cd686e Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Thu, 7 May 2020 16:20:35 +0000
+Subject: [PATCH] Bug 1636036: Always generate headers from IPDL
+
+
+diff --git a/mobile/android/components/geckoview/moz.build b/mobile/android/components/geckoview/moz.build
+index f4266be401df..27dcaa25ad37 100644
+--- a/mobile/android/components/geckoview/moz.build
++++ b/mobile/android/components/geckoview/moz.build
+@@ -17,7 +17,8 @@ if CONFIG['MOZ_ANDROID_HISTORY']:
+     XPCOM_MANIFESTS += [
+         'components.conf',
+     ]
+-    include('/ipc/chromium/chromium-config.mozbuild')
++
++include('/ipc/chromium/chromium-config.mozbuild')
+ 
+ EXTRA_COMPONENTS += [
+     'GeckoView.manifest',
+-- 
+2.26.2
+
