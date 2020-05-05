@@ -78,11 +78,6 @@ steps:
       # standard for reproducibility.
       mv $rootdir/[% c('input_files_by_name/gradle-dependencies') %] $gradle_repo
       cp -r $gradle_repo/m2/* $gradle_repo
-      # Move emulator to location that firefox build expects
-      # https://bugzilla.mozilla.org/show_bug.cgi?id=1409624
-      # XXX: should be dealt with in our android-toolchain project
-      mkdir /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
-      cp /var/tmp/dist/android-toolchain/android-sdk-linux/tools/emulator /var/tmp/dist/android-toolchain/android-sdk-linux/emulator
 
       patch -p1 < $rootdir/mobile-configure.patch
 
