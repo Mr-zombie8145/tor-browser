@@ -52,7 +52,6 @@ dce7e66b32456a1b1198da0caff3a8acb71548658391e798c79369241e6490a4 | https://jcent
 24909c552842c0eb7a4c769d631a43cbef5a9a10c1640f2bdbd1ea149c573a47 | https://jcenter.bintray.com/com/google/protobuf/protobuf-parent/3.4.0/protobuf-parent-3.4.0.pom
 f715b19c918900ad34be8f2e2372d97b1c5fff579a383f0b2dad9581df443ea4 | https://jcenter.bintray.com/com/koushikdutta/async/androidasync/2.2.1/androidasync-2.2.1.aar
 522714e46eb74d494c94e37e17114030e618a7560141720998d82f363d1fcd47 | https://jcenter.bintray.com/com/koushikdutta/async/androidasync/2.2.1/androidasync-2.2.1.pom
-c7f27741f1f14e484377960a3a889793b366c026de2daffd49af9f74dc9c0fe7 | https://jcenter.bintray.com/com/koushikdutta/async/androidasync/maven-metadata.xml
 4241dfa94e711d435f29a4604a3e2de5c4aa3c165e23bd066be6fc1fc4309569 | https://jcenter.bintray.com/commons-codec/commons-codec/1.10/commons-codec-1.10.jar
 bdb8db7012d112a6e3ea8fdb7c510b300d99eff0819d27dddba9c43397ea4cfb | https://jcenter.bintray.com/commons-codec/commons-codec/1.10/commons-codec-1.10.pom
 ad19d2601c3abf0b946b5c3a4113e226a8c1e3305e395b90013b78dd94a723ce | https://jcenter.bintray.com/commons-codec/commons-codec/1.9/commons-codec-1.9.jar
