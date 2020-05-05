@@ -187,7 +187,6 @@ de617480ce64e4e9055e2d0295c87ee20929b06c4f2a5efdaded27dcca8520e4 | https://dl.go
 960a24728eaedfc4ff7a2f366b9360e02a1d88f9eb0a9c7142ed94ed462797b0 | https://dl.google.com/dl/android/maven2/androidx/work/work-runtime/2.2.0/work-runtime-2.2.0.pom
 e93836f35d35e47ba501add90fa6559964fa7a70975bf4ffc4a04836189611e9 | https://dl.google.com/dl/android/maven2/androidx/work/work-runtime-ktx/2.2.0/work-runtime-ktx-2.2.0.aar
 7cbb32f2fe880d407d4c53268bcd554c11dc9316a1d6cd556a08fe45a4631f22 | https://dl.google.com/dl/android/maven2/androidx/work/work-runtime-ktx/2.2.0/work-runtime-ktx-2.2.0.pom
-7ae647436900d5c616530a3c57e4e332eabca9e3b6a48da7288f068ac7ff6aac | https://dl.google.com/dl/android/maven2/androidx/work/work-runtime/maven-metadata.xml
 6103c033ba6f0b1eeb034f8c72349cfa17a597fbff13f72093f096b8680253c3 | https://dl.google.com/dl/android/maven2/androidx/work/work-testing/2.2.0/work-testing-2.2.0.aar
 cfbbf1f7939c1667c30962e432affcc4054ffa421908a47f512dd99c4d738a07 | https://dl.google.com/dl/android/maven2/androidx/work/work-testing/2.2.0/work-testing-2.2.0.pom
 cde6d4eef63ee5e05b8aab58ff85eaf39cc3e6ed84fd184bf6558d82f8d9c067 | https://dl.google.com/dl/android/maven2/com/android/databinding/baseLibrary/3.5.3/baseLibrary-3.5.3.jar
@@ -302,7 +301,6 @@ d324a1785bbc48bfe3639fc847cfd3cf43d49e967b5caf2794240a854557a39c | https://dl.go
 ffe9295d9eb2ec2d784bb4c3634f6a10175224d2111332fa2735320b52a24b66 | https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-basement/17.0.0/play-services-basement-17.0.0.pom
 93121da3171a000016b639ec3a40bae5114c38deb056e0819cc19b1cde493f3b | https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-measurement-base/16.0.0/play-services-measurement-base-16.0.0.aar
 964cc8163960e2af37d1100568215040882608843bf6c33ff4b417537e937d3b | https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-measurement-base/16.0.0/play-services-measurement-base-16.0.0.pom
-4734cd77eb7939d17e3884444c6c90f3a1fd6bb8121e6e0d7dfdae7bd3dd9666 | https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-measurement-base/maven-metadata.xml
 65f0cdc6f2d835e979913600b3fe13a66334ee0730bb78f22d930a8dcdd94715 | https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-nearby/17.0.0/play-services-nearby-17.0.0.aar
 7eea522d952b9c733c37f0e806ead84af3e3e6f463dc07ec6cd2379d93f6f0eb | https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-nearby/17.0.0/play-services-nearby-17.0.0.pom
 5b2d8281adbfd6e74d2295c94bab9ea80fc9a84dfbb397995673f5af4d4c6368 | https://dl.google.com/dl/android/maven2/com/google/android/gms/play-services-stats/16.0.1/play-services-stats-16.0.1.aar
@@ -317,7 +315,6 @@ d24d02664e9fee1f8ff576f0e18c13ab1e9425cc5e2fb319f2612f8b14507bb1 | https://dl.go
 df7d150ae3f961a6d6802e1eb7a6e3975fb621cfd72df13788c820eeb04866be | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-analytics/16.0.1/firebase-analytics-16.0.1.pom
 e55cca818721d08c305707e3c651e3948655817dceb9f3d7308c5cf48c068660 | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-analytics-impl/16.1.1/firebase-analytics-impl-16.1.1.aar
 78900e6484c2f78e93e8bc275868e8b705a9f1aaff4e761e440d553085286c0c | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-analytics-impl/16.1.1/firebase-analytics-impl-16.1.1.pom
-eef1b9ac249c36f60b122c1e46f15ab277fa5a2282d44ded8877bfe1f63373e2 | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-analytics-impl/maven-metadata.xml
 3db6bfd4c6f758551e5f9acdeada2050577277e6da1aefb2412de23829759bcf | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-common/16.0.3/firebase-common-16.0.3.aar
 3c8ba6f7796567ccbf7a19799c5ea55ebac2980cbe36fc1bfffd37bd9efffb68 | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-common/16.0.3/firebase-common-16.0.3.pom
 34191626778782b1ad7e817b76a5d4d6214a311be4b984aa28846a2ac96fd317 | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-core/16.0.1/firebase-core-16.0.1.aar
@@ -326,7 +323,6 @@ bb42774e309d5eac1aa493d19711032bee4f677a409639b6a5cfa93089af93eb | https://dl.go
 cbdbeb32721b7e277a5ee60d793b4e0636a2507f7f4832d8ed874855dd7af1d6 | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-iid/17.0.4/firebase-iid-17.0.4.pom
 2a86322b9346fd4836219206d249e85803311655e96036a8e4b714ce7e79693b | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-iid-interop/16.0.1/firebase-iid-interop-16.0.1.aar
 8167641bed97523c94a389b9f166252a7bef65427c13c4c4cdea850e9a4af84b | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-iid-interop/16.0.1/firebase-iid-interop-16.0.1.pom
-19d8c9732ee335aeeaeb44d3771aa81bef832cbe788908aa9045ab333208440c | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-iid/maven-metadata.xml
 bc318110486ed738e1cc84d4b280e156b35a9a3964d678ee64930d846150d0c3 | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-measurement-connector/17.0.1/firebase-measurement-connector-17.0.1.aar
 a65cc2d69035888e5b7b9db2fa27115d0382bf7bb0404c3ece726d1ac62cc703 | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-measurement-connector/17.0.1/firebase-measurement-connector-17.0.1.pom
 3e901e0e0839c0ed19584aa6ace9fb8b40efe1e56965d5aa42d98b199bc11aeb | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-measurement-connector-impl/16.0.1/firebase-measurement-connector-impl-16.0.1.aar
