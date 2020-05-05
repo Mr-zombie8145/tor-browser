@@ -13,10 +13,7 @@ ac_add_options --enable-application=mobile/android
 ac_add_options --target=aarch64-linux-android
 ac_add_options --with-android-ndk=/var/tmp/dist/android-toolchain/android-ndk
 ac_add_options --with-android-sdk=/var/tmp/dist/android-toolchain/android-sdk-linux
-ac_add_options --with-gradle=/var/tmp/dist/android-toolchain/gradle/gradle-4.10.2/bin/gradle
-
-ac_add_options --with-android-distribution-directory=@TOPSRCDIR@/mobile/android/torbrowser
-ac_add_options --with-l10n-base=/var/tmp/dist/locales
+ac_add_options --with-gradle=/var/tmp/dist/android-toolchain/gradle/gradle-5.1.1/bin/gradle
 
 # We do not use Tor Launcher on Android:
 ac_add_options --disable-tor-launcher
@@ -31,9 +28,11 @@ if [ -z "${TB_BUILD_WITH_UPDATER}" ]; then
 # https://play.google.com/about/privacy-security-deception/malicious-behavior/
 
     ac_add_options --disable-tor-browser-update
-    ac_add_options --disable-signmar
     ac_add_options --disable-verify-mar
 fi
+
+# We only use beta GeckoView for now
+ac_add_options --enable-update-channel=beta
 
 ac_add_options --enable-strip
 ac_add_options --disable-tests
@@ -42,7 +41,6 @@ ac_add_options --disable-rust-debug
 ac_add_options --disable-crashreporter
 ac_add_options --disable-webrtc
 
-ac_add_options --without-google-play-services
 ac_add_options --enable-proxy-bypass-protection
 
 # Disable telemetry
