@@ -47,6 +47,8 @@ cp -r $gradle_repo/m2/* $gradle_repo
 rm -f configure
 rm -f js/src/configure
 
+patch -p1 < $rootdir/mobile-configure.patch
+
 ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --enable-update-channel=[% c("var/channel") %]
 
 ./mach build --verbose
