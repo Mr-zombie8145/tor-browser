@@ -36,7 +36,7 @@ input_files:
   - project: container-image
   - name: '[% c("var/compiler") %]'
     project: '[% c("var/compiler") %]'
-  - filename: get-moz-build-date
+  - filename: '[% INCLUDE "get-moz-build-date" %]'
   - filename: 'mozconfig-[% c("var/osname") %]'
     name: mozconfig
   - project: binutils
