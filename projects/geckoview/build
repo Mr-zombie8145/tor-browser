@@ -50,8 +50,7 @@ rm -f js/src/configure
 patch -p1 < $rootdir/ipdl.patch
 patch -p1 < $rootdir/libvpx.patch
 
-./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %] --enable-update-channel=[% c("var/channel") %]
-
+./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %]
 ./mach build --verbose
 
 # We don't want to have the debug .aar but the one that has `$channel`, `$arch`,

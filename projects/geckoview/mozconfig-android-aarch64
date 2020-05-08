@@ -31,6 +31,9 @@ if [ -z "${TB_BUILD_WITH_UPDATER}" ]; then
     ac_add_options --disable-verify-mar
 fi
 
+# We only use beta GeckoView for now
+ac_add_options --enable-update-channel=beta
+
 ac_add_options --enable-strip
 ac_add_options --disable-tests
 ac_add_options --disable-debug
