@@ -21,12 +21,12 @@ unzip -qq [% c("input_files_by_name/gradle_bin_old") %] -d $GRADLE_HOME
 cd $NDK_HOME
 mv android-ndk-r[% c("var/android_ndk_version") %]/* .
 rm -fR android-ndk-r[% c("var/android_ndk_version") %]
-# Adjust CROSS_PREFIX for armv7. Unfortunately, the compiler cross prefix and
+# Adjust CROSS_PREFIX for armv7a. Unfortunately, the compiler cross prefix and
 # the one for all the other tools differ. Let's fix that so we only have to
 # take care of one.
 cd toolchains/llvm/prebuilt/linux-x86_64/bin
 for f in `ls arm-linux-androideabi-*`; do
-  ln -s $f ${f//arm-linux-androideabi/armv7-linux-androideabi}
+  ln -s $f ${f//arm-linux-androideabi/armv7a-linux-androideabi}
 done
 
 # Tool Archives
