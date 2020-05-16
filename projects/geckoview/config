@@ -93,6 +93,7 @@ steps:
 
     input_files:
       - project: container-image
+        pkg_type: build
       - name: '[% c("var/compiler") %]'
         project: '[% c("var/compiler") %]'
         pkg_type: build
