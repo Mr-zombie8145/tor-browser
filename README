@@ -217,6 +217,7 @@ Hacking on the Tor Browser build
 The file README.HACKING tries to list the main things to know when
 making changes to the Tor Browser build.
 
+
 Description of makefile rules
 -----------------------------
 
