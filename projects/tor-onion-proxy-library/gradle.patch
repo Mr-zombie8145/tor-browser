@@ -1,14 +1,22 @@
-From 30ed25aeff1439d8ea981318c3d26b66984412c9 Mon Sep 17 00:00:00 2001
+From 91854cf66221fe7a11603b7d3b24ad43ae1dcb19 Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
-Date: Mon, 18 May 2020 08:59:54 +0000
+Date: Mon, 18 May 2020 09:53:02 +0000
 Subject: [PATCH] Bug 33558: Update TOPL to use updated Android toolchain
 
 
 diff --git a/android/build.gradle b/android/build.gradle
-index a8d9bdc..b8442f0 100644
+index a8d9bdc..9c0f0da 100644
 --- a/android/build.gradle
 +++ b/android/build.gradle
-@@ -40,7 +40,9 @@ publishing {
+@@ -7,6 +7,7 @@ buildscript {
+         mavenLocal()
+         mavenCentral()
+         google()
++        maven { url "https://repo.spring.io/plugins-release" }
+     }
+     dependencies {
+         classpath "com.android.tools.build:gradle:${androidplugin}"
+@@ -40,7 +41,9 @@ publishing {
              groupId 'com.msopentech.thali.toronionproxy.android'
              artifactId 'android'
              version '0.0.3'
@@ -19,6 +27,18 @@ index a8d9bdc..b8442f0 100644
              artifact("$buildDir/outputs/aar/android-release.aar")
              pom.withXml {
                  def dependenciesNode = asNode().appendNode('dependencies')
+diff --git a/android_tor_installer/build.gradle b/android_tor_installer/build.gradle
+index 554fd49..dc9fb65 100644
+--- a/android_tor_installer/build.gradle
++++ b/android_tor_installer/build.gradle
+@@ -7,6 +7,7 @@ buildscript {
+         mavenLocal()
+         mavenCentral()
+         google()
++        maven { url "https://repo.spring.io/plugins-release" }
+     }
+     dependencies {
+         classpath "com.android.tools.build:gradle:${androidplugin}"
 -- 
 2.26.2
 
