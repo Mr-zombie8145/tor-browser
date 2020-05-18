@@ -24,4 +24,3 @@ input_files:
     name: topl
   - project: tor
     name: tor
-  - filename: remove-native-build.patch
