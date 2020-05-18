@@ -17,6 +17,7 @@ tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 # Patch projects
 cd /var/tmp/build/[% project %]-[% c('version') %]
+patch -p1 < $rootdir/gradle.patch
 patch -p1 < $rootdir/0001-Bug-33931-Filter-bridges-in-stream-by-type.patch
 
 # Extract obfs4proxy from TorBrowser/Tor/PluggableTransports/obfs4proxy
