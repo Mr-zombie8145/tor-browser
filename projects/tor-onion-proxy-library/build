@@ -31,7 +31,7 @@ done
 rm obfs4proxy
 
 # Build Android Libraries and Apps
-gradle --offline --no-daemon -P androidplugin=3.1.0 -Dmaven.repo.local=$gradle_repo assembleRelease -x lint
+gradle --offline --no-daemon -P androidplugin=3.6.0 -Dmaven.repo.local=$gradle_repo assembleRelease -x lint
 
 # Package
 cp universal/build/libs/* android/build/outputs/aar/* $output_dir
