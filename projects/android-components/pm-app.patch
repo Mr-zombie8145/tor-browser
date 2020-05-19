@@ -1,0 +1,26 @@
+From f37b662b3aa7d9ef088d089c77298ee4cf15b693 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Mon, 20 Apr 2020 08:26:03 +0000
+Subject: [PATCH] pm app
+
+
+diff --git a/settings.gradle b/settings.gradle
+index 29a883ab6..99fbe207c 100644
+--- a/settings.gradle
++++ b/settings.gradle
+@@ -4,6 +4,12 @@
+ 
+ import org.yaml.snakeyaml.Yaml
+ 
++pluginManagement {
++  repositories {
++    mavenLocal()
++  }
++}
++
+ buildscript {
+     repositories {
+         mavenLocal()
+-- 
+2.26.1
+
