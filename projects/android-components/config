@@ -12,6 +12,7 @@ var:
 
 targets:
   nightly:
+    version: '[% c("abbrev") %]'
     git_hash: '6ab9d585ad2faa00ade780e4f6395ae1b87b51cb'
 
 input_files:
