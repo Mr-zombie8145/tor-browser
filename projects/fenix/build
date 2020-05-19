@@ -16,7 +16,7 @@ cd $builddir-[% c("version") %]
 # Use our local Maven repository for all Gradle dependencies we need
 patch -p1 < $rootdir/mavenLocal.patch
 
-gradle --offline --no-daemon -Dmaven.repo.local=$gradle_repo app:assemble[% c('build_flavor') %]
+gradle --offline --no-daemon -Dmaven.repo.local=$gradle_repo app:assemble[% c('build_flavor') %] -x lint
 # We have both the Gecko and the Fenix type in upper camel case. But the path to
 # the .apks is in lower camel case.
 gf=[% c("gecko_flavor") %]
