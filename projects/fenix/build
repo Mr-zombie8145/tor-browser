@@ -17,7 +17,11 @@ cd $builddir-[% c("version") %]
 patch -p1 < $rootdir/mavenLocal.patch
 
 gradle --offline --no-daemon -Dmaven.repo.local=$gradle_repo app:assemble[% c('build_flavor') %]
-cp app/build/outputs/apk/geckoBeta/debug/*.apk $distdir/[% project %]
+# We have both the Gecko and the Fenix type in upper camel case. But the path to
+# the .apks is in lower camel case.
+gf=[% c("gecko_flavor") %]
+ff=[% c("fenix_flavor") %]
+cp app/build/outputs/apk/${gf,}/${ff,}/*.apk $distdir/[% project %]
 
 cd $distdir
 [% c('tar', {
