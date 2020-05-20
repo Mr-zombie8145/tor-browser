@@ -24,6 +24,8 @@ gradle_args="--offline --no-daemon -Dmaven.repo.local=$gradle_repo"
 gradle $gradle_args assembleGeckoBeta -x lint
 gradle $gradle_args publish
 
+# XXX: That's a good start but I guess we only want to end up with the maven/
+# org/mozilla/components part to use the artifacts easier in fenix
 find components -regex '.*[0-9].\(aar\|pom\)' -exec cp --parents {} $distdir/[% project %] \;
 
 # Package
