@@ -1,7 +1,7 @@
-From dfda87ac67e8f61de1b524e7daf532ec113852a4 Mon Sep 17 00:00:00 2001
+From f0a08154b95bd98e5cc6b659f6d49e4ef9c65fbc Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
-Date: Mon, 20 Apr 2020 08:03:44 +0000
-Subject: [PATCH 5/5] gradle
+Date: Wed, 20 May 2020 12:53:12 +0000
+Subject: [PATCH] mavenLocal() fixes
 
 
 diff --git a/build.gradle b/build.gradle
@@ -24,12 +24,32 @@ index a538b66ad..f4b058509 100644
          if (project.hasProperty("googleRepo")) {
              maven {
                  name "Google"
+diff --git a/buildSrc/build.gradle.kts b/buildSrc/build.gradle.kts
+index 69c23c387..b53eed13f 100644
+--- a/buildSrc/build.gradle.kts
++++ b/buildSrc/build.gradle.kts
+@@ -7,6 +7,7 @@ plugins {
+ }
+ 
+ repositories {
++    mavenLocal()
+     jcenter()
+ }
+ 
 diff --git a/settings.gradle b/settings.gradle
-index 54d2414aa..4b797cb13 100644
+index 05da65f2f..4b797cb13 100644
 --- a/settings.gradle
 +++ b/settings.gradle
-@@ -12,6 +12,7 @@ pluginManagement {
+@@ -4,8 +4,15 @@
  
+ import org.yaml.snakeyaml.Yaml
+ 
++pluginManagement {
++  repositories {
++    mavenLocal()
++  }
++}
++
  buildscript {
      repositories {
 +        mavenLocal()

@@ -23,7 +23,4 @@ input_files:
     name: gradle-dependencies
     exec: '[% INCLUDE "fetch-gradle-dependencies" %]'
   - filename: git.patch
-  - filename: pm.patch
-  - filename: pm-app.patch
-  - filename: kts.patch
-  - filename: gradle.patch
+  - filename: mavenLocal.patch

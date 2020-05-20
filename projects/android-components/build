@@ -13,11 +13,8 @@ cp -r $gradle_repo/m2/* $gradle_repo
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 cd $builddir-[% c('version') %]
-patch -p1 < $rootdir/pm.patch
-patch -p1 < $rootdir/pm-app.patch
 patch -p1 < $rootdir/git.patch
-patch -p1 < $rootdir/kts.patch
-patch -p1 < $rootdir/gradle.patch
+patch -p1 < $rootdir/mavenLocal.patch
 
 gradle_args="--offline --no-daemon -Dmaven.repo.local=$gradle_repo"
 
