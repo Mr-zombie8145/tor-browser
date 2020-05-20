@@ -1,20 +1,21 @@
-From d906e7787fc83ac7069793cf47fd76c3a7611aa8 Mon Sep 17 00:00:00 2001
+From 0c37b703104a76913d90f8e7cc8eec538114dc03 Mon Sep 17 00:00:00 2001
 From: Bart Simpson <bart@simpsons.net>
 Date: Tue, 14 Apr 2020 14:14:28 +0200
-Subject: [PATCH] kts
+Subject: [PATCH 4/5] kts
 
 
 diff --git a/buildSrc/build.gradle.kts b/buildSrc/build.gradle.kts
-index f7bcc37a..9ba05d2e 100644
+index 69c23c387..b53eed13f 100644
 --- a/buildSrc/build.gradle.kts
 +++ b/buildSrc/build.gradle.kts
-@@ -7,5 +7,6 @@ plugins {
+@@ -7,6 +7,7 @@ plugins {
  }
  
  repositories {
 +    mavenLocal()
      jcenter()
  }
+ 
 -- 
-2.20.1
+2.27.0.rc0
 

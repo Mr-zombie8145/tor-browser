@@ -1,11 +1,11 @@
-From f37b662b3aa7d9ef088d089c77298ee4cf15b693 Mon Sep 17 00:00:00 2001
+From 8885238ddb56adddeaaa552110439e8ed1ea4e9c Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
 Date: Mon, 20 Apr 2020 08:26:03 +0000
-Subject: [PATCH] pm app
+Subject: [PATCH 2/5] pm app
 
 
 diff --git a/settings.gradle b/settings.gradle
-index 29a883ab6..99fbe207c 100644
+index 05da65f2f..54d2414aa 100644
 --- a/settings.gradle
 +++ b/settings.gradle
 @@ -4,6 +4,12 @@
@@ -20,7 +20,7 @@ index 29a883ab6..99fbe207c 100644
 +
  buildscript {
      repositories {
-         mavenLocal()
+         jcenter()
 -- 
-2.26.1
+2.27.0.rc0
 

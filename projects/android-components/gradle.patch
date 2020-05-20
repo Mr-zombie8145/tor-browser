@@ -1,11 +1,11 @@
-From 8a5a2b7d01cdc96be9857ef5895e1ac9009d6475 Mon Sep 17 00:00:00 2001
+From dfda87ac67e8f61de1b524e7daf532ec113852a4 Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
 Date: Mon, 20 Apr 2020 08:03:44 +0000
-Subject: [PATCH] gradle
+Subject: [PATCH 5/5] gradle
 
 
 diff --git a/build.gradle b/build.gradle
-index 937057283..d85cab2b7 100644
+index a538b66ad..f4b058509 100644
 --- a/build.gradle
 +++ b/build.gradle
 @@ -6,6 +6,7 @@ import static org.gradle.api.tasks.testing.TestResult.ResultType
@@ -13,22 +13,22 @@ index 937057283..d85cab2b7 100644
  buildscript {
      repositories {
 +        mavenLocal()
-         google()
-         jcenter()
-     }
-@@ -24,6 +25,7 @@ plugins {
+         if (project.hasProperty("googleRepo")) {
+             maven {
+                 name "Google"
+@@ -39,6 +40,7 @@ plugins {
  
  allprojects {
      repositories {
 +        mavenLocal()
-         google()
-         jcenter()
- 
+         if (project.hasProperty("googleRepo")) {
+             maven {
+                 name "Google"
 diff --git a/settings.gradle b/settings.gradle
-index 191de1a67..29a883ab6 100644
+index 54d2414aa..4b797cb13 100644
 --- a/settings.gradle
 +++ b/settings.gradle
-@@ -6,6 +6,7 @@ import org.yaml.snakeyaml.Yaml
+@@ -12,6 +12,7 @@ pluginManagement {
  
  buildscript {
      repositories {
@@ -37,5 +37,5 @@ index 191de1a67..29a883ab6 100644
      }
  
 -- 
-2.26.1
+2.27.0.rc0
 
