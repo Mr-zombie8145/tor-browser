@@ -22,15 +22,8 @@ input_files:
   - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
     name: gradle-dependencies
     exec: '[% INCLUDE "fetch-gradle-dependencies" %]'
-  #- filename: buildconfig.patch
-  #- filename: buildsrc.patch
-  #- filename: enginegecko.patch
-  #- filename: geckodependency.patch
   - filename: git.patch
-  #- filename: gradlebuild.patch
   - filename: pm.patch
   - filename: pm-app.patch
   - filename: kts.patch
   - filename: gradle.patch
-  #- filename: publish.patch
-  #- filename: settings.patch

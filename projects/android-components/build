@@ -14,22 +14,12 @@ mkdir -p /var/tmp/build
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 cd /var/tmp/build/[% project %]-[% c('version') %]
-#patch -p1 < $rootdir/buildconfig.patch
-#patch -p1 < $rootdir/buildsrc.patch
-#patch -p1 < $rootdir/enginegecko.patch
-#patch -p1 < $rootdir/geckodependency.patch
 patch -p1 < $rootdir/pm.patch
 patch -p1 < $rootdir/pm-app.patch
 patch -p1 < $rootdir/git.patch
 patch -p1 < $rootdir/kts.patch
 patch -p1 < $rootdir/gradle.patch
-#patch -p1 < $rootdir/gradlebuild.patch
-#patch -p1 < $rootdir/publish.patch
-#patch -p1 < $rootdir/settings.patch
 
-#mkdir -p /home/rbm/.m2/repository
-#cp -r $gradle_repo/* /home/rbm/.m2/repository
-# Build Android Libraries and Apps
 gradle --offline --no-daemon -Dmaven.repo.local=$gradle_repo assemble -x lint
 #gradle publish
 
