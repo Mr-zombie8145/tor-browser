@@ -1,6 +1,6 @@
-From f0a08154b95bd98e5cc6b659f6d49e4ef9c65fbc Mon Sep 17 00:00:00 2001
+From beebd7c29bc0388ad350cf1873a7e6edb5bc133e Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
-Date: Wed, 20 May 2020 12:53:12 +0000
+Date: Wed, 20 May 2020 14:18:12 +0000
 Subject: [PATCH] mavenLocal() fixes
 
 
@@ -36,6 +36,17 @@ index 69c23c387..b53eed13f 100644
      jcenter()
  }
  
+diff --git a/buildSrc/settings.gradle.kts b/buildSrc/settings.gradle.kts
+new file mode 100644
+index 000000000..a7066edcb
+--- /dev/null
++++ b/buildSrc/settings.gradle.kts
+@@ -0,0 +1,5 @@
++pluginManagement {
++  repositories {
++    mavenLocal()
++  }
++}
 diff --git a/settings.gradle b/settings.gradle
 index 05da65f2f..4b797cb13 100644
 --- a/settings.gradle
