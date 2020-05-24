@@ -93,7 +93,7 @@ for f in *.mar; do
       unsigned_mars=$((unsigned_mars + 1))
     else
       echo "$f is either signed with the wrong key or the signature is" \
-           "corrupted."
+           "corrupted!"
       badsigned_mars=$((badsigned_mars +1))
     fi
   fi
@@ -121,25 +121,28 @@ for f in *.mar; do
     rm "$f"
     cd ..
   fi
+  echo ""
 done
 
 rm -rf tmp/
 
-if ! [ "$unsigned_mars" = "0" ]
+if ! [ "$unsigned_mars" = "0" ] || ! [ "$badsigned_mars" = "0" ]
 then
-  echo "We got $unsigned_mars unsigned MAR file(s), exiting..."
-  exit 1
-fi
-
-if ! [ "$badsigned_mars" = "0" ]
-then
-  echo "We got $badsigned_mars badly signed MAR file(s), exiting..."
+  echo "We got:"
+  if ! [ "$unsigned_mars" = "0" ]
+  then
+    echo "$unsigned_mars unsigned MAR file(s)"
+  fi
+  if ! [ "$badsigned_mars" = "0" ]
+  then
+    echo "$badsigned_mars badly signed MAR file(s)"
+  fi
+  echo "exiting..."
   exit 1
 fi
 
 if ! [ "$not_reproduced_mars" = "0" ]
 then
-  echo ""
   echo "We got $not_reproduced_mars non-matching, signed MAR files."
   if [ "$not_reproduced_mars" -eq "$not_reproduced_mars_expected" ]
   then
@@ -154,7 +157,6 @@ then
     exit 1
   fi
 else
-  echo ""
   echo "The signatures and MAR files are fine."
   exit 0
 fi
