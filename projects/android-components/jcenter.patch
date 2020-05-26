@@ -1,0 +1,75 @@
+From 1fc8c5f75c47b61db5134d0da47f51dece1eab7c Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Tue, 26 May 2020 08:45:19 +0000
+Subject: [PATCH 1/2] Add jcenter before google repo
+
+
+diff --git a/build.gradle b/build.gradle
+index a538b66ad..ab76e5457 100644
+--- a/build.gradle
++++ b/build.gradle
+@@ -6,22 +6,22 @@ import static org.gradle.api.tasks.testing.TestResult.ResultType
+ 
+ buildscript {
+     repositories {
+-        if (project.hasProperty("googleRepo")) {
++        if (project.hasProperty("jcenterRepo")) {
+             maven {
+-                name "Google"
+-                url project.property("googleRepo")
++                name "BintrayJCenter"
++                url project.property("jcenterRepo")
+             }
+         } else {
+-            google()
++            jcenter()
+         }
+ 
+-        if (project.hasProperty("jcenterRepo")) {
++        if (project.hasProperty("googleRepo")) {
+             maven {
+-                name "BintrayJCenter"
+-                url project.property("jcenterRepo")
++                name "Google"
++                url project.property("googleRepo")
+             }
+         } else {
+-            jcenter()
++            google()
+         }
+     }
+ 
+@@ -39,22 +39,22 @@ plugins {
+ 
+ allprojects {
+     repositories {
+-        if (project.hasProperty("googleRepo")) {
++        if (project.hasProperty("jcenterRepo")) {
+             maven {
+-                name "Google"
+-                url project.property("googleRepo")
++                name "BintrayJCenter"
++                url project.property("jcenterRepo")
+             }
+         } else {
+-            google()
++            jcenter()
+         }
+ 
+-        if (project.hasProperty("jcenterRepo")) {
++        if (project.hasProperty("googleRepo")) {
+             maven {
+-                name "BintrayJCenter"
+-                url project.property("jcenterRepo")
++                name "Google"
++                url project.property("googleRepo")
+             }
+         } else {
+-            jcenter()
++            google()
+         }
+ 
+         maven {
+-- 
+2.27.0.rc0
+
