@@ -14,7 +14,6 @@ tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 cd $builddir-[% c('version') %]
 patch -p1 < $rootdir/git.patch
-patch -p1 < $rootdir/jcenter.patch
 patch -p1 < $rootdir/mavenLocal.patch
 
 gradle_args="--offline --no-daemon -Dmaven.repo.local=$gradle_repo"

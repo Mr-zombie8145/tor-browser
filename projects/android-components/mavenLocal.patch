@@ -1,11 +1,11 @@
-From b68eea81fafc253bfb5d4a4643b4365603e4a17a Mon Sep 17 00:00:00 2001
+From beebd7c29bc0388ad350cf1873a7e6edb5bc133e Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
-Date: Tue, 26 May 2020 08:46:39 +0000
-Subject: [PATCH 2/2] mavenLocal() patch
+Date: Wed, 20 May 2020 14:18:12 +0000
+Subject: [PATCH] mavenLocal() fixes
 
 
 diff --git a/build.gradle b/build.gradle
-index ab76e5457..a8acdc97b 100644
+index a538b66ad..f4b058509 100644
 --- a/build.gradle
 +++ b/build.gradle
 @@ -6,6 +6,7 @@ import static org.gradle.api.tasks.testing.TestResult.ResultType
@@ -13,17 +13,17 @@ index ab76e5457..a8acdc97b 100644
  buildscript {
      repositories {
 +        mavenLocal()
-         if (project.hasProperty("jcenterRepo")) {
+         if (project.hasProperty("googleRepo")) {
              maven {
-                 name "BintrayJCenter"
+                 name "Google"
 @@ -39,6 +40,7 @@ plugins {
  
  allprojects {
      repositories {
 +        mavenLocal()
-         if (project.hasProperty("jcenterRepo")) {
+         if (project.hasProperty("googleRepo")) {
              maven {
-                 name "BintrayJCenter"
+                 name "Google"
 diff --git a/buildSrc/build.gradle.kts b/buildSrc/build.gradle.kts
 index 69c23c387..b53eed13f 100644
 --- a/buildSrc/build.gradle.kts
