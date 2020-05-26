@@ -216,8 +216,6 @@ db025ad1bbc6896edf0f67cda1222ba9b7ec9a0187df7f4fd0a318475c758e4e | https://dl.go
 4973a6c6d7f89297a1cfea56c623cea72b3db3b4a49992afa00dd77ac052b89f | https://dl.google.com/dl/android/maven2/com/android/tools/build/jetifier/jetifier-processor/1.0.0-beta04/jetifier-processor-1.0.0-beta04.pom
 b4606d0602f21f91a174cfb8516b5a6e98ffac958d3f3cd8993b950ef49b8049 | https://dl.google.com/dl/android/maven2/com/android/tools/build/manifest-merger/26.5.3/manifest-merger-26.5.3.jar
 663c684e8f232e01185cb9ea0708ea091c310216220c7950b61a906655f4563e | https://dl.google.com/dl/android/maven2/com/android/tools/build/manifest-merger/26.5.3/manifest-merger-26.5.3.pom
-4de4a3d05e1c534c2db9e4588bf34082bb2bd232d8abb9727c430290ce225740 | https://dl.google.com/dl/android/maven2/com/android/tools/build/transform-api/2.0.0-deprecated-use-gradle-api/transform-api-2.0.0-deprecated-use-gradle-api.jar
-7c62f3856e8abca1d79257925f26c12668693f5d95904056bbac88605cfd8575 | https://dl.google.com/dl/android/maven2/com/android/tools/build/transform-api/2.0.0-deprecated-use-gradle-api/transform-api-2.0.0-deprecated-use-gradle-api.pom
 600568f41fb19fc796487b6fc539e52abd098fad1c678bce35c02a31519e24f6 | https://dl.google.com/dl/android/maven2/com/android/tools/common/26.5.3/common-26.5.3.jar
 f629150c6464d78aaf88a5121298b27b2705d07756d96e611faff2b8981d81e4 | https://dl.google.com/dl/android/maven2/com/android/tools/common/26.5.3/common-26.5.3.pom
 225acadf5168a60e3020a33cd669ba4d86adb1ef9e3e712171111de2df91ac2b | https://dl.google.com/dl/android/maven2/com/android/tools/ddms/ddmlib/26.5.3/ddmlib-26.5.3.jar
@@ -290,6 +288,8 @@ e42288e7950d7d3b033d3395a5ac9365d230da3e439a2794ec13e2ef0fbaf078 | https://dl.go
 511b2c1888d010910e538b5d62c81469269d7a665b88a837b99083913fd9e37d | https://dl.google.com/dl/android/maven2/com/google/firebase/firebase-messaging/17.3.4/firebase-messaging-17.3.4.pom
 9e1d8dd83ca6003f841e3af878ce2dc7c22497493a7bb6d1b62ec1b0d0a83c05 | https://jcenter.bintray.com/com/almworks/sqlite4java/sqlite4java/0.282/sqlite4java-0.282.jar
 2d4cdc52be79184386d74333d1c4466b7960f83505bfd5e596e76c5ab6ee3bbf | https://jcenter.bintray.com/com/almworks/sqlite4java/sqlite4java/0.282/sqlite4java-0.282.pom
+e8b4151ae1679f1abe7a14ee371ac9b3c651ae7b63290d1f586bdd0f78face9a | https://jcenter.bintray.com/com/android/tools/build/transform-api/2.0.0-deprecated-use-gradle-api/transform-api-2.0.0-deprecated-use-gradle-api.jar
+d49d179f707d3f3a00b2a7d36136b54aa8d44fa22770703cd82fe52fb39e22eb | https://jcenter.bintray.com/com/android/tools/build/transform-api/2.0.0-deprecated-use-gradle-api/transform-api-2.0.0-deprecated-use-gradle-api.pom
 256ff34118ab292d1b4f3ee4d2c3e5e5f0f609d8e07c57e8ad1f51c46d4fbb46 | https://jcenter.bintray.com/com/fasterxml/jackson/core/jackson-core/2.8.7/jackson-core-2.8.7.jar
 0d8f415d56320fbe3883ab7adee73bbb2c9a69c2a49af3608fd6b1efa15d8b5a | https://jcenter.bintray.com/com/fasterxml/jackson/core/jackson-core/2.8.7/jackson-core-2.8.7.pom
 3b51994c1a3a29c2c89728226c0be14b69888a1bb0ef311f8d65904cdfbd9358 | https://jcenter.bintray.com/com/fasterxml/jackson/jackson-parent/2.8/jackson-parent-2.8.pom
