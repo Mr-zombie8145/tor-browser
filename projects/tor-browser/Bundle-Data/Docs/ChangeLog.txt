@@ -1,9 +1,9 @@
-Tor Browser 9.5 -- June 3 2020
+Tor Browser 9.5 -- June 2 2020
  * All Platforms
-   * Firefox 68.9.0
-   * HTTPS-Everywhere 2020.5.20
-   * NoScript 11.0.26
-   * Tor 0.4.3.5
+   * Update Firefox to 68.9.0
+   * Update HTTPS-Everywhere to 2020.5.20
+   * Update NoScript to 11.0.26
+   * Update Tor to 0.4.3.5
    * Translations update
    * Bug 21549: Disable wasm for now until it is properly audited
    * Bug 27268: Preferences clean-up in Torbutton code
@@ -20,18 +20,15 @@ Tor Browser 9.5 -- June 3 2020
    * Bug 31499: Update libevent to 2.1.11-stable
      * Bug 33877: Disable Samples and Regression tests For Libevent Build
    * Bug 31573: Catch SessionStore.jsm exception
-   * Bug 32076: Upgrade to goptlib v1.1.0
    * Bug 32318: Backport Mozilla's fix for bug 1534339
    * Bug 32414: Make Services.search.addEngine obey FPI
-   * Bug 32470: Backport fix for bug 1590538
    * Bug 32493: Disable MOZ_SERVICES_HEALTHREPORT
    * Bug 32618: Backport fixes from Mozilla bugs 1467970 and 1590526
-   * Bug 32658: Create a new MAR signing key
    * Bug 33342: Avoid disconnect search addon error after removal
    * Bug 33726: Fix patch for #23247: Communicating security expectations for .onion
    * Bug 34157: Backport fix for Mozilla Bug 1511941
  * Windows + OS X + Linux
-   * Update Tor Launcher to 0.2.20.8
+   * Update Tor Launcher to 0.2.21.8
      * Translations update
      * Bug 19757: Support on-disk storage of v3 client auth keys
      * Bug 30237: Add v3 onion services client authentication prompt
@@ -45,15 +42,17 @@ Tor Browser 9.5 -- June 3 2020
    * Bug 27604: Fix broken Tor Browser after moving it to a different directory
    * Bug 28005: Implement .onion alias urlbar rewrites
    * Bug 30237: Improve TBB UI of hidden service client authorization
+   * Bug 32076: Upgrade to goptlib v1.1.0
    * Bug 32220: Improve the letterboxing experience
    * Bug 32418: Allow updates to be disabled via an enterprise policy.
+   * Bug 32470: Backport fix for bug 1590538
    * Bug 32645: Update URL bar onion indicators
+   * Bug 32658: Create a new MAR signing key
    * Bug 32674: Point the about:tor "Get involved" link to the community portal
    * Bug 32767: Remove Disconnect search
    * Bug 33698: Update "About Tor Browser" links in Tor Browser
    * Bug 33707: Swap out onion icon in circuit display with new one
    * Bug 34032: Use Securedrop's Official https-everywhere ruleset
-   * Bug 34043: Update snowflake to persist sessions across proxies
    * Bug 34196: Update site info URL with the onion name
  * Windows
    * Bug 22919: Improve the random number generator for the boundaries in multipart/form-data
@@ -61,6 +60,8 @@ Tor Browser 9.5 -- June 3 2020
    * Bug 33113: Bump NSIS version to 3.05
  * OS X
    * Bug 32505: Tighten our rules in our entitlements file for macOS
+ * Linux
+   * Bug 34315: Avoid reading policies from /etc/firefox on Linux
  * Android
    * Bug 26529: Notify user about possible proxy-bypass before opening external app
    * Bug 30767: Custom obfs4 bridge does not work on Tor Browser for Android
