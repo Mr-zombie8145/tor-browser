@@ -356,6 +356,7 @@ c71555751e57e0ef912870e8ac9625ae782502a6a5b9c19ccf83b2a97d8b26bd | https://jcent
 74ee43b09e711b13d568811e12f33bd16e6087b15f1aeded22b0dfe89ae76856 | https://jcenter.bintray.com/com/google/protobuf/protobuf-bom/3.11.4/protobuf-bom-3.11.4.pom
 dce7e66b32456a1b1198da0caff3a8acb71548658391e798c79369241e6490a4 | https://jcenter.bintray.com/com/google/protobuf/protobuf-java/3.4.0/protobuf-java-3.4.0.jar
 83f17ba86c5fa1a15a3a3c8030d4ce42ef21c1d39b65db6cc004a8eeb2c59406 | https://jcenter.bintray.com/com/google/protobuf/protobuf-java/3.4.0/protobuf-java-3.4.0.pom
+8cacea2f7a042dabae295c509dcdbfe32a49aa3708eec6ddb8efd8593aa0b4a3 | https://jcenter.bintray.com/com/google/protobuf/protobuf-javalite/3.11.4/protobuf-javalite-3.11.4.jar
 1aa38c0b0891b910e84642c5116bb1b54d86a5959f37c9c38a34ede600bdd55d | https://jcenter.bintray.com/com/google/protobuf/protobuf-javalite/3.11.4/protobuf-javalite-3.11.4.pom
 4189e0be5ab15cf2330f70b24fbdc75ca37514f188388fce8580ce16a9a68052 | https://jcenter.bintray.com/com/google/protobuf/protobuf-java-util/3.4.0/protobuf-java-util-3.4.0.jar
 89c43073e7eaa0eaba72a4a36ae1b6bfdfe5d81bb9d0e156aee05e4a72de3cb8 | https://jcenter.bintray.com/com/google/protobuf/protobuf-java-util/3.4.0/protobuf-java-util-3.4.0.pom
