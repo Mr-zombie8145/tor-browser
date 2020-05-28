@@ -1,11 +1,11 @@
-From 11f46b2f2ae04fe4dd29d2b016bac2a185b350f9 Mon Sep 17 00:00:00 2001
+From 9ff7f154e0db53b866b7da998161f5e792deafd6 Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
-Date: Thu, 28 May 2020 08:17:01 +0000
+Date: Thu, 28 May 2020 12:32:49 +0000
 Subject: [PATCH] geckoview project adjustment
 
 
 diff --git a/.buildconfig.yml b/.buildconfig.yml
-index 1cba5033d..4c905d8fa 100644
+index 1cba5033d..470fe37f0 100644
 --- a/.buildconfig.yml
 +++ b/.buildconfig.yml
 @@ -156,10 +156,6 @@ projects:
@@ -19,6 +19,17 @@ index 1cba5033d..4c905d8fa 100644
    browser-engine-gecko-beta:
      path: components/browser/engine-gecko-beta
      description: 'Engine implementation based on GeckoView (Beta channel).'
+@@ -380,10 +376,6 @@ projects:
+     path: components/tooling/fetch-tests
+     description: 'Test cases for concept-fetch implementations.'
+     publish: false
+-  samples-browser:
+-    path: samples/browser
+-    description: 'A simple browser composed from browser components.'
+-    publish: false
+   samples-crash:
+     path: samples/crash
+     description: 'An app showing the integration of the lib-crash component.'
 -- 
 2.27.0.rc2
 
