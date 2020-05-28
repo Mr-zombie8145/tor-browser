@@ -1,11 +1,11 @@
-From db5e5859fddebe0bca5e9779d3d54cf56f33fa68 Mon Sep 17 00:00:00 2001
+From d1d83e074ededafcd3a68d4419dcfeea07ff910e Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
-Date: Thu, 28 May 2020 13:17:18 +0000
+Date: Thu, 28 May 2020 13:28:04 +0000
 Subject: [PATCH] geckoview project adjustment
 
 
 diff --git a/.buildconfig.yml b/.buildconfig.yml
-index 1cba5033d..c1e954824 100644
+index 1cba5033d..213e6e9ab 100644
 --- a/.buildconfig.yml
 +++ b/.buildconfig.yml
 @@ -156,18 +156,10 @@ projects:
@@ -38,7 +38,7 @@ index 1cba5033d..c1e954824 100644
    lib-dataprotect:
      path: components/lib/dataprotect
      description: 'A component using AndroidKeyStore to protect user data.'
-@@ -380,10 +368,6 @@ projects:
+@@ -380,14 +368,6 @@ projects:
      path: components/tooling/fetch-tests
      description: 'Test cases for concept-fetch implementations.'
      publish: false
@@ -46,9 +46,13 @@ index 1cba5033d..c1e954824 100644
 -    path: samples/browser
 -    description: 'A simple browser composed from browser components.'
 -    publish: false
-   samples-crash:
-     path: samples/crash
-     description: 'An app showing the integration of the lib-crash component.'
+-  samples-crash:
+-    path: samples/crash
+-    description: 'An app showing the integration of the lib-crash component.'
+-    publish: false
+   samples-firefox-accounts:
+     path: samples/firefox-accounts
+     description: 'A simple app demoing Firefox Accounts integration.'
 -- 
 2.27.0.rc2
 
