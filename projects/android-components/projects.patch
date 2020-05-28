@@ -1,11 +1,11 @@
-From e31e3f5fc83d9ecab072a3fb1bc4d264491c58c2 Mon Sep 17 00:00:00 2001
+From db5e5859fddebe0bca5e9779d3d54cf56f33fa68 Mon Sep 17 00:00:00 2001
 From: Georg Koppen <gk@torproject.org>
-Date: Thu, 28 May 2020 12:45:29 +0000
+Date: Thu, 28 May 2020 13:17:18 +0000
 Subject: [PATCH] geckoview project adjustment
 
 
 diff --git a/.buildconfig.yml b/.buildconfig.yml
-index 1cba5033d..831f73e6f 100644
+index 1cba5033d..c1e954824 100644
 --- a/.buildconfig.yml
 +++ b/.buildconfig.yml
 @@ -156,18 +156,10 @@ projects:
@@ -27,7 +27,18 @@ index 1cba5033d..831f73e6f 100644
    browser-engine-system:
      path: components/browser/engine-system
      description: 'Engine implementation based on the system WebView.'
-@@ -380,10 +372,6 @@ projects:
+@@ -328,10 +320,6 @@ projects:
+     path: components/support/webextensions
+     description: 'A component containing building blocks for features implemented as web extensions.'
+     publish: true
+-  lib-crash:
+-    path: components/lib/crash
+-    description: 'A generic crash reporter library that can report crashes to multiple services.'
+-    publish: true
+   lib-dataprotect:
+     path: components/lib/dataprotect
+     description: 'A component using AndroidKeyStore to protect user data.'
+@@ -380,10 +368,6 @@ projects:
      path: components/tooling/fetch-tests
      description: 'Test cases for concept-fetch implementations.'
      publish: false
