@@ -1,0 +1,24 @@
+From 11f46b2f2ae04fe4dd29d2b016bac2a185b350f9 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Thu, 28 May 2020 08:17:01 +0000
+Subject: [PATCH] geckoview project adjustment
+
+
+diff --git a/.buildconfig.yml b/.buildconfig.yml
+index 1cba5033d..4c905d8fa 100644
+--- a/.buildconfig.yml
++++ b/.buildconfig.yml
+@@ -156,10 +156,6 @@ projects:
+     path: components/browser/domains
+     description: 'Localized and customizable domain lists for auto-completion in browsers.'
+     publish: true
+-  browser-engine-gecko:
+-    path: components/browser/engine-gecko
+-    description: 'Engine implementation based on GeckoView.'
+-    publish: true
+   browser-engine-gecko-beta:
+     path: components/browser/engine-gecko-beta
+     description: 'Engine implementation based on GeckoView (Beta channel).'
+-- 
+2.27.0.rc2
+
