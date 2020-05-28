@@ -3,6 +3,7 @@ set -e
 # Bug 28117: setting LC_ALL=C is causing wget to fail downloading some URLs
 unset LC_ALL
 cd "[% dest_dir %]"
+export TMPDIR=[% shell_quote(c("tmp_dir")) %]
 m2dir="$(mktemp -d)"
 [% USE artifacts = datafile(c('basedir') _ '/projects/' _ project _ '/gradle-dependencies-list.txt', delim = '|') %]
 [% FOREACH artifact = artifacts %]
