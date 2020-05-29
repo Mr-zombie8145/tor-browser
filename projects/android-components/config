@@ -21,8 +21,11 @@ input_files:
     project: '[% c("var/compiler") %]'
   - name: geckoview
     project: geckoview
+    pkg_type: merge_aars
   - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
     name: gradle-dependencies
     exec: '[% INCLUDE "fetch-gradle-dependencies" %]'
   - filename: git.patch
   - filename: mavenLocal.patch
+  - filename: projects.patch
+  - filename: betaVersion.patch

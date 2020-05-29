@@ -1,0 +1,22 @@
+From 0f5761a8d9443267144702b81c9e347e27ce551b Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Fri, 29 May 2020 09:12:02 +0000
+Subject: [PATCH] beta version adjustment
+
+
+diff --git a/buildSrc/src/main/java/Gecko.kt b/buildSrc/src/main/java/Gecko.kt
+index f2a2e7256..a3cd4e772 100644
+--- a/buildSrc/src/main/java/Gecko.kt
++++ b/buildSrc/src/main/java/Gecko.kt
+@@ -11,7 +11,7 @@ internal object GeckoVersions {
+     /**
+      * GeckoView Beta Version.
+      */
+-    const val beta_version = "77.0.20200505174119"
++    const val beta_version = "77.0.20010101010101"
+ 
+     /**
+      * GeckoView Release Version.
+-- 
+2.27.0.rc2
+
