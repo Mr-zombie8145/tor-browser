@@ -10,6 +10,12 @@ gradle_repo=$rootdir/[% c('input_files_by_name/gradle-dependencies') %]
 cp -r $gradle_repo/dl/android/maven2/* $gradle_repo
 cp -r $gradle_repo/maven2/* $gradle_repo
 cp -r $gradle_repo/m2/* $gradle_repo
+
+tar -C /var/tmp/dist -xf [% c('input_files_by_name/geckoview') %]
+gvbeta_path=$gradle_repo/org/mozilla/geckoview/geckoview-beta/77.0.20010101010101
+mkdir $gvbeta_path
+cp $distdir/geckoview/* $gvbeta_path/
+
 tar -C /var/tmp/build -xf [% project %]-[% c('version') %].tar.gz
 
 cd $builddir-[% c('version') %]
