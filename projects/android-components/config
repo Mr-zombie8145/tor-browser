@@ -29,3 +29,4 @@ input_files:
   - filename: mavenLocal.patch
   - filename: projects.patch
   - filename: betaVersion.patch
+  - filename: crash.patch

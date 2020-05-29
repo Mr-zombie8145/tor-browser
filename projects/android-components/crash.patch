@@ -1,0 +1,35 @@
+From adac05034643055dfc9302c92fdc2188523c2af5 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Fri, 29 May 2020 18:56:49 +0000
+Subject: [PATCH] crash backout
+
+
+diff --git a/.buildconfig.yml b/.buildconfig.yml
+index 1cba5033d..986156343 100644
+--- a/.buildconfig.yml
++++ b/.buildconfig.yml
+@@ -328,10 +328,6 @@ projects:
+     path: components/support/webextensions
+     description: 'A component containing building blocks for features implemented as web extensions.'
+     publish: true
+-  lib-crash:
+-    path: components/lib/crash
+-    description: 'A generic crash reporter library that can report crashes to multiple services.'
+-    publish: true
+   lib-dataprotect:
+     path: components/lib/dataprotect
+     description: 'A component using AndroidKeyStore to protect user data.'
+@@ -384,10 +380,6 @@ projects:
+     path: samples/browser
+     description: 'A simple browser composed from browser components.'
+     publish: false
+-  samples-crash:
+-    path: samples/crash
+-    description: 'An app showing the integration of the lib-crash component.'
+-    publish: false
+   samples-firefox-accounts:
+     path: samples/firefox-accounts
+     description: 'A simple app demoing Firefox Accounts integration.'
+-- 
+2.27.0.rc2
+
