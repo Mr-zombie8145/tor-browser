@@ -1,0 +1,24 @@
+From cc6f492363cca3aa611bdd3c6d52d19496f0b8b7 Mon Sep 17 00:00:00 2001
+From: Georg Koppen <gk@torproject.org>
+Date: Fri, 29 May 2020 20:17:37 +0000
+Subject: [PATCH] no sample browser
+
+
+diff --git a/.buildconfig.yml b/.buildconfig.yml
+index 986156343..21a2413fb 100644
+--- a/.buildconfig.yml
++++ b/.buildconfig.yml
+@@ -376,10 +376,6 @@ projects:
+     path: components/tooling/fetch-tests
+     description: 'Test cases for concept-fetch implementations.'
+     publish: false
+-  samples-browser:
+-    path: samples/browser
+-    description: 'A simple browser composed from browser components.'
+-    publish: false
+   samples-firefox-accounts:
+     path: samples/firefox-accounts
+     description: 'A simple app demoing Firefox Accounts integration.'
+-- 
+2.27.0.rc2
+

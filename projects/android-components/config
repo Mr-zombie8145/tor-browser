@@ -30,3 +30,4 @@ input_files:
   - filename: projects.patch
   - filename: betaVersion.patch
   - filename: crash.patch
+  - filename: browser.patch

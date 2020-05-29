@@ -24,9 +24,11 @@ patch -p1 < $rootdir/mavenLocal.patch
 #patch -p1 < $rootdir/projects.patch
 patch -p1 < $rootdir/betaVersion.patch
 patch -p1 < $rootdir/crash.patch
+patch -p1 < $rootdir/browser.patch
 
 gradle_args="--offline --no-daemon -Dmaven.repo.local=$gradle_repo"
 
+gradle $gradle_args tasks
 gradle $gradle_args assembleGeckoBeta -x lint
 gradle $gradle_args publish
 
