@@ -33,7 +33,7 @@
 # Usage:
 # 1) Let SIGNMAR point to your signmar binary
 # 2) Let LD_LIBRARY_PATH point to the mar-tools directory
-# 3) Let NSSDB_DIR point to the directory containing the database with the
+# 3) Let NSS_DB_DIR point to the directory containing the database with the
 #    signing certificate to check against.
 #
 #    To create the database to use for signature checking import the
@@ -60,7 +60,7 @@ then
   exit 1
 fi
 
-if [ -z "$NSSDB_DIR" ]
+if [ -z "$NSS_DB_DIR" ]
 then
   echo "The path to your nssdb directory is missing!"
   exit 1
@@ -84,7 +84,7 @@ for f in *.mar; do
 
   # Test 1: Is the MAR file correctly signed?
   echo "Verifying the MAR signature of $f..."
-  if ! $SIGNMAR -d "$NSSDB_DIR" -n marsigner -v "$f"
+  if ! $SIGNMAR -d "$NSS_DB_DIR" -n marsigner -v "$f"
   then
     # Something went wrong. Let's figure out what.
     if [ "$sha256_txt" = "$(sha256sum "$f")" ]
