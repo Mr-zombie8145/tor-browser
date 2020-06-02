@@ -9,7 +9,7 @@ mkdir -p [% dest_dir _ '/' _ c('filename') %]
 # but we can't include it via input_files as it is a script shared between
 # projects.
 cat > get-moz-build-date << EOF
-[% INCLUDE get-moz-build-date %]
+[% INCLUDE "get-moz-build-date" %]
 EOF
 
 [% IF c("var/windows") %]
