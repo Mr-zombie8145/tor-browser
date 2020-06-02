@@ -15,7 +15,7 @@ input_files:
     enable: '[% c("var/linux") %]'
   - name: binutils
     project: binutils
-    enable:'[% c("var/linux") %]'
+    enable: '[% c("var/linux") %]'
   - project: cmake
     name: cmake
   - URL: 'https://github.com/llvm/llvm-project/releases/download/llvmorg-[% c("version") %]/llvm-[% c("version") %].src.tar.xz'
