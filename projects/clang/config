@@ -8,14 +8,6 @@ var:
   container:
     use_container: 1
 
-targets:
-  windows:
-    var:
-      arch_deps:
-        # We use git to apply patches
-        - git
-
-
 input_files:
   - project: container-image
   - name: '[% c("var/compiler") %]'
