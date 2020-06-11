@@ -15,3 +15,4 @@ input_files:
     enable: '[% c("var/linux") %]'
   - URL: 'https://nodejs.org/download/release/[% c("version") %]/node-[% c("version") %].tar.xz'
     sha256sum: 26b01fa28338cacaa8a66d7963ab2514e81678c268ab52ec55dcf937aadcb73b
+    name: fenix-node
