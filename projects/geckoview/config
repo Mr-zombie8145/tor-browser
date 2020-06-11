@@ -47,7 +47,7 @@ steps:
 
       tar -C $distdir -xf [% c('input_files_by_name/node') %]
       tar -C $distdir -xf [% c('input_files_by_name/python') %]
-      export PATH="/var/tmp/dist/node/bin:/var/tmp/dist/python/bin:$PATH"
+      export PATH="/var/tmp/dist/fenix-node/bin:/var/tmp/dist/python/bin:$PATH"
 
       tar -C $builddir -xf [% c('input_files_by_name/geckoview_armv7') %]
       tar -C $builddir -xf [% c('input_files_by_name/geckoview_aarch64') %]
