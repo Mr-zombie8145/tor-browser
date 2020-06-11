@@ -1,5 +1,5 @@
 # vim: filetype=yaml sw=2
-version: v10.19.0
+version: v10.21.0
 filename: '[% project %]-[% c("version") %]-[% c("var/build_id") %].tar.gz'
 var:
   container:
@@ -14,4 +14,4 @@ input_files:
     name: '[% c("var/compiler") %]'
     enable: '[% c("var/linux") %]'
   - URL: 'https://nodejs.org/download/release/[% c("version") %]/node-[% c("version") %].tar.xz'
-    sha256sum: 622721bc3e6b65faf7eb6a22bfb6e3e31817e42212aa6bf5a7991ea7d9b6f169
+    sha256sum: 26b01fa28338cacaa8a66d7963ab2514e81678c268ab52ec55dcf937aadcb73b
