@@ -19,7 +19,7 @@ cat > .cargo/config << 'EOF'
 replace-with = "vendored-sources"
 
 [source.vendored-sources]
-directory = "/var/tmp/build/cbindgen/vendor"
+directory = "/var/tmp/build/fenix-cbindgen/vendor"
 EOF
 
 cargo build --release --frozen --target x86_64-unknown-linux-gnu
