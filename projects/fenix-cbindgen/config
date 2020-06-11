@@ -5,6 +5,10 @@ git_hash: 0761b9bbe48d01ded1bbec45bbeea5544b3b1002 #v0.14.1
 filename: '[% project %]-[% c("version") %]-[% c("var/osname") %]-[% c("var/build_id") %].tar.gz'
 
 var:
+  # If there is a new cbindgen version that needs newly vendored crates,
+  # increase the version number to fetch the correct tarball.
+  vendor_version: 2
+
   container:
     use_container: 1
 input_files:
@@ -12,5 +16,5 @@ input_files:
   - name: rust
     project: fenix-rust
   # `cargo vendor vendor` in the `cbindgen` directory has vendored the sources.
-  - URL: https://people.torproject.org/~gk/mirrors/sources/cbindgen-vendor2.tar.bz2
+  - URL: https://people.torproject.org/~gk/mirrors/sources/cbindgen-vendor[% c('var/vendor_version') %].tar.bz2
     sha256sum: 1c500bc1b8de4eb400f90a528c4b5c6b2c7357e401a95c5354469a18fd365dbc
