@@ -10,7 +10,7 @@
   export PATH="/var/tmp/dist/binutils/bin:$PATH"
 [% END -%]
 distdir=/var/tmp/dist/[% project %]
-tar -xf [% c('input_files_by_name/fenix-node') %].tar.xz
+tar -xf [% c('input_files_by_name/fenix-node') %]
 cd node-[% c('version') %]
 
 ./configure --prefix=$distdir
