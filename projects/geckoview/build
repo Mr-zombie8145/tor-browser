@@ -47,9 +47,6 @@ cp -r $gradle_repo/m2/* $gradle_repo
 rm -f configure
 rm -f js/src/configure
 
-patch -p1 < $rootdir/ipdl.patch
-patch -p1 < $rootdir/libvpx.patch
-
 ./mach configure --with-tor-browser-version=[% c("var/torbrowser_version") %]
 ./mach build --verbose
 

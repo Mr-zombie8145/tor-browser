@@ -132,7 +132,7 @@ steps:
 
 targets:
   nightly:
-    git_hash: '33533+5'
+    git_hash: '33533+6'
     tag_gpg_id: 0
 
 input_files:
@@ -158,5 +158,3 @@ input_files:
   - filename: 'gradle-dependencies-[% c("var/gradle_dependencies_version") %]'
     name: gradle-dependencies
     exec: '[% INCLUDE "fetch-gradle-dependencies" %]'
-  - filename: ipdl.patch
-  - filename: libvpx.patch
