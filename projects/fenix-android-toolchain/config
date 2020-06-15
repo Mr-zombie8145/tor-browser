@@ -12,7 +12,10 @@ var:
     mkdir -p /var/tmp/dist
     tar -C /var/tmp/dist -xf $rootdir/[% c("compiler_tarfile") %]
     export ANDROID_SDK_HOME=/var/tmp/dist/[% project %]/android-sdk-linux
-    export ANDROID_NDK_HOME=/var/tmp/dist/[% project %]/android-ndk
+    # By default we use the old NDK which is the one GeckoView is using.
+    # However, we can overwrite that per project if needed (e.g.
+    # application-services are currently on a newer NDK).
+    export ANDROID_NDK_HOME=/var/tmp/dist/[% project %]/android-ndk/[% c("var/android_ndk_version_old") %]
     export GRADLE_HOME=/var/tmp/dist/[% project %]/gradle
     export ANDROID_HOME=$ANDROID_SDK_HOME
     export GRADLE_USER_HOME=$GRADLE_HOME
@@ -21,7 +24,8 @@ var:
   android_api_level: 29
   android_api_level_old: 28
   android_platform_revision: 04
-  android_ndk_version: 20
+  android_ndk_version: 21
+  android_ndk_version_old: 20
   gradle_version: 5.6.4
   gradle_version_old: 5.1.1
 input_files:
@@ -49,6 +53,9 @@ input_files:
     sha256sum: 92ffee5a1d98d856634e8b71132e8a95d96c83a63fde1099be3d86df3106def9
   - URL: '[% c("var/google_repo") %]/android-ndk-r[% c("var/android_ndk_version") %]-linux-x86_64.zip'
     name: android_ndk_compiler
+    sha256sum: b65ea2d5c5b68fb603626adcbcea6e4d12c68eb8a73e373bbb9d23c252fc647b
+  - URL: '[% c("var/google_repo") %]/android-ndk-r[% c("var/android_ndk_version_old") %]-linux-x86_64.zip'
+    name: android_ndk_compiler_old
     sha256sum: 57435158f109162f41f2f43d5563d2164e4d5d0364783a9a6fab3ef12cb06ce0
   - URL: https://services.gradle.org/distributions/gradle-[% c("var/gradle_version") %]-bin.zip
     name: gradle_bin
