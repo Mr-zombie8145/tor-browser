@@ -15,7 +15,7 @@ var:
     # By default we use the old NDK which is the one GeckoView is using.
     # However, we can overwrite that per project if needed (e.g.
     # application-services are currently on a newer NDK).
-    export ANDROID_NDK_HOME=/var/tmp/dist/[% project %]/android-ndk/[% c("var/android_ndk_version_old") %]
+    export ANDROID_NDK_HOME=/var/tmp/dist/[% project %]/android-ndk/android-ndk-r[% c("var/android_ndk_version_old") %]
     export GRADLE_HOME=/var/tmp/dist/[% project %]/gradle
     export ANDROID_HOME=$ANDROID_SDK_HOME
     export GRADLE_USER_HOME=$GRADLE_HOME
